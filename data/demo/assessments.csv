@@ -1,0 +1,3 @@
+assessment_id,alert_id,area,start_date,end_date,method,kii_sample,hh_sample,observation_sample,coverage_note,limitations,response_use,source
+DEMO-RNA-01,DEMO-001,Arrival B,2026-09-03,2026-09-04,KII + HESPER,5,12,1,Arrival B assessed. Arrival C not assessed in this round.,Small purposive sample; no population prevalence estimate.,Partner confirms food and shelter findings informed the proposed response.,DEMO partner summary
+DEMO-RNA-02,DEMO-003,Arrival F,2026-09-17,2026-09-18,KII + HESPER,4,10,1,Arrival F assessed.,Small purposive sample; no population prevalence estimate.,Response planning ongoing.,DEMO partner summary

@@ -1,0 +1,4 @@
+alert_id,alert_date,trigger,gla,movement,alert_hh,alert_people,alert_severity,alert_evidence_date,rna_hh,rna_people,rna_severity,rna_evidence_date,rationale,related_alert,overlap_status
+DEMO-001,2026-09-01,Conflict,Partner A,IDP,610,3050,High,2026-09-01,940,4700,Critical,2026-09-04,Verified alert-linked caseload meets the 900 HH override (mock-up rule; requires operational approval).,DEMO-002,Potential overlap; shared households not confirmed
+DEMO-002,2026-09-08,Conflict,Partner B,IDP,200,1000,High,2026-09-08,,,,,RNA verification pending,DEMO-001,Potential overlap; shared households not confirmed
+DEMO-003,2026-09-16,Flood,Partner C,Returnee,80,360,Moderate,2026-09-16,75,345,Moderate,2026-09-18,Reviewed evidence; no automatic severity calculation.,,Not assessed

@@ -1,0 +1,32 @@
+# Run from the project root: Rscript tests/check_data.R
+source('R/data.R')
+d <- read_rrm_data('demo')
+stopifnot(nrow(d$alerts)==3L, nrow(d$activities)==5L)
+x <- filter_equal(d$activities,'alert_id','DEMO-001')
+t <- activity_totals(x)
+stopifnot(t$hh==180,t$kits==120,t$consultations==86,t$days==4)
+stopifnot(min(x$days_from_alert[x$tier=='Tier 2'])==18)
+p <- x; p$delivery_status <- 'Planned'
+stopifnot(activity_totals(p)$hh==0,is.na(activity_totals(p)$days))
+stopifnot(nrow(filter_equal(x,'modality','Absent'))==0)
+stopifnot(nrow(filter_date(x,'start_date',as.Date(c('2026-09-19','2026-09-19'))))==1L)
+stopifnot(is.na(known_sum(c(NA_real_,NA_real_))))
+# Representative malformed datasets must be rejected before any data is displayed.
+rejected <- function(table, mutate) {
+  base <- tempfile('rrm_contract_'); dir.create(base)
+  on.exit(unlink(base,recursive=TRUE))
+  dir.create(file.path(base,'data'));dir.create(file.path(base,'data','demo'));dir.create(file.path(base,'data','templates'))
+  for(folder in c('demo','templates')) file.copy(list.files(file.path('data',folder),full.names=TRUE),file.path(base,'data',folder))
+  f <- file.path(base,'data','demo',paste0(table,'.csv'))
+  y <- read.csv(f,na.strings='',check.names=FALSE); y <- mutate(y)
+  write.csv(y,f,row.names=FALSE,na='')
+  inherits(try(read_rrm_data('demo',base),silent=TRUE),'try-error')
+}
+stopifnot(rejected('activities',function(x) {x$event_id[2]<-x$event_id[1];x}))
+stopifnot(rejected('activities',function(x) {x$alert_id[1]<-'missing';x}))
+stopifnot(rejected('activities',function(x) {x$start_date[1]<-'2026-08-01';x}))
+stopifnot(rejected('routes',function(x) {x$people[1]<-99999;x}))
+stopifnot(rejected('needs',function(x) {x$hesper_serious[1]<-999;x}))
+stopifnot(rejected('screening',function(x) {x$household_name<-'Not permitted';x}))
+stopifnot(rejected('metadata',function(x) {x$mode<-'operational';x}))
+message('PASS: sample KPI totals, date filters, missing values, planned activities, and malformed-data rejection.')

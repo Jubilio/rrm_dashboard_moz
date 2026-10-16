@@ -1,0 +1,7 @@
+assessment_id,need,rank,kii_summary,hesper_serious,hesper_valid,ranking_note
+DEMO-RNA-01,Food,1,Priority need,10,12,Reviewed top-three ranking; example only
+DEMO-RNA-01,Shelter,2,Priority need,9,12,Reviewed top-three ranking; example only
+DEMO-RNA-01,WASH,3,Priority need,7,12,Reviewed top-three ranking; example only
+DEMO-RNA-02,WASH,1,Priority need,8,10,Reviewed top-three ranking; example only
+DEMO-RNA-02,Food,2,Priority need,6,10,Reviewed top-three ranking; example only
+DEMO-RNA-02,Shelter,3,Priority need,4,10,Reviewed top-three ranking; example only

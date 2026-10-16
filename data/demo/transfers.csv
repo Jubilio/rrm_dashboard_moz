@@ -1,0 +1,2 @@
+transfer_id,alert_id,area,component,from_partner,to_partner,transfer_date,note
+T01,DEMO-001,Arrival B,Shelter follow-up,Partner A,Partner B,2026-09-20,Illustrative responsibility transfer; no additional reach is implied.

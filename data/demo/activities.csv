@@ -1,0 +1,6 @@
+event_id,alert_id,area,tier,modality,start_date,delivery_partner,quantity,unit,measure_type,delivery_status,donor,delay_reason
+A01,DEMO-001,Arrival B,Tier 1,Voucher,2026-09-05,Partner A,120,HH,Assistance,Completed,Donor A,
+A02,DEMO-001,Arrival B,Tier 1,NFI kits,2026-09-05,Partner A,120,kits,Service output,Completed,Donor A,
+A03,DEMO-001,Arrival B,Tier 1,Mobile clinic,2026-09-12,Partner B,86,consultations,Service output,Completed,Donor B,
+A04,DEMO-001,Arrival B,Tier 2,Voucher,2026-09-19,Partner A,60,HH,Assistance,Completed,Donor A,Partner-reported access constraints (illustrative)
+A05,DEMO-003,Arrival F,Tier 1,Water kits,2026-09-21,Partner C,75,kits,Service output,Completed,Donor C,

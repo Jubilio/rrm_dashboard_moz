@@ -1,0 +1,9 @@
+assignment_id,area,partner,role,effective_from,effective_to,source_version
+C01,Area 1,Partner A,Primary,2026-01-01,,DEMO-v1
+C02,Area 2,Partner A,Secondary,2026-01-01,,DEMO-v1
+C03,Area 2,Partner B,Primary,2026-01-01,,DEMO-v1
+C04,Area 3,Partner C,Primary,2026-01-01,,DEMO-v1
+C05,Area 4,Partner B,Secondary,2026-01-01,,DEMO-v1
+C06,Area 5,Partner A,Primary,2026-01-01,,DEMO-v1
+C07,Area 7,Unknown,Unknown,2026-01-01,,DEMO-v1
+C08,Area 6,Partner C,Primary,2026-01-01,,DEMO-v1

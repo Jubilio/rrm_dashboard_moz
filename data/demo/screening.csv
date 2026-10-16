@@ -1,0 +1,4 @@
+screening_id,alert_id,community,decision_date,population,decision,reason,reviewed,profile_summary,analysis_version,review_date
+S01,DEMO-001,Community B,2026-09-10,IDP,Proceed,Community acceptance; assessment and analysis reviewed,TRUE,Repeated displacement combined with reported household disability was associated with the highest concurrence in the example analysis.,DEMO-v1,2026-09-10
+S02,DEMO-001,Community B,2026-09-10,Host,Proceed,Community acceptance; assessment and analysis reviewed,TRUE,Hosting additional people combined with a larger household was associated with the highest concurrence in the example analysis.,DEMO-v1,2026-09-10
+S03,DEMO-002,Community D,2026-09-12,IDP,Not proceeding,Community acceptance not obtained,FALSE,,DEMO-v1,2026-09-12

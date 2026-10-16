@@ -1,0 +1,6 @@
+alert_id,stage,conditions_level,protection_level,verified_hh,hh_verified,evidence_date,confidence,geographic_caveat
+DEMO-001,Alert,3,2,610,TRUE,2026-09-01,Medium,Illustrative domain ratings
+DEMO-001,RNA,3,3,940,TRUE,2026-09-04,High,Illustrative domain ratings
+DEMO-002,Alert,3,2,200,FALSE,2026-09-08,Low,RNA pending
+DEMO-003,Alert,2,1,80,FALSE,2026-09-16,Medium,Illustrative
+DEMO-003,RNA,2,1,75,TRUE,2026-09-18,Medium,Illustrative

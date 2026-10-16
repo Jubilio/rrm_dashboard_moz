@@ -16,14 +16,13 @@ d <- apply_alert_severity(read_rrm_data(DATA_MODE))
 ui <- fluidPage(
   tags$head(tags$title(paste(APP_TITLE,APP_SUBTITLE,sep=' | ')),tags$meta(name='viewport',content='width=device-width, initial-scale=1'),
     tags$link(rel='stylesheet',type='text/css',href='styles.css')),
-  div(class='app-header',div(h1(APP_TITLE),p(APP_SUBTITLE)),
-    div(class=if(DATA_MODE=='demo') 'mode demo' else 'mode live',if(DATA_MODE=='demo') 'CORE CSV DEMO · WORKBOOK SOURCES LABELLED SEPARATELY' else 'PRODUCTION · REPORTED INTERVENTIONS')),
+  div(class='app-header',div(h1(APP_TITLE),textOutput('page_subtitle',container=tags$p)),
+    textOutput('source_label',container=function(...) div(class='mode',...))),
   div(class='app-shell',
-    tags$aside(class='app-sidebar',span(class='eyebrow','WORKSPACE'),
-      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected=if(DATA_MODE=='demo') 'coverage' else 'activity'),
-      div(class='sidebar-note',h4('Evidence to action'),p('Coverage · alerts · assessment · screening · response'),
-        if(DATA_MODE=='demo') p('Core CSV records are illustrative. Historical and activity workbook sources, and synthetic household scenarios, are labelled separately.')),
-      actionLink('methods','Methods & data sources')),
+    tags$aside(class='app-sidebar',
+      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage'),
+      div(class='sidebar-note',p('Select a page to explore the dashboard.'),
+        if(DATA_MODE=='demo') p('Filters and values are design examples. Replace all demo records before use.'))),
     tags$main(class='app-main',lapply(names(page_titles),function(key)
       conditionalPanel(sprintf("input.page == '%s'",key),
         if(key=='alerts') tabsetPanel(tabPanel('Historical severity review',history_ui('history',history)),tabPanel('Dashboard records',page_ui(key,key,d)))
@@ -32,12 +31,26 @@ ui <- fluidPage(
         else page_ui(key,key,d))))),
   tags$footer(class='app-footer',
     div(class='footer-meta',
-      div(if(DATA_MODE=='demo') 'Core CSV demo · workbook sources and synthetic scenarios labelled separately' else 'Operational reporting · original workbook review statuses retained'),
-      div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Core metadata updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))),
+      textOutput('source_footer'),
+      div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
+        ' · ',actionLink('methods','Methods and sources'))),
     div(class='footer-brand',
       tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',
         alt='REACH — Informing more effective humanitarian action',width=308,height=68))))
 server <- function(input,output,session) {
+  output$page_subtitle <- renderText(paste(page_titles[[if(is.null(input$page)) 'coverage' else input$page]],APP_SUBTITLE,sep=' | '))
+  output$source_label <- renderText({
+    if(identical(input$page,'activity')) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
+    else if(identical(input$page,'alerts')) 'HISTORICAL EVIDENCE · DASHBOARD RECORDS LABELLED SEPARATELY'
+    else if(DATA_MODE=='demo') 'DRAFT LAYOUT - DEMO DATA ONLY'
+    else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
+  })
+  output$source_footer <- renderText({
+    if(identical(input$page,'activity')) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'
+    else if(identical(input$page,'alerts')) 'Historical severity evidence is a separate source. Dashboard records follow the selected core data mode.'
+    else if(DATA_MODE=='demo') 'Layout mock-up. All figures and DEMO records on this page are illustrative, not operational data.'
+    else 'Operational core data. Coverage responsibilities are not evidence of an intervention.'
+  })
   for(key in setdiff(names(page_titles),'activity')) page_server(key,key,d)
   history_server('history',history)
   household_server('household',history,allow_synthetic=DATA_MODE=='demo')

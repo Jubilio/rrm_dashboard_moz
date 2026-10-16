@@ -3,7 +3,7 @@
 import {spawn} from 'node:child_process';
 import assert from 'node:assert/strict';
 const port=19000+Math.floor(Math.random()*1000);
-const processR=spawn(process.env.RRM_TEST_R||'Rscript',['-e',`shiny::runApp('.',host='127.0.0.1',port=${port},launch.browser=FALSE)`],{cwd:process.cwd()});
+const processR=spawn(process.env.RRM_TEST_R||'Rscript',['-e',`shiny::runApp('.',host='127.0.0.1',port=${port},launch.browser=FALSE)`],{cwd:process.cwd(),env:{...process.env,RRM_DATA_MODE:'operational'}});
 let log='',socket;
 processR.stderr.on('data',d=>{log+=d;});
 try {

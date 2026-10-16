@@ -2,7 +2,7 @@
 
 The dashboard interface is entirely **English**. This update integrates the supplied 2026 severity workbook and Draft 0.1 household matrix. See **SEVERITY_INTEGRATION.md** and **HOUSEHOLD_ANALYSIS.md** for the implemented rules, source issues, private processing workflow and draft release controls.
 
-The dashboard starts in production mode on Activity reporting, using the real reporting workbook or its sanitised snapshot. Historical alert evidence is labelled separately. Production vulnerability views accept reviewed operational aggregates only; synthetic household scenarios and draft scenario controls are available only in explicitly selected demo mode.
+The dashboard always opens on Geographic coverage. It starts in demo mode with clearly labelled fictional core records while approved inputs are pending. Activity reporting uses the real reporting workbook or its sanitised snapshot and is labelled separately. Historical alert evidence is labelled separately. Production vulnerability views accept reviewed operational aggregates only; synthetic household scenarios and draft scenario controls are available only in explicitly selected demo mode.
 
 
 Independent **R Shiny** dashboard implementing the five pages in `RRM_Dashboard_Page_Mockups.pdf`. It keeps the lightweight Shiny approach of the supplied WASH tracker and its coral, charcoal and white palette. The pages and data model are rebuilt for RRM. The WASH household records, saved sessions, publishing credentials and Windows package library are not carried into this project.
@@ -44,13 +44,13 @@ Each page exports its currently filtered display table to CSV. On narrow screens
 
 ## Production data
 
-**Production (`operational`) is the default.** Activity reporting loads the real supplied workbook snapshot (83 activities and four extra outputs), or the live source configured with `RRM_ACTIVITY_WORKBOOK`. Production does not alter source review statuses: the supplied 83 activities are still pending review and remain available in Records and review. Validated result totals remain unavailable until the required source review is recorded.
+**Demo is the layout-preview default.** Set `RRM_DATA_MODE=operational` before starting R to use approved core inputs. Activity reporting loads the real supplied workbook snapshot (83 activities and four extra outputs), or the live source configured with `RRM_ACTIVITY_WORKBOOK`. Production does not alter source review statuses: the supplied 83 activities are still pending review and remain available in Records and review. Validated result totals remain unavailable until the required source review is recorded.
 
 The eight core operational CSV tables are initially header-only because no separate approved responsibility, core-alert, assessment, screening or transfer datasets have been supplied. Those pages show explicit empty states. Historical severity records remain a separate source, and the geographic boundaries remain available. Real intervention rows are not fabricated into unrelated RNA, coverage or household tables.
 
 To add core data, populate the existing files in `data/operational/` using the exact headers from `data/templates/`, update `metadata.csv` with source date/version/methods and restart the Shiny process. Missing files and malformed operational data fail explicitly and never fall back to demo records. Activity reporting has its own Excel refresh workflow; see ACTIVITY_WORKBOOK.md. Dates use `YYYY-MM-DD`, blank means unknown and controlled values are case-sensitive. Production household analysis admits only reviewed, non-synthetic aggregates generated under approved rules.
 
-For isolated development demonstrations only, explicitly set `RRM_DATA_MODE=demo`. The fixtures in `data/demo/` and synthetic household scenarios remain available for regression testing; they are not the production source. Run `Rscript tests/check_production.R` to verify the default production configuration and source separation.
+The default `RRM_DATA_MODE=demo` reproduces the supplied reference layout. The fixtures in `data/demo/` and synthetic household scenarios remain available for regression testing; they are not the production source. Run `Rscript tests/check_production.R` to verify the explicitly selected production configuration and source separation.
 
 ## Counting rules
 

@@ -1,18 +1,18 @@
 library(shiny)
 source('R/data.R');source('R/pages.R');source('R/severity.R');source('R/household_ui.R');source('R/activity_workbook.R')
 old_mode <- Sys.getenv('RRM_DATA_MODE',unset=NA_character_)
-Sys.unsetenv('RRM_DATA_MODE')
+Sys.setenv(RRM_DATA_MODE='operational')
 e <- new.env(parent=globalenv())
 sys.source('app.R',envir=e)
-if(!is.na(old_mode)) Sys.setenv(RRM_DATA_MODE=old_mode)
+if(!is.na(old_mode)) Sys.setenv(RRM_DATA_MODE=old_mode) else Sys.unsetenv('RRM_DATA_MODE')
 stopifnot(e$DATA_MODE=='operational',read_rrm_data()$metadata$mode=='operational',
           all(vapply(e$d[c('coverage','alerts','routes','assessments','needs','screening','activities','transfers')],nrow,integer(1))==0L))
 html <- as.character(e$ui)
-stopifnot(grepl('PRODUCTION · REPORTED INTERVENTIONS',html,fixed=TRUE),
+stopifnot(grepl('id="source_label"',html,fixed=TRUE),
           !grepl('Synthetic draft scenarios',html,fixed=TRUE),!grepl('DEMO-001',html,fixed=TRUE),
           !grepl('Household analysis — draft',html,fixed=TRUE),
           grepl('id="coverage-coverage_map"',html,fixed=TRUE),
-          grepl('value="activity" checked="checked"',html,fixed=TRUE))
+          grepl('value="coverage" checked="checked"',html,fixed=TRUE))
 actual <- prepare_activity_data(read_activity_snapshot())
 stopifnot(nrow(actual$activities)==83L,nrow(actual$extra)==4L)
 h <- read_history()
@@ -35,4 +35,4 @@ for(key in c('coverage','alerts','rna','vulnerability')) local({
     }
   })
 })
-message('PASS: production defaults, real intervention snapshot, empty operational sources, synthetic UI exclusion, server-side source guard and production map.')
+message('PASS: explicit production mode, real intervention snapshot, empty operational sources, synthetic UI exclusion, server-side source guard and production map.')

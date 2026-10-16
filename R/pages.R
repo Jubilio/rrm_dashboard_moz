@@ -3,7 +3,7 @@ page_titles <- c(coverage='Geographic coverage',alerts='Alerts',rna='Light RNA',
 all_choices <- function(x) c('All', sort(unique(x[!is.na(x)])))
 filter_spec <- function(key, d) {
   switch(key,
-    coverage=list(list('area','Geography',d$coverage$area),list('partner','Partner',d$coverage$partner),list('role','GLA role',d$coverage$role)),
+    coverage=list(list('area','Area',d$coverage$area),list('partner','Partner',d$coverage$partner),list('role','GLA role',d$coverage$role)),
     alerts=list(list('arrival','Arrival geography',d$routes$arrival),list('alert_id','Alert ID',d$alerts$alert_id),list('trigger','Trigger',d$alerts$trigger),list('gla','GLA',d$alerts$gla),list('movement','Movement',d$alerts$movement)),
     rna=list(list('area','Assessed geography',d$assessments$area),list('alert_id','Alert ID',d$assessments$alert_id),list('method','Method',d$assessments$method),list('assessment_id','Assessment round',d$assessments$assessment_id)),
     vulnerability=list(list('community','Community',d$screening$community),list('alert_id','Alert ID',d$screening$alert_id),list('population','Population',d$screening$population),list('decision','Decision',d$screening$decision)),
@@ -11,26 +11,33 @@ filter_spec <- function(key, d) {
 }
 page_ui <- function(id, key, d) {
   ns <- NS(id); specs <- filter_spec(key,d)
+  if(key=='coverage') specs <- specs[c(2,3,1)]
   date_col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
   source <- switch(key,coverage=d$coverage,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
   dates <- if(key != 'coverage') source[[date_col]] else d$metadata$source_updated
   bounds <- if(length(dates) && any(!is.na(dates))) range(dates,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
-  tagList(
-    div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
+  div(class=paste('dashboard-page',paste0('page-',key)),
+    if(key!='coverage') div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export')),
     if(d$metadata$mode=='operational' && !nrow(source)) div(class='method-strip',paste('No operational',switch(key,coverage='responsibility assignments',alerts='core alert records',rna='assessment records',vulnerability='screening decisions',activity='core activity records'),'have been supplied for this page.')),
     div(class='filters',
-      if(key=='coverage') dateInput(ns('as_of'),'Coverage as of',value=d$metadata$source_updated)
+      if(key=='coverage') tagList(
+        selectInput(ns('map_province'),'Geography',choices=c('All verified areas'='All','Cabo Delgado'='mz01','Nampula'='mz07'),selectize=FALSE),
+        dateInput(ns('as_of'),'Coverage as of',value=d$metadata$source_updated,format='dd M yyyy'))
       else dateRangeInput(ns('dates'),switch(key, alerts='Alert issued date',rna='RNA start date',vulnerability='Tier 2 decision date',activity='Intervention start date'),start=bounds[1],end=bounds[2],format='dd M yyyy'),
       lapply(specs,function(s) {
         choices <- if(s[[1]]=='assessment_id') sort(unique(s[[3]])) else all_choices(s[[3]])
+        if(key=='coverage') {
+          names(choices) <- choices
+          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas')
+        }
         selected <- if(s[[1]]=='alert_id' && key %in% c('alerts','activity','vulnerability') && 'DEMO-001' %in% choices) 'DEMO-001' else choices[1]
-        selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected)
+        selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
     uiOutput(ns('metrics')),
-    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),geography_controls(ns),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot')),
-      p(class='muted','Assignments describe geographic responsibilities; they are not evidence of a response.')),
-      div(class='panel',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
+    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
+      div(class='panel',h3('Partner and area responsibilities'),DT::DTOutput(ns('table')),
+        p(class='responsibility-note','Assignments are coverage responsibilities, not evidence that a response took place.')))
     else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
       div(class='panel',h3('Alert summary and severity evidence'),uiOutput(ns('details')))),
       div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),
@@ -92,10 +99,10 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     x <- filtered()
     if(!nrow(x)) return(empty_ui())
     switch(key,
-      coverage=kpi_row(kpi('Primary GLAs',length(unique(x$partner[x$role=='Primary'])),'Distinct assigned partners'),
-        kpi('Secondary GLAs',length(unique(x$partner[x$role=='Secondary'])),'Distinct assigned partners'),
-        kpi('Assigned areas',length(unique(x$area[x$role!='Unknown'])),'Distinct areas with a known role'),
-        kpi('Unknown areas',length(unique(x$area[x$role=='Unknown'])),'Responsibility requires confirmation')),
+      coverage=kpi_row(kpi('Primary GLAs',length(unique(x$partner[x$role=='Primary'])),if(d$metadata$mode=='demo') 'Illustrative assignments' else 'Distinct assigned partners'),
+        kpi('Secondary GLAs',length(unique(x$partner[x$role=='Secondary'])),if(d$metadata$mode=='demo') 'Illustrative assignments' else 'Distinct assigned partners'),
+        kpi('Assigned areas',length(unique(x$area[x$role!='Unknown'])),'Distinct coverage areas'),
+        kpi('Coverage source',paste(unique(x$source_version),collapse=' / '),'Confirm effective dates')),
       alerts=kpi_row(kpi('Selected alerts',nrow(x),'One record per alert'),
         kpi('Verified people',fmt(known_sum(x$rna_people)),paste(sum(!is.na(x$rna_people)),'of',nrow(x),'alerts verified · alert-wide')),
         kpi('Verified households',fmt(known_sum(x$rna_hh)),'RNA-stage caseload · alert-wide'),
@@ -129,7 +136,9 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       activity=x[c('event_id','alert_id','area','tier','modality','start_date','quantity','unit','measure_type','delivery_status','delivery_partner','donor','days_from_alert')])
   })
   output$table <- DT::renderDT({
-    DT::datatable(display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
+    if(key=='coverage') DT::datatable(display_table()[c('partner','area','role')],colnames=c('Partner','Area','Role'),rownames=FALSE,escape=TRUE,
+      options=list(pageLength=4,scrollX=TRUE,autoWidth=TRUE,ordering=FALSE,language=list(emptyTable='No matching records'),dom='tp'))
+    else DT::datatable(display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
   })
   output$severity_calc <- DT::renderDT({
     y <- d$severity_calculations
@@ -210,12 +219,12 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     })
     output$map_slot <- renderUI({
       if(is.null(layers)) return(div(class='map-placeholder',h4('Geographic map unavailable'),p('Check the supplied geography files.')))
-      tagList(uiOutput(session$ns('map_note')),
-        div(class='map-legend',
-          span(span(class='map-swatch',style='background:#EE5859;'),'Known assignment'),
-          span(span(class='map-swatch',style='background:#D2CBB8;'),'Unknown / no matching assignment')),
-        p(class='muted',if(d$metadata$mode=='demo') 'Geographic context only. Fictional demo areas are not assigned to real districts.' else 'Colours reflect the current assignment filters and effective date. Click a district for partner roles.'),
-        p(class='muted','Supplied boundaries: 2019. Administrative-post boundaries and localities provide context; assignment colours describe district responsibilities. OpenStreetMap requires internet; choose No basemap to use local boundaries.'))
+      tagList(
+        p(class='muted coverage-map-caption',if(d$metadata$mode=='demo') 'Geographic context only. Demo areas are fictional; no district assignments are implied.' else 'Coral: known assignment. Sand: unknown or no matching assignment.'),
+        p(class='muted','Filter partner and role; keep unknown coverage explicit.'),
+        tags$details(class='map-details',tags$summary('Map view and sources'),downloadButton(session$ns('download'),'Export filtered assignments',class='btn-export'),geography_controls(session$ns,include_province=FALSE),
+          uiOutput(session$ns('map_note')),
+          p(class='muted','Supplied boundaries: 2019. Localities provide context, not response locations. OpenStreetMap requires internet; choose No basemap for local boundaries.')))
     })
     if(!is.null(layers)) {
       map_data <- reactive(coverage_map_payload(filtered(),d$metadata$mode,input$map_province,input$map_district,layers,input$map_post))

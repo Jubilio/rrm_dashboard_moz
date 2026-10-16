@@ -1,3 +1,7 @@
-Production loads these core CSV tables by default. The eight data tables are deliberately header-only until approved operational sources are supplied. Do not populate them from demo fixtures or copy intervention records into unrelated assessment/coverage tables. Activity reporting reads the real workbook or its allowlisted snapshot independently.
+# Operational core CSV inputs
 
-Keep the exact template headers and date/controlled-value contract when adding data. Update metadata with the new source version and date, then restart the app. Missing files or malformed data fail explicitly; there is no fallback to demonstration data.
+These tables are used only when no consolidated Excel input is selected and the core mode is operational. The eight core data tables are initially header-only; route_locations.csv is an optional coordinate crosswalk. metadata.csv describes the source mode, date and version.
+
+Keep the exact headers from data/templates, populate approved aggregate inputs and restart the application. Missing required files or invalid data fail explicitly. The separate real reporting workbook is configured independently.
+
+See [Data entry guide](../../docs/DATA_ENTRY.md) and [Operations guide](../../docs/OPERATIONS.md) for the supported workflows.

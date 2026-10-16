@@ -34,7 +34,10 @@ ui <- fluidPage(
           tabPanel('Reviewed profile summaries',value='summaries',page_ui(key,key,d)),
           tabPanel(if(DATA_MODE=='demo') 'Household analysis — draft' else 'Reviewed household aggregates',value='households',household_ui('household',history,allow_synthetic=DATA_MODE=='demo')),
           selected='summaries')
-        else if(key=='activity') activity_workbook_ui('activity_excel')
+        else if(key=='activity') tabsetPanel(id='activity_view',
+          tabPanel('Dashboard overview',value='overview',page_ui(key,key,d)),
+          tabPanel('Reporting workbook',value='workbook',activity_workbook_ui('activity_excel')),
+          selected=if(DATA_MODE=='demo') 'overview' else 'workbook')
         else page_ui(key,key,d))))),
   tags$footer(class='app-footer',
     conditionalPanel("input.page != 'coverage'",class='footer-meta',
@@ -46,19 +49,20 @@ ui <- fluidPage(
         alt='REACH — Informing more effective humanitarian action',width=308,height=68))))
 server <- function(input,output,session) {
   output$page_subtitle <- renderText(paste(page_titles[[if(is.null(input$page)) 'coverage' else input$page]],APP_SUBTITLE,sep=' | '))
+  workbook_view <- reactive(identical(input$page,'activity') && (identical(input$activity_view,'workbook') || (is.null(input$activity_view) && DATA_MODE!='demo')))
   output$source_label <- renderText({
-    if(identical(input$page,'activity')) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
+    if(workbook_view()) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
     else if(DATA_MODE=='demo') 'DRAFT LAYOUT - DEMO DATA ONLY'
     else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
   })
   output$source_footer <- renderText({
-    if(identical(input$page,'activity')) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'
+    if(workbook_view()) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'Historical severity evidence is a separate source. Source classifications and evidence dates are retained.'
     else if(DATA_MODE=='demo') 'Layout mock-up. All figures and DEMO records on this page are illustrative, not operational data.'
     else 'Operational core data. Coverage responsibilities are not evidence of an intervention.'
   })
-  for(key in setdiff(names(page_titles),'activity')) page_server(key,key,d)
+  for(key in names(page_titles)) page_server(key,key,d)
   history_server('history',history)
   household_server('household',history,allow_synthetic=DATA_MODE=='demo')
   activity_workbook_server('activity_excel',ACTIVITY_WORKBOOK_PATH)

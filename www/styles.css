@@ -194,3 +194,30 @@ h1{font-size:32px}
 @media(max-width:1250px){.page-vulnerability .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-vulnerability .kpi{padding:12px}.page-vulnerability .kpi-value{font-size:29px}.profile-entry{font-size:14px}.page-vulnerability .profile-summary h3{font-size:18px}}
 @media(max-width:900px){.page-vulnerability .vulnerability-profiles{grid-template-columns:1fr;gap:0}.page-vulnerability .profile-summary{min-height:0}}
 @media(max-width:680px){.page-vulnerability .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-vulnerability .kpi-value{font-size:26px}.page-vulnerability .profile-summary{padding:12px}.page-vulnerability .profile-provenance{font-size:12px}}
+
+/* Activity reference overview; the real reporting workbook stays in its own tab. */
+.page-activity .filters{display:grid;grid-template-columns:1.2fr 1.1fr .95fr .75fr 1fr .9fr auto;margin-bottom:20px}
+.page-activity .filters .shiny-input-container{width:100%;min-width:0}
+.page-activity .kpi{min-height:100px;padding:11px 19px 7px}
+.page-activity .kpi-value{font-size:40px}
+.page-activity .kpi .muted{font-size:12px;line-height:17px}
+.page-activity .activity-events{padding:14px 20px;margin-bottom:18px}
+.page-activity .activity-events h3{font-size:20px;margin-bottom:14px}
+.page-activity table.dataTable thead th{font-size:13px;padding:11px 10px}
+.page-activity table.dataTable tbody td{font-size:13px;padding:13px 10px!important}
+.page-activity table.dataTable tbody tr:nth-child(odd){background:var(--panel)}
+.page-activity table.dataTable tbody tr:nth-child(even){background:#fff}
+.page-activity .dataTables_wrapper{margin-bottom:0}
+.page-activity .activity-notes{grid-template-columns:repeat(2,minmax(0,1fr));gap:21px}
+.page-activity .activity-notes .panel{padding:12px 20px;margin-bottom:10px}
+.page-activity .activity-notes h3{font-size:18px;line-height:1.4;margin-bottom:4px}
+.page-activity .activity-notes .evidence{font-size:12px;padding:4px 0}
+.page-activity .activity-notes .evidence h4{font-size:12px;margin:0 0 3px}
+.page-activity .activity-notes .evidence p{margin:0;line-height:1.4}
+.page-activity .transfer-entry{font-size:12px;line-height:1.5;margin-bottom:6px}
+.activity-export{font-size:11px;margin-top:8px}
+.activity-export summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.activity-export .btn-export{margin-top:8px}
+@media(max-width:1250px){.page-activity .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-activity .filters .btn-reset{margin-top:0}.page-activity .kpi{padding:12px}.page-activity .kpi-value{font-size:32px}}
+@media(max-width:900px){.page-activity .activity-notes{grid-template-columns:1fr;gap:0}}
+@media(max-width:680px){.page-activity .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-activity .kpi-value{font-size:30px}.page-activity .activity-events{padding:12px}.page-activity .activity-notes .panel{padding:12px}}

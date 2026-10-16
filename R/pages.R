@@ -62,6 +62,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       updateDateInput(session,'as_of',value=d$metadata$source_updated)
       updateSelectInput(session,'map_province',selected='All')
       updateSelectInput(session,'map_district',selected='All')
+      updateSelectInput(session,'map_post',selected='All')
     }
     else {
       x <- switch(key,alerts=d$alerts$alert_date,rna=d$assessments$start_date,vulnerability=d$screening$decision_date,activity=d$activities$start_date)
@@ -198,6 +199,14 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       selected <- if(!is.null(input$map_district)&&input$map_district %in% choices) input$map_district else 'All'
       updateSelectInput(session,'map_district',choices=choices,selected=selected)
     })
+    observeEvent(list(input$map_province,input$map_district), {
+      r <- map_reference(); r <- r[r$level=='admin3',,drop=FALSE]
+      if(!is.null(input$map_province)&&input$map_province!='All') r <- r[substr(r$pcode,1,4)==input$map_province,,drop=FALSE]
+      if(!is.null(input$map_district)&&input$map_district!='All') r <- r[r$parent_pcode==input$map_district,,drop=FALSE]
+      choices <- c('All'='All',setNames(r$pcode,paste(r$label,r$pcode,sep=' · ')))
+      selected <- if(!is.null(input$map_post)&&input$map_post %in% choices) input$map_post else 'All'
+      updateSelectInput(session,'map_post',choices=choices,selected=selected)
+    })
     output$map_slot <- renderUI({
       if(is.null(layers)) return(div(class='map-placeholder',h4('Geographic map unavailable'),p('Check the supplied geography files.')))
       tagList(rrm_map_output(session$ns('coverage_map')),uiOutput(session$ns('map_note')),
@@ -205,10 +214,10 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
           span(span(class='map-swatch',style='background:#EE5859;'),'Known assignment'),
           span(span(class='map-swatch',style='background:#D2CBB8;'),'Unknown / no matching assignment')),
         p(class='muted',if(d$metadata$mode=='demo') 'Geographic context only. Fictional demo areas are not assigned to real districts.' else 'Colours reflect the current assignment filters and effective date. Click a district for partner roles.'),
-        p(class='muted','Supplied boundaries: 2019. No administrative-post polygons supplied. Localities are context only. OpenStreetMap requires internet; choose No basemap to use local boundaries.'))
+        p(class='muted','Supplied boundaries: 2019. Administrative-post boundaries and localities provide context; assignment colours describe district responsibilities. OpenStreetMap requires internet; choose No basemap to use local boundaries.'))
     })
     if(!is.null(layers)) {
-      map_data <- reactive(coverage_map_payload(filtered(),d$metadata$mode,input$map_province,input$map_district,layers))
+      map_data <- reactive(coverage_map_payload(filtered(),d$metadata$mode,input$map_province,input$map_district,layers,input$map_post))
       output$coverage_map <- render_rrm_map({map_data()})
       output$map_note <- renderUI({
         n <- map_data()$unmapped

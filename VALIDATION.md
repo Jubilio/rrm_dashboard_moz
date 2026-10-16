@@ -66,3 +66,7 @@ For the original XLSX reader check also set RRM_TEST_WORKBOOK to the private sou
 Supplied map validation: `tests/check_geography.R` verifies all 19 district codes, the 85-row reference hierarchy, operational joins (including accent/case variants), unknown assignments, geographic extent filters, demo isolation and Shiny JSON output. Python preparation checked WGS84 and valid input polygons. Full graphical browser review remains outstanding.
 
 HTTP startup and all 21 initial assets returned 200. The Shiny WebSocket check also verifies map JSON types, 19-to-2 district filtering and the four dynamically loaded map assets. Browser rendering and live OSM tile availability remain unverified.
+
+Admin3 update: the replacement archive supplies 411 national administrative-post polygons; all 64 listed posts match the reference and their parent districts. Original and display geometries are checked for validity. Hierarchical map/post filters, parent consistency, locality subsets and district-only assignment colours are checked in the geography tests.
+
+The Shiny WebSocket check also passed with all 64 post polygons and a Province/District/Post selection narrowed to Mesa (`mz010102`), retaining numeric coordinates and valid map asset routes. Graphical browser rendering remains unverified.

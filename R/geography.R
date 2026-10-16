@@ -25,16 +25,26 @@ read_map_layers <- function(path=file.path('data','geography')) {
     if(!identical(g$type,'FeatureCollection')) stop('Expected a GeoJSON FeatureCollection: ',name)
     g
   }
-  list(districts=read('districts'),provinces=read('provinces'),towns=read('towns'))
+  list(districts=read('districts'),provinces=read('provinces'),towns=read('towns'),posts=read('administrative_posts'))
 }
-coverage_map_payload <- function(assignments,mode,province='All',district='All',layers=read_map_layers()) {
+coverage_map_payload <- function(assignments,mode,province='All',district='All',layers=read_map_layers(),post='All') {
   if(is.null(province)) province <- 'All'
   if(is.null(district)) district <- 'All'
+  if(is.null(post)) post <- 'All'
   codes <- if(mode=='demo') rep(NA_character_,nrow(assignments)) else coverage_district_codes(assignments)
   districts <- layers$districts
   districts$features <- Filter(function(f) {
     (province=='All'||f$properties$province_pcode==province) && (district=='All'||f$properties$pcode==district)
   },districts$features)
+  posts <- layers$posts
+  selected_districts <- vapply(districts$features,function(f) f$properties$pcode,character(1))
+  posts$features <- Filter(function(f) {
+    f$properties$district_pcode %in% selected_districts && (post=='All'||f$properties$pcode==post)
+  },posts$features)
+  if(post!='All') {
+    parents <- vapply(posts$features,function(f) f$properties$district_pcode,character(1))
+    districts$features <- Filter(function(f) f$properties$pcode %in% parents,districts$features)
+  }
   districts$features <- lapply(districts$features,function(f) {
     rows <- assignments[which(!is.na(codes) & codes==f$properties$pcode),,drop=FALSE]
     f$properties$assigned <- any(!is.na(rows$role)&rows$role!='Unknown')
@@ -43,23 +53,24 @@ coverage_map_payload <- function(assignments,mode,province='All',district='All',
   })
   selected <- vapply(districts$features,function(f) f$properties$pcode,character(1))
   towns <- layers$towns
-  towns$features <- Filter(function(f) f$properties$district_pcode %in% selected,towns$features)
+  towns$features <- Filter(function(f) f$properties$district_pcode %in% selected && (post=='All'||identical(f$properties$post_pcode,post)),towns$features)
   provinces <- layers$provinces
   parents <- unique(vapply(districts$features,function(f) f$properties$province_pcode,character(1)))
   provinces$features <- Filter(function(f) f$properties$pcode %in% parents,provinces$features)
-  list(districts=districts,provinces=provinces,towns=towns,
+  list(districts=districts,provinces=provinces,towns=towns,posts=posts,selected_post=post,
        unmapped=if(mode=='demo') 0L else sum(is.na(codes)),mode=mode)
 }
 geography_controls <- function(ns) {
-  r <- map_reference(); p <- r[r$level=='admin1',]; a <- r[r$level=='admin2',]
+  r <- map_reference(); p <- r[r$level=='admin1',]; a <- r[r$level=='admin2',]; b <- r[r$level=='admin3',]
   shiny::tagList(
     shiny::div(class='map-filters',
       shiny::selectInput(ns('map_province'),'Map province',choices=c('All'= 'All',setNames(p$pcode,p$label))),
-      shiny::selectInput(ns('map_district'),'Map district',choices=c('All'= 'All',setNames(a$pcode,a$label)))),
+      shiny::selectInput(ns('map_district'),'Map district',choices=c('All'= 'All',setNames(a$pcode,a$label))),
+      shiny::selectInput(ns('map_post'),'Map administrative post',choices=c('All'='All',setNames(b$pcode,paste(b$label,b$pcode,sep=' · '))))),
     shiny::p(class='muted','Map controls change the geographic view. Assignment filters above control the table and KPIs.'))
 }
 rrm_map_output <- function(outputId) {
-  dep <- htmltools::htmlDependency('rrm-geography','1.0.0',src=c(file='www'),
+  dep <- htmltools::htmlDependency('rrm-geography','1.1.0',src=c(file='www'),
       script=c('vendor/leaflet/leaflet.js','geography.js'),stylesheet=c('vendor/leaflet/leaflet.css','geography.css'))
   htmltools::attachDependencies(shiny::div(id=outputId,class='rrm-map-output',
       role='region',`aria-label`='District coverage map',style='height:430px;'),dep)

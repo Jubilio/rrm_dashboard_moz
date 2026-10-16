@@ -17,6 +17,7 @@ out = Path('data/geography')
 reference = list(csv.DictReader((out / 'admin_reference.csv').open(encoding='utf-8')))
 districts = {r['pcode']: r for r in reference if r['level'] == 'admin2'}
 provinces = {r['pcode']: r for r in reference if r['level'] == 'admin1'}
+posts = {r['pcode']: r for r in reference if r['level'] == 'admin3'}
 archive = Path(sys.argv[1])
 z = zipfile.ZipFile(archive)
 
@@ -84,6 +85,31 @@ for item in read_layer('province').iterShapeRecords():
                                 dict(pcode=code, province=provinces[code]['label'])))
 save('provinces', features)
 
+features, post_originals, seen_posts = [], [], set()
+for item in read_layer('admin3').iterShapeRecords():
+    r = item.record.as_dict()
+    code = r['ADM3_PCODE'].strip().lower()
+    if code not in posts:
+        continue
+    if code in seen_posts:
+        raise ValueError('Duplicate administrative post: ' + code)
+    seen_posts.add(code)
+    parent = r['ADM2_PCODE'].strip().lower()
+    if parent != posts[code]['parent_pcode'] or r['ADM1_PCODE'].strip().lower() != districts[parent]['parent_pcode']:
+        raise ValueError('Administrative-post parent mismatch: ' + code)
+    g = shape(item.shape.__geo_interface__)
+    if not g.is_valid or g.is_empty or g.geom_type not in ('Polygon', 'MultiPolygon'):
+        raise ValueError('Invalid administrative post: ' + code)
+    post_originals.append((code, g))
+    props = dict(pcode=code, district_pcode=parent, province_pcode=districts[parent]['parent_pcode'],
+                 administrative_post=posts[code]['label'], district=districts[parent]['label'],
+                 province=provinces[code[:4]]['label'], source_name=r['ADM3_PT'],
+                 source_date=str(r['date']), source_valid_on=str(r['validOn']))
+    features.append(feature(g.simplify(0.0005, preserve_topology=True), props))
+if seen_posts != set(posts):
+    raise ValueError('Missing administrative posts: ' + str(set(posts) - seen_posts))
+save('administrative_posts', features)
+
 features = []
 for index, item in enumerate(read_layer('main_town').iterShapeRecords(), 1):
     g = shape(item.shape.__geo_interface__)
@@ -91,13 +117,16 @@ for index, item in enumerate(read_layer('main_town').iterShapeRecords(), 1):
         raise ValueError('Expected valid town point')
     matches = [code for code, polygon in originals if polygon.covers(g)]
     if len(matches) == 1:
+        post_matches = [code for code, polygon in post_originals if code[:6] == matches[0] and polygon.covers(g)]
         features.append(feature(g, dict(name=item.record.as_dict()['TOPONIMO'],
-                                       district_pcode=matches[0], source_row=index)))
+                                       district_pcode=matches[0],
+                                       post_pcode=post_matches[0] if len(post_matches) == 1 else None,
+                                       source_row=index)))
 save('towns', features)
 metadata = dict(source_archive=archive.name, sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),
-                district_count=len(seen), province_count=len(provinces), town_count=len(features),
+                district_count=len(seen), province_count=len(provinces), administrative_post_count=len(seen_posts), town_count=len(features),
                 crs='EPSG:4326', display_simplification_degrees=0.0005,
                 source_date='2019-04-02', source_valid_on='2019-06-07',
-                note='User-supplied boundaries, not independently re-certified. No admin3 geometry. Towns are geographic context, not verified response sites.')
+                note='User-supplied boundaries, not independently re-certified. Admin3 codes match the user reference. Towns are geographic context, not verified response sites.')
 (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n', encoding='utf-8')
 print(json.dumps(metadata, indent=2))

@@ -44,3 +44,20 @@ Additional repeat commands from the project root:
 source("tests/check_rules.R")
 source("tests/check_integration.R")
 ```
+
+
+# Excel activity reporting verification — 16 October 2026
+
+The live Excel adapter and sanitised snapshot read **83 activities, four extra outputs, 77 confirmed links and zero Validated records** from the supplied workbook. Blank review status remains pending. Source XLSX formulas and reporting contacts are excluded from the snapshot and calculations.
+
+Passed: named-table extraction from the actual workbook; metric/unit lookup; independent demographic and date recalculation; validated/confirmed/reconciled gates; duplicate records, duplicate/repeated/orphan extra metrics; prevention of reach multiplication; unknown/multiple alert links; missing, negative, zero and fractional count quantities; MZN decimals; mismatched totals and PWD subsets; month/date validation; mixed funding kept unsplit; controlled counting bases; superseded records; empty datasets; CSV-source refresh; session Excel upload; malformed-upload retention of the last good dataset; and filtered empty states in the Shiny module. The existing four regression suites continue to pass.
+
+Application startup and all 21 linked assets returned HTTP 200. Full graphical browser review, actual hosting file permissions, simultaneous live Excel editing and download-click interaction remain unverified. No source rows were marked Validated by this change.
+
+Repeat from the project root:
+
+```r
+source("tests/check_activity_workbook.R")
+```
+
+For the original XLSX reader check also set RRM_TEST_WORKBOOK to the private source workbook path. See ACTIVITY_WORKBOOK.md for configuration and refresh behaviour.

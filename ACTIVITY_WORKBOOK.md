@@ -80,3 +80,8 @@ source("tests/check_activity_workbook.R")
 ```
 
 Set `RRM_TEST_WORKBOOK` to test the live Excel reader against the supplied workbook as well as the repository snapshot. Tests cover parent/extra joins, duplicate IDs and metrics, unknown links, month/date rules, negative/fractional/missing/zero values, monetary decimals, demographics, mixed funding, empty datasets and Shiny refresh/last-good-data behaviour. Full graphical browser interaction review remains separate from the automated tests.
+
+
+## Intervention map
+
+The Intervention map tab uses the same activity filters, plus Reported community, and a separate All reported / Validated results map scope. It links community names to the allowlisted settlement gazetteer without modifying workbook review or eligibility. Combined, ambiguous and conflicting locations stay unresolved. The geographic review table/export retains each source record once. No extra-output joins or reach quantities are used to allocate locations. See INTERVENTION_LOCATIONS.md for matching, provenance and the initial 38-record / seven-point result.

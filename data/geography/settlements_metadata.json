@@ -1,0 +1,28 @@
+{
+  "source_archive": "shapefile(2).zip",
+  "sha256": "b2cd1524224223a62cb745ac1d380211d24a36dfba7110a9bc1b1a10da0e463c",
+  "crs": "EPSG:4326",
+  "layers": {
+    "localities": {
+      "source_records": 2550,
+      "selected": 393,
+      "outside_or_ambiguous_district": 1734,
+      "invalid_or_unnamed": 423
+    },
+    "villages": {
+      "source_records": 11523,
+      "selected": 1346,
+      "outside_or_ambiguous_district": 10136,
+      "invalid_or_unnamed": 41
+    },
+    "main_town": {
+      "source_records": 417,
+      "selected": 65,
+      "outside_or_ambiguous_district": 352,
+      "invalid_or_unnamed": 0
+    }
+  },
+  "selected_points": 1804,
+  "administrative_conflicts": 6,
+  "note": "Original point geometry determines administrative codes. Source population and project/activity attributes are excluded. Geographic name matches do not independently verify intervention delivery."
+}

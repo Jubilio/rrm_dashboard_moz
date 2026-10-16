@@ -18,11 +18,11 @@ try {
   socket=new WebSocket(`ws://127.0.0.1:${port}/websocket`);
   socket.onmessage=e=>{const m=JSON.parse(e.data);Object.assign(values,m.values||{});Object.assign(errors,m.errors||{});};
   await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
-  const input={page:'activity','coverage-as_of':'2026-10-16','coverage-area':'All','coverage-partner':'All','coverage-role':'All','coverage-map_province':'All','coverage-map_district':'All','coverage-map_post':'All','household-source':'operational','household-population':'All','household-profile':'all_households','activity_excel-show_all':true};
-  for(const id of ['coverage-map_slot','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs'])input[`.clientdata_output_${id}_hidden`]=false;
+  const input={page:'activity','coverage-as_of':'2026-10-16','coverage-area':'All','coverage-partner':'All','coverage-role':'All','coverage-map_province':'All','coverage-map_district':'All','coverage-map_post':'All','household-source':'operational','household-population':'All','household-profile':'all_households','activity_excel-show_all':true,'activity_excel-map_scope':'all'};
+  for(const id of ['coverage-map_slot','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'])input[`.clientdata_output_${id}_hidden`]=false;
   // No assessment_id exists in production. The RNA table must still send a real empty widget.
   socket.send(JSON.stringify({method:'init',data:input}));
-  for(let i=0;i<150;i++){await new Promise(r=>setTimeout(r,100));if(['coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs'].every(id=>values[id]!==undefined))break;}
+  for(let i=0;i<150;i++){await new Promise(r=>setTimeout(r,100));if(['coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'].every(id=>values[id]!==undefined))break;}
   for(const id of ['coverage-table','household-summary','rna-table','activity_excel-outputs']) {
     let value=values[id];assert.notEqual(value,undefined,id+' not received');
     if(typeof value==='string')value=JSON.parse(value);
@@ -30,6 +30,8 @@ try {
   }
   assert.equal(values['coverage-coverage_map'].districts.features.length,19);
   assert.equal(values['coverage-coverage_map'].posts.features.length,64);
+  assert.equal(values['activity_excel-location_map'].markers.features.length,7);
+  assert(values['activity_excel-location_map'].markers.features.every(f=>f.properties.validated_records===0));
   assert.deepEqual(errors,{});
-  console.log('PASS: HTTP assets, initial map binding, 19 districts, 64 posts and non-null empty table payloads over Shiny WebSocket.');
+  console.log('PASS: HTTP assets, initial map binding, 19 districts, 64 posts non-null empty table payloads, and seven reported intervention points over Shiny WebSocket.');
 }finally{if(socket)socket.close();processR.kill('SIGTERM');}

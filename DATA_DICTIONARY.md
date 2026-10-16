@@ -171,3 +171,5 @@ Structural validation does not establish operational truth. Source owners must a
 `data/reference/alert_registry.csv` and `severity_evidence.csv` preserve historical source text, stage rows and proposed/unresolved links. They are a separate review dataset, not inputs to ordinary demo reach or population totals. Original XLSX files remain unchanged beside them.
 
 The geographic reference also links `admin3.parent_pcode` to the district Pcode. `administrative_posts.geojson` has all 64 listed post polygons. Post filters change map extent, not district assignment KPIs.
+
+`data/geography/settlements.csv` stores reference point IDs/names, source provenance, WGS84 coordinates and spatial administrative codes. Activity geography matching joins the full community name plus district and, when resolvable, administrative post. Match output preserves source record IDs and review statuses; it does not change source tables or allocate beneficiary/output quantities. See INTERVENTION_LOCATIONS.md.

@@ -38,7 +38,7 @@ R 4.3 or newer is recommended. To run the optional Shiny module tests, install `
 | Alerts | Arrival geography, issued date, Alert ID, trigger, GLA, movement | Separate Alert/RNA evidence; verified alert-wide caseloads; route-specific schematic |
 | Light RNA | Assessed geography, assessment start date, Alert ID, method, single round | KII priorities alongside HESPER sample counts, coverage and response-use narrative |
 | Vulnerability screening | Community, decision date, Alert ID, population, decision | Reviewed aggregate profile narratives and Tier 2 decisions |
-| Activity reporting | Reporting month, Alert ID, district, implementing agency, tier, sector, modality, funding | Excel-backed validated outputs, reach by scope/basis, demographics, timing, handovers and review queue |
+| Activity reporting | Reporting month, Alert ID, district, community, implementing agency, tier, sector, modality, funding | Reported-location map, community matching review, Excel-backed validated outputs, reach by scope/basis, demographics, timing, handovers and review queue |
 
 Each page exports its currently filtered display table to CSV. On narrow screens the navigation becomes a horizontal list and panels stack vertically. Browser printing hides filters and navigation.
 
@@ -75,6 +75,8 @@ The map works in both data modes. In demo mode it shows geographic context only 
 OpenStreetMap is the default basemap, with visible contributor attribution. Choose **No basemap** for local boundaries without external tiles. Administrative-post boundaries, locality points and province outlines can be toggled; locality points do not establish alert, displacement or response locations. Selecting an administrative post zooms to its boundary; assignment colours continue to describe district responsibilities. Core CSV locations are not automatically equated with these points.
 
 See [GEOGRAPHY.md](GEOGRAPHY.md) for preparation, provenance and limitations. The previous `data/operational/approved_areas.geojson` hook is replaced by these bundled, code-linked layers.
+
+Activity reporting also includes an **Intervention map** linked by community name and administrative context to the supplied settlement points. The initial snapshot matches 38 of 83 records to seven distinct points; unresolved, combined and conflicting locations remain available for review with blank coordinates. The map distinguishes validated records from other reported records and never allocates reach or output totals to points. See [INTERVENTION_LOCATIONS.md](INTERVENTION_LOCATIONS.md).
 
 ## Files
 

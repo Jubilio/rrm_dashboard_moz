@@ -10,13 +10,24 @@ activity_workbook_ui <- function(id) {
   shiny::uiOutput(ns('load_error')),
   shiny::div(class='filters',
     shiny::selectInput(ns('month'),'Reporting month','All'),shiny::selectInput(ns('alert'),'Alert ID','All'),
-    shiny::selectInput(ns('district'),'Response district','All'),shiny::selectInput(ns('partner'),'Implementing agency','All'),
+    shiny::selectInput(ns('district'),'Response district','All'),shiny::selectInput(ns('community'),'Reported community','All'),shiny::selectInput(ns('partner'),'Implementing agency','All'),
     shiny::selectInput(ns('tier'),'Tier','All'),shiny::selectInput(ns('sector'),'Sector','All'),
     shiny::selectInput(ns('modality'),'Modality','All'),shiny::selectInput(ns('funding'),'Funding scope','All'),
     shiny::actionButton(ns('reset'),'Reset filters',class='btn-reset')),
   shiny::uiOutput(ns('metrics')),
   shiny::div(class='method-strip','Results use Validated records with Confirmed alert links and reconciled inputs. Blank is not zero. All reported HH reach is gross; repeat assistance can overlap. Outputs are grouped by metric AND unit. People, estimated catchments, household counts, kits, services and currency are never added together.'),
   shiny::tabsetPanel(
+    shiny::tabPanel('Intervention map',
+      shiny::div(class='panel',shiny::h3('Reported intervention locations'),
+        shiny::radioButtons(ns('map_scope'),'Map record scope',choices=c('All reported records'='all','Validated results only'='validated'),selected='all',inline=TRUE),
+        shiny::uiOutput(ns('location_status')),rrm_map_output(ns('location_map')),
+        shiny::div(class='map-legend',
+          shiny::span(shiny::span(class='map-swatch',style='background:#EE5859;'),'Location with validated records'),
+          shiny::span(shiny::span(class='map-swatch',style='background:#D2CBB8;'),'Reported location - pending / excluded records only')),
+        shiny::p(class='muted','Points are geographic name matches, not independent verification of delivery. Marker counts describe activity records, never unique beneficiaries. Combined locations, conflicting administrative labels and ambiguous names require review; no reach or output quantities are allocated to points.')),
+      shiny::div(class='panel',shiny::h3('Community matching and unresolved locations'),
+        shiny::downloadButton(ns('location_export'),'Export geographic matching CSV'),DT::DTOutput(ns('location_review')),
+        shiny::p(class='muted','Candidate names are review suggestions only. Similar spellings and multiple possible points are never assigned automatically.'))),
     shiny::tabPanel('Validated outputs',shiny::div(class='panel',shiny::h3('Outputs by tier, funding, metric and unit'),DT::DTOutput(ns('outputs')))),
     shiny::tabPanel('Reach and demographics',
       shiny::div(class='panel',shiny::h3('Household reach by counting basis'),DT::DTOutput(ns('households'))),
@@ -35,6 +46,9 @@ activity_workbook_ui <- function(id) {
     shiny::tabPanel('Counting definitions',shiny::div(class='panel',DT::DTOutput(ns('definitions'))))))
 }
 activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/activity_snapshot') shiny::moduleServer(id,function(input,output,session) {
+ settlement_error<-NULL
+ settlements<-tryCatch(read_settlement_points(),error=function(e){settlement_error<<-conditionMessage(e);NULL})
+ location_layers<-read_map_layers()
  current<-shiny::reactiveVal(NULL);last_error<-shiny::reactiveVal(NULL);source_label<-shiny::reactiveVal('Not loaded');loaded_at<-shiny::reactiveVal(NULL)
  use_upload<-shiny::reactiveVal(TRUE)
  signature<-shiny::reactiveVal(NULL)
@@ -58,7 +72,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   },error=function(e){last_error(conditionMessage(e))})
  })
  data<-shiny::reactive({shiny::req(current(),cancelOutput=TRUE);current()})
- filter_fields<-c(month='reporting_month',alert='alert_id',district='district',partner='implementing_agency',tier='tier',sector='sector',modality='modality',funding='funding')
+ filter_fields<-c(month='reporting_month',alert='alert_id',district='district',community='community',partner='implementing_agency',tier='tier',sector='sector',modality='modality',funding='funding')
  shiny::observeEvent(current(),{
   a<-data()$activities
   for(id in names(filter_fields)) {
@@ -94,6 +108,19 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   if(!is.null(d)) shiny::p(class='muted',paste('Source updated:',d$metadata$source_updated[1])))})
  output$load_error<-shiny::renderUI({e<-last_error();if(is.null(e))return(NULL)
   shiny::div(class='empty',shiny::h4('Source refresh failed'),shiny::p(e),shiny::p(if(is.null(current())) 'No dataset is available.' else 'The last successfully loaded dataset remains visible; its refresh timestamp is unchanged.'))})
+ location_source<-shiny::reactive({a<-records();if(identical(input$map_scope,'validated'))a<-a[a$eligible,,drop=FALSE];a})
+ location_links<-shiny::reactive(match_intervention_locations(location_source(),settlements))
+ output$location_map<-render_rrm_map(intervention_map_payload(location_source(),location_links(),settlements,location_layers))
+ output$location_status<-shiny::renderUI({
+  a<-location_links();mapped<-sum(a$match_status=='Matched');places<-length(unique(a$point_id[!is.na(a$point_id)]))
+  shiny::tagList(
+    if(!is.null(settlement_error))shiny::p(class='map-notice',paste('Settlement source unavailable:',settlement_error)),
+    shiny::p(paste(mapped,'of',nrow(a),'records geographically matched to',places,'distinct points;',nrow(a)-mapped,'records require geographic review.')),
+    shiny::p(class='muted',if(identical(input$map_scope,'validated'))'Only records included in validated results are mapped.' else 'Includes pending and excluded records. Geographic matching does not change source review status.'))
+ })
+ output$location_review<-DT::renderDT(result_table(location_links()))
+ output$location_export<-shiny::downloadHandler(filename=function()paste0('rrm_community_matching_',Sys.Date(),'.csv'),
+   content=function(file)write.csv(location_links(),file,row.names=FALSE,na='',fileEncoding='UTF-8'))
  output$metrics<-shiny::renderUI({
   x<-records();a<-eligible();o<-outputs();hh<-if(!nrow(a)) NA_real_ else known_sum(a$households)
   assisted<-o[o$metric=='Households assisted'&o$unit=='households',,drop=FALSE]

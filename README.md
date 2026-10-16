@@ -35,7 +35,7 @@ R 4.3 or newer is recommended. To run the optional Shiny module tests, install `
 | Page | Filters | Main output |
 | --- | --- | --- |
 | Geographic coverage | Effective date, geography, partner, GLA role | Distinct partners and assigned areas; explicit unknowns; assignment table; optional approved map |
-| Alerts | Arrival geography, issued date, Alert ID, trigger, GLA, movement | Separate Alert/RNA evidence; verified alert-wide caseloads; route-specific schematic |
+| Alerts | Arrival geography, issued date, trigger, GLA, movement; Alert ID in the first KPI card | Separate Alert/RNA evidence; verified alert-wide caseloads; branching route-specific schematic |
 | Light RNA | Assessed geography, assessment start date, Alert ID, method, single round | KII priorities alongside HESPER sample counts, coverage and response-use narrative |
 | Vulnerability screening | Community, decision date, Alert ID, population, decision | Reviewed aggregate profile narratives and Tier 2 decisions |
 | Activity reporting | Reporting month, Alert ID, district, community, implementing agency, tier, sector, modality, funding | Reported-location map, community matching review, Excel-backed validated outputs, reach by scope/basis, demographics, timing, handovers and review queue |
@@ -98,3 +98,5 @@ Deploy the **extracted `rrm_dashboard` folder** through an existing Shiny hostin
 ## Added v2 files
 
 `R/severity.R` implements alert classification, stage updates, provisional status and the historical review. `R/household.R` implements native indicators, draft component rules, bounds, profiles and aggregate disclosure. `R/household_ui.R` exposes aggregates and the pending-decision register. `household_rule_config.R` records the household rule status/version and release metadata. `tests/check_rules.R` tests both source-based methods. The two supplied workbooks are preserved unchanged under `data/reference/`.
+
+In demo mode, Alerts opens on Dashboard records using the supplied reference layout. Historical severity review remains a separate tab and is the default Alerts view in operational mode. Core demo and historical source labels follow the selected subtab. Detailed alert records, CSV export and calculated severity evidence are available in the expandable evidence section below the main panels.

@@ -23,20 +23,22 @@
     }
     var state = el._rrm, m = state.map;
     var interventionMode = data.kind === 'interventions';
+    var alertMode = data.kind === 'alert_routes';
+    var contextMode = interventionMode || alertMode;
     var showSettlements = state.settlements && m.hasLayer(state.settlements);
     var showTowns = state.towns && m.hasLayer(state.towns);
     var showProvinces = state.provinces && m.hasLayer(state.provinces);
     var showPosts = !state.posts || m.hasLayer(state.posts) || data.selected_post !== 'All';
     if (state.control) m.removeControl(state.control);
-    ['districts','towns','provinces','posts','settlements','interventions'].forEach(function (key) {
+    ['districts','towns','provinces','posts','settlements','interventions','alertPoints','alertConnections'].forEach(function (key) {
       if (state[key]) m.removeLayer(state[key]);
     });
     state.districts = L.geoJSON(data.districts, {
-      style: function (f) { return {color: '#58585A', weight: 1, fillColor: f.properties.assigned ? '#EE5859' : '#D2CBB8', fillOpacity: interventionMode ? 0.08 : 0.6}; },
+      style: function (f) { return {color: '#58585A', weight: 1, fillColor: f.properties.assigned ? '#EE5859' : '#D2CBB8', fillOpacity: contextMode ? 0.08 : 0.6}; },
       onEachFeature: function (f, layer) {
         var p = f.properties;
         layer.bindTooltip(text(p.district + ' · ' + p.pcode));
-        layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + (interventionMode ? ' — District boundary (context only)' : ' — ' + p.assignment)));
+        layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + (contextMode ? ' — District boundary (context only)' : ' — ' + p.assignment)));
         layer.on('mouseover', function () { layer.setStyle({weight: 3}); });
         layer.on('mouseout', function () { state.districts.resetStyle(layer); });
       }
@@ -50,7 +52,7 @@
         layer.bindTooltip(text(p.administrative_post + ' · ' + p.pcode));
         var parent = districtProperties[p.district_pcode];
         layer.bindPopup(text(p.administrative_post + ' | ' + p.district + ' | ' + p.pcode +
-          (interventionMode ? ' — Administrative-post boundary (context only)' :
+          (contextMode ? ' — Administrative-post boundary (context only)' :
           ' — Administrative-post boundary. District responsibility: ' + (parent ? parent.assignment : 'Unknown') +
           ' Colours describe district responsibilities, not post-level response coverage.')));
       }
@@ -61,7 +63,7 @@
       onEachFeature: function (f, layer) { layer.bindTooltip(text(f.properties.name + ' · locality (context only)')); }
     });
     var overlays = {};
-    overlays[interventionMode ? 'District boundaries' : 'District coverage'] = state.districts;
+    overlays[contextMode ? 'District boundaries' : 'District coverage'] = state.districts;
     overlays['Administrative-post boundaries'] = state.posts;
     overlays['Province boundaries'] = state.provinces;
     overlays['Main towns (context only)'] = state.towns;
@@ -95,6 +97,36 @@
       overlays['Settlement reference points'] = state.settlements;
       if (showSettlements) state.settlements.addTo(m);
     }
+    if (alertMode) {
+      state.alertConnections = L.geoJSON(data.connections, {
+        style: {color: '#79797B', weight: 2, dashArray: '6 4'},
+        onEachFeature: function (f, layer) {
+          var p = f.properties;
+          layer.bindTooltip(text(p.origin + ' → ' + p.arrival));
+          layer.bindPopup(text(p.alert_id + ' | ' + p.route_id + '\n' + p.origin + ' → ' + p.arrival +
+            '\nRoute people: ' + (p.people == null ? 'Unavailable' : p.people) +
+            '\nRoute HH: ' + (p.households == null ? 'Unavailable' : p.households) +
+            '\nCaseload stage: ' + p.stage + '\nRRM targeted at arrival: ' + p.targeted +
+            '\nOrigin–arrival connection only; not a travelled path.' + (data.mode === 'demo' ? '\nDEMO · fictional movement.' : '')));
+        }
+      }).addTo(m);
+      state.alertPoints = L.geoJSON(data.markers, {
+        pointToLayer: function (f, latlng) { return L.circleMarker(latlng, {
+          radius: f.properties.endpoint === 'origin' ? 8 : 7,
+          color: '#FFFFFF', weight: 2, fillOpacity: 1,
+          fillColor: f.properties.endpoint === 'origin' ? '#58585A' : '#EE5859'
+        }); },
+        onEachFeature: function (f, layer) {
+          var p = f.properties;
+          layer.bindTooltip(text((p.endpoint === 'origin' ? 'Origin: ' : 'Arrival: ') + p.name));
+          layer.bindPopup(text(p.name + ' | ' + p.endpoint + '\n' + p.details +
+            '\nCoordinate source: ' + p.coordinate_source + '\nCoordinate status: ' + p.coordinate_status +
+            (data.mode === 'demo' ? '\nDEMO · fictional coordinates and movement.' : '')));
+        }
+      }).addTo(m);
+      overlays['Origin and arrival points'] = state.alertPoints;
+      overlays['Origin–arrival connections'] = state.alertConnections;
+    }
     if (showPosts) state.posts.addTo(m);
     if (showTowns) state.towns.addTo(m);
     if (showProvinces) state.provinces.addTo(m);
@@ -102,8 +134,9 @@
     state.control = L.control.layers({'OpenStreetMap': state.osm, 'No basemap': state.blank}, overlays).addTo(m);
     var key = data.districts.features.map(function (f) { return f.properties.pcode; }).join(',') + ':' + data.selected_post;
     if (interventionMode) key += ':' + data.markers.features.map(function (f) { return f.properties.point_id + ':' + f.geometry.coordinates.join(','); }).join(';');
-    var extent = interventionMode && data.markers.features.length ? state.interventions : data.selected_post !== 'All' ? state.posts : state.districts;
-    if (state.key !== key && extent.getBounds().isValid()) m.fitBounds(extent.getBounds(), {padding: [15, 15], maxZoom: interventionMode ? 13 : 18, animate: false});
+    if (alertMode) key += ':' + data.markers.features.map(function (f) { return f.properties.location_id; }).join(';');
+    var extent = alertMode && data.markers.features.length ? state.alertPoints : interventionMode && data.markers.features.length ? state.interventions : data.selected_post !== 'All' ? state.posts : state.districts;
+    if (state.key !== key && extent.getBounds().isValid()) m.fitBounds(extent.getBounds(), {padding: [15, 15], maxZoom: contextMode ? 13 : 18, animate: false});
     state.key = key;
     requestAnimationFrame(function () { m.invalidateSize({pan: false}); });
   };

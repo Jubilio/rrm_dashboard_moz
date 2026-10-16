@@ -2,8 +2,9 @@
 // Override RRM_TEST_R with an Rscript-compatible executable if needed.
 import {spawn} from 'node:child_process';
 import assert from 'node:assert/strict';
+const dataMode=process.env.RRM_TEST_MODE||'operational';
 const port=19000+Math.floor(Math.random()*1000);
-const processR=spawn(process.env.RRM_TEST_R||'Rscript',['-e',`shiny::runApp('.',host='127.0.0.1',port=${port},launch.browser=FALSE)`],{cwd:process.cwd(),env:{...process.env,RRM_DATA_MODE:'operational'}});
+const processR=spawn(process.env.RRM_TEST_R||'Rscript',['-e',`shiny::runApp('.',host='127.0.0.1',port=${port},launch.browser=FALSE)`],{cwd:process.cwd(),env:{...process.env,RRM_DATA_MODE:dataMode}});
 let log='',socket;
 processR.stderr.on('data',d=>{log+=d;});
 try {
@@ -18,16 +19,20 @@ try {
   socket=new WebSocket(`ws://127.0.0.1:${port}/websocket`);
   socket.onmessage=e=>{const m=JSON.parse(e.data);Object.assign(values,m.values||{});Object.assign(errors,m.errors||{});};
   await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
-  const input={page:'activity','coverage-as_of':'2026-10-16','coverage-area':'All','coverage-partner':'All','coverage-role':'All','coverage-map_province':'All','coverage-map_district':'All','coverage-map_post':'All','household-source':'operational','household-population':'All','household-profile':'all_households','activity_excel-show_all':true,'activity_excel-map_scope':'all'};
-  for(const id of ['coverage-map_slot','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'])input[`.clientdata_output_${id}_hidden`]=false;
+  const input={page:'activity','alerts-alert_id':'DEMO-001','coverage-as_of':'2026-10-16','coverage-area':'All','coverage-partner':'All','coverage-role':'All','coverage-map_province':'All','coverage-map_district':'All','coverage-map_post':'All','household-source':'operational','household-population':'All','household-profile':'all_households','activity_excel-show_all':true,'activity_excel-map_scope':'all'};
+  if(dataMode==='demo') input['rna-assessment_id']='DEMO-RNA-01';
+  for(const id of ['alerts-alert_map','alerts-endpoint_review','coverage-map_slot','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'])input[`.clientdata_output_${id}_hidden`]=false;
   // No assessment_id exists in production. The RNA table must still send a real empty widget.
   socket.send(JSON.stringify({method:'init',data:input}));
-  for(let i=0;i<150;i++){await new Promise(r=>setTimeout(r,100));if(['coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'].every(id=>values[id]!==undefined))break;}
+  for(let i=0;i<150;i++){await new Promise(r=>setTimeout(r,100));if(['alerts-alert_map','alerts-endpoint_review','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'].every(id=>values[id]!==undefined))break;}
   for(const id of ['coverage-table','household-summary','rna-table','activity_excel-outputs']) {
     let value=values[id];assert.notEqual(value,undefined,id+' not received');
     if(typeof value==='string')value=JSON.parse(value);
     assert(value&&value.x, id+' must not send x:null to hidden DT outputs');
   }
+  assert.equal(values['alerts-alert_map'].kind,'alert_routes');
+  assert.equal(values['alerts-alert_map'].markers.features.length,dataMode==='demo'?3:0,'Alert points must follow the selected data mode');
+  assert.equal(values['alerts-alert_map'].connections.features.length,dataMode==='demo'?2:0);
   assert.equal(values['coverage-coverage_map'].districts.features.length,19);
   assert.equal(values['coverage-coverage_map'].posts.features.length,64);
   assert.equal(values['activity_excel-location_map'].markers.features.length,7);

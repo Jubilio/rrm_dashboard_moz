@@ -1,4 +1,5 @@
 source('R/geography.R',local=TRUE)
+source('R/alert_locations.R',local=TRUE)
 page_titles <- c(coverage='Geographic coverage',alerts='Alerts',rna='Light RNA',vulnerability='Vulnerability screening',activity='Activity reporting')
 all_choices <- function(x) c('All', sort(unique(x[!is.na(x)])))
 filter_spec <- function(key, d) {
@@ -44,9 +45,13 @@ page_ui <- function(id, key, d) {
     if(key=='coverage') div(class='two-col coverage-panels',
       div(class='panel coverage-map-panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
       div(class='panel coverage-responsibilities',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
-    else if(key=='alerts') tagList(div(class='two-col alert-panels',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
+    else if(key=='alerts') tagList(div(class='two-col alert-panels',div(class='panel',h3('Origin to arrival and targeted locations'),rrm_map_output(ns('alert_map')),
+      div(class='map-legend',span(span(class='map-swatch',style='background:#58585A;'),'Origin'),
+        span(span(class='map-swatch',style='background:#EE5859;'),'Arrival')),uiOutput(ns('alert_map_note'))),
       div(class='panel',h3('Alert summary and severity evidence'),uiOutput(ns('details')))),
       tags$details(class='alert-evidence-details',tags$summary('Alert records and calculation evidence'),
+        div(class='panel',h3('Route schematic'),uiOutput(ns('routes'))),
+        div(class='panel',h3('Origin and arrival coordinate review'),DT::DTOutput(ns('endpoint_review'))),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export'),
         div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),
         div(class='panel',h3('Calculated domain ratings and evidence provenance'),DT::DTOutput(ns('severity_calc')))))
@@ -160,6 +165,36 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       # Export only the deliberate display columns; never export unreviewed profile text.
       write.csv(display_table(),file,row.names=FALSE,na='',fileEncoding='UTF-8')
     })
+  if(key=='alerts') {
+    alert_layers <- tryCatch(read_map_layers(),error=function(e) NULL)
+    location_source <- tryCatch(list(data=read_alert_locations(d$metadata$mode),error=NULL),error=function(e)list(data=NULL,error=conditionMessage(e)))
+    selected_routes <- reactive({
+      x <- d$routes[d$routes$alert_id %in% filtered()$alert_id,,drop=FALSE]
+      filter_equal(x,'arrival',input$arrival)
+    })
+    endpoint_links <- reactive({
+      req(is.null(location_source$error),cancelOutput=TRUE)
+      alert_endpoint_links(selected_routes(),location_source$data,d$metadata$mode)
+    })
+    if(!is.null(alert_layers)) output$alert_map <- render_rrm_map({
+      req(is.null(location_source$error),cancelOutput=TRUE)
+      alert_map_payload(selected_routes(),location_source$data,d$metadata$mode,alert_layers)
+    })
+    output$alert_map_note <- renderUI({
+      if(!is.null(location_source$error)) return(p(class='muted',paste('Route coordinate source unavailable:',location_source$error)))
+      if(is.null(alert_layers)) return(p(class='muted','Map boundaries are unavailable. Check the supplied geography files.'))
+      x <- endpoint_links()
+      p(class='muted alert-map-status',
+        if(d$metadata$mode=='demo') 'DEMO POINTS · Fictional coordinates and movements. ' else '',
+        paste(sum(x$mapped),'of',nrow(x),'route endpoints mapped.'),
+        ' Lines show origin–arrival connections, not the travelled path.',
+        if(any(!x$mapped)) ' Missing or unconfirmed locations remain in coordinate review.')
+    })
+    output$endpoint_review <- DT::renderDT({
+      if(!is.null(location_source$error)) return(DT::datatable(data.frame(Note=location_source$error),rownames=FALSE,escape=TRUE,options=list(dom='t')))
+      DT::datatable(endpoint_links(),rownames=FALSE,escape=TRUE,options=list(pageLength=6,scrollX=TRUE))
+    })
+  }
   output$routes <- renderUI({
     x <- filtered(); if(!nrow(x)) return(empty_ui())
     y <- d$routes[d$routes$alert_id %in% x$alert_id,,drop=FALSE]

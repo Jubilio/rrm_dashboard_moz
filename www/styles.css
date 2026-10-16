@@ -155,3 +155,7 @@ h1{font-size:32px}
 @media(max-width:1250px){.page-alerts .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-alerts .kpi{padding:12px}.page-alerts .kpi-value{font-size:32px}.page-alerts .alert-selection select{font-size:26px}.page-alerts .kpi:last-child .kpi-value{font-size:23px}.route-origin,.route-arrival{padding:10px}.route-diagram h4{font-size:17px}}
 @media(max-width:1050px){.page-alerts .alert-panels{grid-template-columns:1fr}.page-alerts .alert-panels>.panel{min-height:0}.page-alerts .alert-metrics>.empty{grid-column:span 1}}
 @media(max-width:680px){.page-alerts .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-alerts .alert-selection select{font-size:22px}.page-alerts .kpi-value{font-size:30px}.page-alerts .kpi:last-child .kpi-value{font-size:21px}.page-alerts .alert-panels>.panel{padding:12px}.route-arrival p{font-size:13px}.route-arrival .route-target{font-size:11px}.route-diagram h4{font-size:15px}.route-origin,.route-arrival{padding:8px}}
+/* Geographic alert endpoints share the existing local Leaflet binding. */
+.page-alerts .rrm-map-output{height:clamp(300px,calc(100dvh - 390px),620px)!important;border-radius:0;border-color:var(--line)}
+.page-alerts .alert-map-status{font-size:11px;line-height:1.4;margin:4px 0 0}
+.page-alerts .map-legend{font-size:12px;margin:8px 0 4px}

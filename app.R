@@ -27,8 +27,13 @@ ui <- fluidPage(
         if(key=='alerts') tabsetPanel(tabPanel('Historical severity review',history_ui('history',history)),tabPanel('Dashboard records',page_ui(key,key,d)))
         else if(key=='vulnerability') tabsetPanel(tabPanel('Household analysis — draft',household_ui('household',history)),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
         else page_ui(key,key,d))))),
-  tags$footer(div(if(DATA_MODE=='demo') 'Demo dashboard records · historical source review and synthetic scenarios labelled separately' else 'Aggregate operational reporting'),
-    div(paste('Last successful load:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))))
+  tags$footer(class='app-footer',
+    div(class='footer-meta',
+      div(if(DATA_MODE=='demo') 'Demo dashboard records · historical source review and synthetic scenarios labelled separately' else 'Aggregate operational reporting'),
+      div(paste('Last successful load:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))),
+    div(class='footer-brand',
+      tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',
+        alt='REACH — Informing more effective humanitarian action',width=308,height=68))))
 server <- function(input,output,session) {
   for(key in names(page_titles)) page_server(key,key,d)
   history_server('history',history)

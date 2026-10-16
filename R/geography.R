@@ -60,11 +60,11 @@ coverage_map_payload <- function(assignments,mode,province='All',district='All',
   list(districts=districts,provinces=provinces,towns=towns,posts=posts,selected_post=post,
        unmapped=if(mode=='demo') 0L else sum(is.na(codes)),mode=mode)
 }
-geography_controls <- function(ns) {
+geography_controls <- function(ns,include_province=TRUE) {
   r <- map_reference(); p <- r[r$level=='admin1',]; a <- r[r$level=='admin2',]; b <- r[r$level=='admin3',]
   shiny::tagList(
     shiny::div(class='map-filters',
-      shiny::selectInput(ns('map_province'),'Map province',choices=c('All'= 'All',setNames(p$pcode,p$label))),
+      if(include_province) shiny::selectInput(ns('map_province'),'Map province',choices=c('All'= 'All',setNames(p$pcode,p$label))),
       shiny::selectInput(ns('map_district'),'Map district',choices=c('All'= 'All',setNames(a$pcode,a$label))),
       shiny::selectInput(ns('map_post'),'Map administrative post',choices=c('All'='All',setNames(b$pcode,paste(b$label,b$pcode,sep=' · '))))),
     shiny::p(class='muted','Map controls change the geographic view. Assignment filters above control the table and KPIs.'))

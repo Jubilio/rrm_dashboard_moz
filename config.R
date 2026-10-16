@@ -1,6 +1,6 @@
-# Production is the default. Empty operational tables indicate sources not yet supplied.
-# Use RRM_DATA_MODE=demo explicitly for isolated demonstrations and development.
-DATA_MODE <- Sys.getenv("RRM_DATA_MODE", "operational")
+# The reference layout starts with clearly labelled fictional core records.
+# Set RRM_DATA_MODE=operational when approved core inputs are ready.
+DATA_MODE <- Sys.getenv("RRM_DATA_MODE", "demo")
 APP_TITLE <- "RRM dashboard"
 APP_SUBTITLE <- "Cabo Delgado, Mozambique"
 

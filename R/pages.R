@@ -12,36 +12,44 @@ filter_spec <- function(key, d) {
 page_ui <- function(id, key, d) {
   ns <- NS(id); specs <- filter_spec(key,d)
   if(key=='coverage') specs <- specs[c(2,3,1)]
+  if(key=='alerts') specs <- Filter(function(s) !s[[1]] %in% c('arrival','alert_id'),specs)
   date_col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
   source <- switch(key,coverage=d$coverage,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
   dates <- if(key != 'coverage') source[[date_col]] else d$metadata$source_updated
   bounds <- if(length(dates) && any(!is.na(dates))) range(dates,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
   div(class=paste('dashboard-page',paste0('page-',key)),
-    if(key!='coverage') div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
+    if(!key %in% c('coverage','alerts')) div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export')),
     if(d$metadata$mode=='operational' && !nrow(source)) div(class='method-strip',paste('No operational',switch(key,coverage='responsibility assignments',alerts='core alert records',rna='assessment records',vulnerability='screening decisions',activity='core activity records'),'have been supplied for this page.')),
     div(class='filters',
+      if(key=='alerts') selectInput(ns('arrival'),'Arrival geography',choices=c('All verified areas'='All',setNames(sort(unique(d$routes$arrival)),sort(unique(d$routes$arrival)))),selectize=FALSE),
       if(key=='coverage') tagList(
         selectInput(ns('map_province'),'Geography',choices=c('All verified areas'='All','Cabo Delgado'='mz01','Nampula'='mz07'),selectize=FALSE),
         dateInput(ns('as_of'),'Coverage as of',value=d$metadata$source_updated,format='dd M yyyy'))
       else dateRangeInput(ns('dates'),switch(key, alerts='Alert issued date',rna='RNA start date',vulnerability='Tier 2 decision date',activity='Intervention start date'),start=bounds[1],end=bounds[2],format='dd M yyyy'),
       lapply(specs,function(s) {
         choices <- if(s[[1]]=='assessment_id') sort(unique(s[[3]])) else all_choices(s[[3]])
-        if(key=='coverage') {
+        if(key %in% c('coverage','alerts')) {
           names(choices) <- choices
-          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas')
+          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas',trigger='All triggers',gla='All GLAs',movement='IDP / returnee')
         }
         selected <- if(s[[1]]=='alert_id' && key %in% c('alerts','activity','vulnerability') && 'DEMO-001' %in% choices) 'DEMO-001' else choices[1]
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
-    uiOutput(ns('metrics')),
+    if(key=='alerts') div(class='kpi-row alert-kpis',
+      div(class='kpi alert-selection',selectInput(ns('alert_id'),'Selected alert',choices=all_choices(d$alerts$alert_id),
+        selected=if('DEMO-001' %in% d$alerts$alert_id) 'DEMO-001' else 'All',selectize=FALSE),span(class='muted','Choose Alert ID')),
+      uiOutput(ns('metrics'),class='alert-metrics'))
+    else uiOutput(ns('metrics')),
     if(key=='coverage') div(class='two-col coverage-panels',
       div(class='panel coverage-map-panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
       div(class='panel coverage-responsibilities',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
-    else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
+    else if(key=='alerts') tagList(div(class='two-col alert-panels',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
       div(class='panel',h3('Alert summary and severity evidence'),uiOutput(ns('details')))),
-      div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),
-      div(class='panel',h3('Calculated domain ratings and evidence provenance'),DT::DTOutput(ns('severity_calc'))))
+      tags$details(class='alert-evidence-details',tags$summary('Alert records and calculation evidence'),
+        downloadButton(ns('download'),'Export filtered CSV',class='btn-export'),
+        div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),
+        div(class='panel',h3('Calculated domain ratings and evidence provenance'),DT::DTOutput(ns('severity_calc')))))
     else if(key=='rna') div(class='two-col',div(class='panel',h3('Top needs · separate evidence streams'),DT::DTOutput(ns('table')),p(class='muted','KII priorities and HESPER counts remain separate. Counts describe only this purposive sample.')),
       div(class='panel',h3('Coverage, methods and use in response'),uiOutput(ns('details'))))
     else if(key=='vulnerability') tagList(uiOutput(ns('details')),div(class='panel',h3('Tier 2 decisions by alert and community'),DT::DTOutput(ns('table'))))
@@ -103,9 +111,9 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
         kpi('Secondary GLAs',length(unique(x$partner[x$role=='Secondary'])),if(d$metadata$mode=='demo') 'Illustrative assignments' else 'Distinct assigned partners'),
         kpi('Assigned areas',length(unique(x$area[x$role!='Unknown'])),'Distinct coverage areas'),
         kpi('Coverage source',paste(unique(x$source_version),collapse=' / '),'Confirm effective dates')),
-      alerts=kpi_row(kpi('Selected alerts',nrow(x),'One record per alert'),
-        kpi('Verified people',fmt(known_sum(x$rna_people)),paste(sum(!is.na(x$rna_people)),'of',nrow(x),'alerts verified · alert-wide')),
-        kpi('Verified households',fmt(known_sum(x$rna_hh)),'RNA-stage caseload · alert-wide'),
+      alerts=tagList(
+        kpi('Verified people',fmt(known_sum(x$rna_people)),'Current RNA-stage caseload'),
+        kpi('Verified households',fmt(known_sum(x$rna_hh)),'Alert-linked HH only'),
         kpi('Severity',if(nrow(x)==1) paste(text_or(x$alert_severity),text_or(x$rna_severity,'Pending'),sep=' / ') else 'See evidence table','Alert stage / RNA stage')),
       rna=kpi_row(kpi('Selected assessment',x$assessment_id[1],paste('Linked to',x$alert_id[1])),
         kpi('Assessment dates',paste(format(x$start_date[1],'%d %b'),format(x$end_date[1],'%d %b'),sep=' – '),'One assessment round'),
@@ -157,20 +165,32 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     y <- d$routes[d$routes$alert_id %in% x$alert_id,,drop=FALSE]
     y <- filter_equal(y,'arrival',input$arrival)
     if(!nrow(y)) return(empty_ui())
-    tagList(div(class='map-notice','SCHEMATIC ROUTES · no geographic boundaries or verified coordinates supplied'),
-      lapply(seq_len(nrow(y)),function(i) div(class='route',div(span(class='eyebrow',y$alert_id[i]),h4(y$origin[i])),
-        span(class='route-arrow','→'),div(h4(y$arrival[i]),p(paste(fmt(y$people[i]),'people ·',fmt(y$households[i]),'HH')),
-        span(class='badge',paste('Targeted:',y$targeted[i])),p(class='muted',paste('Caseload stage:',y$caseload_stage[i]))))),
-      p(class='muted','Counts are route-specific. Missing routes or route counts can leave a gap versus alert totals; unknown counts remain unavailable.'))
+    groups <- split(y,interaction(y$alert_id,y$origin,drop=TRUE,lex.order=TRUE))
+    tagList(p(class='schematic-caption','Schematic route display · not a geographic map'),
+      lapply(groups,function(z) {
+        positions <- (seq_len(nrow(z))-.5)/nrow(z)*100
+        tagList(if(length(unique(y$alert_id))>1) h4(z$alert_id[1]),
+          div(class='route-diagram',style=paste0('height:',max(260,nrow(z)*125),'px;'),
+            tags$svg(class='route-connections',viewBox='0 0 100 100',preserveAspectRatio='none',`aria-hidden`='true',
+              lapply(positions,function(pos) tags$line(x1=29,y1=50,x2=64,y2=pos,stroke='#58585A',`stroke-width`='0.4'))),
+            div(class='route-origin',h4(z$origin[1])),
+            lapply(seq_len(nrow(z)),function(i) div(class='route-arrival',style=paste0('top:',positions[i],'%;'),
+              h4(z$arrival[i]),p(paste(fmt(z$people[i]),'people')),p(class='route-target',paste('RRM targeted:',text_or(z$targeted[i],'Unknown'))))))
+        )
+      }),
+      p(class='muted route-footnote','Numbers are route-specific. Missing route counts remain unavailable; totals are never copied to individual routes.'))
   })
   output$details <- renderUI({
     x <- filtered(); if(!nrow(x)) return(empty_ui())
     switch(key,
-      alerts=tagList(lapply(seq_len(nrow(x)),function(i) div(class='evidence',
-        h4(x$alert_id[i]),field('Alert issued',x$alert_date[i]),field('Trigger / movement',paste(x$trigger[i],x$movement[i],sep=' / ')),
-        field('Alert stage',paste(text_or(x$alert_severity[i]),'·',fmt(x$alert_hh[i]),'HH · evidence',text_or(x$alert_evidence_date[i]))),
-        field('RNA stage',paste(text_or(x$rna_severity[i],'Pending'),'·',fmt(x$rna_hh[i]),'HH · evidence',text_or(x$rna_evidence_date[i]))),
-        field('Rationale',x$rationale[i]),field('Related alert',x$related_alert[i]),field('Overlap',x$overlap_status[i])))),
+      alerts=tagList(lapply(seq_len(nrow(x)),function(i) div(class='evidence alert-evidence',
+        h4(paste(x$alert_id[i],format(x$alert_date[i],'%d %b %Y'),sep=' | ')),
+        p(paste0('Trigger: ',text_or(x$trigger[i]),'. Movement: ',text_or(x$movement[i]),'.'),br(),'Focus: conditions at the arrival locations.'),
+        div(class='alert-stage-evidence',
+          field('Alert stage',paste(text_or(x$alert_severity[i]),'· provisional',fmt(x$alert_hh[i]),'HH · evidence',text_or(x$alert_evidence_date[i]))),
+          field('RNA stage',paste(text_or(x$rna_severity[i],'Pending'),'· verified',fmt(x$rna_hh[i]),'HH · evidence',text_or(x$rna_evidence_date[i]))),
+          field('Rationale',x$rationale[i])),
+        div(class='alert-related',field('Related alert',x$related_alert[i]),field('Overlap',x$overlap_status[i]))))),
       rna=tagList(lapply(seq_len(nrow(x)),function(i) tagList(field('Coverage',x$coverage_note[i]),field('Method and limitations',x$limitations[i]),field('Evidence to response',x$response_use[i]),field('Source',x$source[i])))),
       vulnerability={
         y <- x[x$reviewed=='TRUE',,drop=FALSE]

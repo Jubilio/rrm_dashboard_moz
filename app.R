@@ -25,7 +25,10 @@ ui <- fluidPage(
         if(DATA_MODE=='demo') p('Filters and values are design examples. Replace all demo records before use.'))),
     tags$main(class='app-main',lapply(names(page_titles),function(key)
       conditionalPanel(sprintf("input.page == '%s'",key),
-        if(key=='alerts') tabsetPanel(tabPanel('Historical severity review',history_ui('history',history)),tabPanel('Dashboard records',page_ui(key,key,d)))
+        if(key=='alerts') tabsetPanel(id='alerts_view',
+          tabPanel('Dashboard records',value='dashboard',page_ui(key,key,d)),
+          tabPanel('Historical severity review',value='history',history_ui('history',history)),
+          selected=if(DATA_MODE=='demo') 'dashboard' else 'history')
         else if(key=='vulnerability') tabsetPanel(tabPanel(if(DATA_MODE=='demo') 'Household analysis — draft' else 'Reviewed household aggregates',household_ui('household',history,allow_synthetic=DATA_MODE=='demo')),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
         else if(key=='activity') activity_workbook_ui('activity_excel')
         else page_ui(key,key,d))))),
@@ -41,13 +44,13 @@ server <- function(input,output,session) {
   output$page_subtitle <- renderText(paste(page_titles[[if(is.null(input$page)) 'coverage' else input$page]],APP_SUBTITLE,sep=' | '))
   output$source_label <- renderText({
     if(identical(input$page,'activity')) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
-    else if(identical(input$page,'alerts')) 'HISTORICAL EVIDENCE · DASHBOARD RECORDS LABELLED SEPARATELY'
+    else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
     else if(DATA_MODE=='demo') 'DRAFT LAYOUT - DEMO DATA ONLY'
     else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
   })
   output$source_footer <- renderText({
     if(identical(input$page,'activity')) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'
-    else if(identical(input$page,'alerts')) 'Historical severity evidence is a separate source. Dashboard records follow the selected core data mode.'
+    else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'Historical severity evidence is a separate source. Source classifications and evidence dates are retained.'
     else if(DATA_MODE=='demo') 'Layout mock-up. All figures and DEMO records on this page are illustrative, not operational data.'
     else 'Operational core data. Coverage responsibilities are not evidence of an intervention.'
   })

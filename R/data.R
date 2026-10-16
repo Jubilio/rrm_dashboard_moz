@@ -11,6 +11,9 @@ read_rrm_data <- function(mode = 'operational', base_dir = '.') {
     if (!identical(names(x), expected)) stop(name, ': columns must match the template exactly (including order).')
     x
   }), names)
+  validate_rrm_tables(result,mode,base_dir)
+}
+validate_rrm_tables <- function(result,mode,base_dir='.',allow_severity_inputs=TRUE) {
   dates <- c('effective_from','effective_to','alert_date','alert_evidence_date','rna_evidence_date','start_date','end_date','decision_date','review_date','transfer_date','source_updated')
   numbers <- c('alert_hh','alert_people','rna_hh','rna_people','people','households','kii_sample','hh_sample','observation_sample','rank','hesper_serious','hesper_valid','quantity')
   for (name in names(result)) {
@@ -57,7 +60,7 @@ read_rrm_data <- function(mode = 'operational', base_dir = '.') {
   if (any(result$needs$rank < 1)) stop('Need ranks start at 1.')
   if (any(result$screening$reviewed == 'TRUE' & is.na(result$screening$profile_summary))) stop('Reviewed profiles require a summary.')
   a <- result$alerts
-  if (!file.exists(file.path(base_dir,'data',mode,'severity_inputs.csv')) && any((!is.na(a$rna_hh) | !is.na(a$rna_people)) & (is.na(a$rna_severity) | is.na(a$rna_evidence_date)))) stop('RNA caseload requires severity and evidence date.')
+  if (!(allow_severity_inputs && file.exists(file.path(base_dir,'data',mode,'severity_inputs.csv'))) && any((!is.na(a$rna_hh) | !is.na(a$rna_people)) & (is.na(a$rna_severity) | is.na(a$rna_evidence_date)))) stop('RNA caseload requires severity and evidence date.')
   if (any(result$assessments$end_date < result$assessments$start_date)) stop('Assessment end precedes start.')
   c <- result$coverage
   if (any(!is.na(c$effective_to) & c$effective_to < c$effective_from)) stop('Coverage end precedes start.')

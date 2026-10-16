@@ -24,7 +24,8 @@ try {
   for(const id of ['alerts-alert_map','alerts-endpoint_review','coverage-map_slot','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'])input[`.clientdata_output_${id}_hidden`]=false;
   // No assessment_id exists in production. The RNA table must still send a real empty widget.
   socket.send(JSON.stringify({method:'init',data:input}));
-  for(let i=0;i<150;i++){await new Promise(r=>setTimeout(r,100));if(['alerts-alert_map','alerts-endpoint_review','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'].every(id=>values[id]!==undefined))break;}
+  // Allow a cold server to serialize bundled geography and table dependencies.
+  for(let i=0;i<450;i++){await new Promise(r=>setTimeout(r,100));if(Object.keys(errors).length)throw Error(JSON.stringify(errors));if(['alerts-alert_map','alerts-endpoint_review','coverage-coverage_map','coverage-table','household-summary','rna-table','activity_excel-outputs','activity_excel-location_map','activity_excel-location_review'].every(id=>values[id]!==undefined))break;}
   for(const id of ['coverage-table','household-summary','rna-table','activity_excel-outputs']) {
     let value=values[id];assert.notEqual(value,undefined,id+' not received');
     if(typeof value==='string')value=JSON.parse(value);

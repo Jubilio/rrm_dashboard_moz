@@ -5,3 +5,6 @@ data/activity_workbook.xlsx
 .Rproj.user/
 .Rhistory
 .RData
+
+# Live consolidated input (the fictional example is tracked separately)
+data/RRM_Dashboard_Input.xlsx

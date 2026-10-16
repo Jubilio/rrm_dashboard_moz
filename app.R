@@ -6,13 +6,16 @@ library(shiny)
 source('config.R',local=TRUE)
 source('R/data.R',local=TRUE)
 source('R/pages.R',local=TRUE)
+source('R/input_workbook.R',local=TRUE)
 source('R/severity.R',local=TRUE)
 source('R/household.R',local=TRUE)
 source('R/household_ui.R',local=TRUE)
 source('R/activity_workbook.R',local=TRUE)
 source('R/activity_workbook_ui.R',local=TRUE)
 history <- read_history()
-d <- apply_alert_severity(read_rrm_data(DATA_MODE))
+d <- load_dashboard_input(INPUT_WORKBOOK_PATH,DATA_MODE,mode_explicit=nzchar(Sys.getenv('RRM_DATA_MODE')))
+DATA_MODE <- d$metadata$mode
+if(is.null(attr(d,'input_workbook'))) d <- apply_alert_severity(d)
 ui <- fluidPage(
   tags$head(tags$title(paste(APP_TITLE,APP_SUBTITLE,sep=' | ')),tags$meta(name='viewport',content='width=device-width, initial-scale=1'),
     tags$link(rel='stylesheet',type='text/css',href='styles.css'),
@@ -42,7 +45,7 @@ ui <- fluidPage(
   tags$footer(class='app-footer',
     conditionalPanel("input.page != 'coverage'",class='footer-meta',
       textOutput('source_footer'),
-      div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
+      div(paste('Core input loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
         ' · ',actionLink('methods','Methods and sources'))),
     div(class='footer-brand',
       tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',
@@ -76,7 +79,7 @@ server <- function(input,output,session) {
       tags$li('Activity results use source-Validated records with Confirmed alert links and reconciled inputs. Pending records remain available in Records and review. Gross household reach is not unique reach.'),
       tags$li('Activity timing uses the first validated activity per selected alert and tier across all reporting months; it is not automatically the first delivery of assistance.'),
       tags$li('Transfers follow selected alerts and geography; their dates and partners are independent of intervention filters.'),
-      tags$li('Core CSV files load at startup. Activity reporting reads the configured Excel workbook, with automatic file checks, session uploads and an explicit review gate. No automatic Kobo synchronization is configured.')),
+      tags$li('Core input loads at startup from the configured consolidated workbook or CSV files. Activity reporting reads the configured Excel workbook, with automatic file checks, session uploads and an explicit review gate. No automatic Kobo synchronization is configured.')),
     p('See README.md and DATA_DICTIONARY.md in the project for the data contract.'),easyClose=TRUE,footer=modalButton('Close'))))
 }
 shinyApp(ui,server)

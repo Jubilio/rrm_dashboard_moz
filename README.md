@@ -106,3 +106,7 @@ Alerts also displays an OpenStreetMap view of origin and arrival endpoints, with
 Vulnerability screening opens on Reviewed profile summaries, with paired IDP/Host narratives and a full-width decision table. Review labels require non-empty reviewed profile text; pending or partly reviewed groups are identified explicitly. Decisions are deduplicated across population groups for display, while CSV exports retain the original filtered decision fields. Household analysis remains available in its separate tab.
 
 The Activity reporting overview uses the selected core CSV mode and shows a compact seven-column intervention table, unit-specific KPIs, first completed response timing and responsibility transfers. Full CSV exports retain units, measure types, delivery status and donor fields. Transfers follow selected alerts and geography independently of intervention-date, tier, modality and delivery-partner filters.
+
+## Consolidated Excel input
+
+The core dashboard can read one Excel file instead of separate CSVs. Copy `data/examples/RRM_Dashboard_Input_Example.xlsx` to `data/RRM_Dashboard_Input.xlsx`, or configure `RRM_INPUT_WORKBOOK`, then restart the app. The supplied example is entirely fictional. Its Metadata mode controls the interface unless RRM_DATA_MODE is explicitly set; conflicting modes or invalid inputs are rejected. Reporting workbook remains a separate real source. See [INPUT_WORKBOOK.md](INPUT_WORKBOOK.md) for the worksheet contract, deployment and update workflow.

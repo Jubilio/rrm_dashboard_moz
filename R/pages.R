@@ -157,7 +157,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       rna={
         y <- d$needs[d$needs$assessment_id %in% x$assessment_id,,drop=FALSE]
         y <- y[order(y$rank),,drop=FALSE]
-        data.frame(Rank=y$rank,Need=y$need,`KII summary`=y$kii_summary,`HESPER households`=if(nrow(y)) paste(y$hesper_serious,'of',y$hesper_valid,'serious need') else character(0),`Ranking note`=y$ranking_note,check.names=FALSE)
+        data.frame(Rank=y$rank,Need=y$need,`KII summary`=y$kii_summary,`HESPER households`=if(nrow(y)) paste(y$hesper_serious,'of',y$hesper_valid,'serious need') else character(0),check.names=FALSE)
       },
       vulnerability=unique(x[c('alert_id','community','decision_date','population','decision','reason','reviewed')]),
       activity=x[c('event_id','alert_id','area','tier','modality','start_date','quantity','unit','measure_type','delivery_status','delivery_partner','donor','days_from_alert')])

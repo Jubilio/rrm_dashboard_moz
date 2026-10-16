@@ -7,6 +7,11 @@ The Alerts page has separate Historical severity review and Dashboard records ta
 
 Independent **R Shiny** dashboard implementing the five pages in `RRM_Dashboard_Page_Mockups.pdf`. It keeps the lightweight Shiny approach of the supplied WASH tracker and its coral, charcoal and white palette. The pages and data model are rebuilt for RRM. The WASH household records, saved sessions, publishing credentials and Windows package library are not carried into this project.
 
+
+## Activity reporting from Excel
+
+The Activity reporting page now reads the standardised Excel workbook directly, with automatic file checks every 10 seconds, session uploads, validated/confirmed result gates and a review queue. Run `source("install_packages.R")` to install the added `readxl` dependency. The bundled allowlisted snapshot contains **83 activity records and four extra outputs; none of the source records is marked Validated**, so result totals remain unavailable until partner review is recorded. See [ACTIVITY_WORKBOOK.md](ACTIVITY_WORKBOOK.md) for live configuration, counting rules, data minimisation and source updates.
+
 ## Open in RStudio
 
 1. Extract the ZIP to a normal writable folder.
@@ -23,7 +28,7 @@ source("install_packages.R")
 shiny::runApp(".", launch.browser = TRUE)
 ```
 
-R 4.3 or newer is recommended. To run the optional Shiny module tests, install `testthat` first (`install.packages("testthat")`). Required packages: `shiny`, `DT`. Fonts and styling do not require an external web font. Optional maps require `sf` and `leaflet`.
+R 4.3 or newer is recommended. To run the optional Shiny module tests, install `testthat` first (`install.packages("testthat")`). Required packages: `shiny`, `DT`, `readxl`. Fonts and styling do not require an external web font. The supplied map uses locally bundled Leaflet 1.9.4, with no R geospatial package required. Only the optional OpenStreetMap basemap requires internet.
 
 ## Pages
 
@@ -33,7 +38,7 @@ R 4.3 or newer is recommended. To run the optional Shiny module tests, install `
 | Alerts | Arrival geography, issued date, Alert ID, trigger, GLA, movement | Separate Alert/RNA evidence; verified alert-wide caseloads; route-specific schematic |
 | Light RNA | Assessed geography, assessment start date, Alert ID, method, single round | KII priorities alongside HESPER sample counts, coverage and response-use narrative |
 | Vulnerability screening | Community, decision date, Alert ID, population, decision | Reviewed aggregate profile narratives and Tier 2 decisions |
-| Activity reporting | Response geography, intervention start date, Alert ID, tier, modality, partner | Completed gross HH reach, kits and consultations separately; intervention table, delays, transfers |
+| Activity reporting | Reporting month, Alert ID, district, implementing agency, tier, sector, modality, funding | Excel-backed validated outputs, reach by scope/basis, demographics, timing, handovers and review queue |
 
 Each page exports its currently filtered display table to CSV. On narrow screens the navigation becomes a horizontal list and panels stack vertically. Browser printing hides filters and navigation.
 
@@ -49,7 +54,7 @@ To load real data:
 4. Run `Rscript tests/check_data.R` for the bundled demo regression checks. Start the app in operational mode to validate your real files.
 5. Restart the Shiny process whenever source CSVs are updated. The footer records the successful startup load time; it is not a live sync indicator.
 
-Operational mode fails on missing files and never falls back to demo data. Kobo, Excel imports, and automatic refresh are not configured. Map source columns to this explicit CSV contract before use. Missing values are empty fields, never zero placeholders. Dates use `YYYY-MM-DD`; controlled vocabularies are case-sensitive.
+Operational mode fails on missing files and never falls back to demo data. Kobo synchronization is not configured. Core CSV data requires a restart; Activity reporting has its own live Excel import/refresh workflow documented in ACTIVITY_WORKBOOK.md. Map source columns to this explicit CSV contract before use. Missing values are empty fields, never zero placeholders. Dates use `YYYY-MM-DD`; controlled vocabularies are case-sensitive.
 
 ## Counting rules
 
@@ -60,14 +65,20 @@ Operational mode fails on missing files and never falls back to demo data. Kobo,
 - Coverage is a responsibility at an effective date, not proof of assistance. The “Assigned areas” KPI excludes unknown roles; “Unknown areas” remains separate. Effective intervals include both start and end dates.
 - RNA selects exactly one round. KII summaries and HESPER numerators/valid denominators remain separate. These purposive samples cannot estimate population prevalence. The source supplies the reviewed ranking; the dashboard does not infer it from mixed evidence.
 - Vulnerability inputs contain aggregate text only. Only `reviewed=TRUE` profile summaries appear. Unreviewed profile text is excluded from exports; decision records may still be shown with their review flag. Never add household identifiers, scores, registries or eligibility lists.
-- Activity KPIs count `Completed` rows only and match both unit and measure type. `HH` + `Assistance` is gross HH reach; `kits` and `consultations` + `Service output` are separate outputs. Other units remain in the table and export and are not silently converted. Gross reach may include repeat assistance.
+- The current Excel-backed Activity reporting page follows the Validated/Confirmed/reconciled gates in ACTIVITY_WORKBOOK.md. The original CSV calculation helper (retained for compatibility/tests) counts `Completed` rows only and matches both unit and measure type. `HH` + `Assistance` is gross HH reach; `kits` and `consultations` + `Service output` are separate outputs. Other units remain in the table and export and are not silently converted. Gross reach may include repeat assistance.
 - The activity CSV has one row per **reporting event**, with one donor value. Where an event has multiple donors, use an agreed combined donor label or keep detailed donor allocation outside this table. Never repeat its full reach once per donor. Unique event IDs cannot detect semantic duplicates with different IDs; source review must prevent them.
-- Response delays use actual start date minus linked alert issued date. The headline is the earliest completed **filtered** intervention, not an average. The breakdown shows the first completed filtered intervention per alert/tier. Restricting dates or modality can change it. No unapproved timeliness thresholds are applied.
+- The current Excel timing table uses the first validated activity per selected alert/tier across all reported months, as documented in ACTIVITY_WORKBOOK.md. The older CSV helper retains its original filtered completed-intervention calculation for compatibility. No unapproved timeliness threshold is applied.
 - Responsibility transfers follow selected alert IDs and response geography, independently of intervention-date, tier, modality and delivery-partner filters. They do not add reach.
 
-## Optional approved geographic map
+## Supplied geographic map
 
-Place an approved polygon GeoJSON at `data/operational/approved_areas.geojson`. It must have a declared CRS and an `area` field exactly matching coverage assignments. Install `sf` and `leaflet`. In operational mode the application loads valid polygons, transforms to WGS84 and displays selected responsibilities. Coral means a known matching assignment; grey means unknown or no selected assignment. Hover labels list all selected partner roles. No external basemap is requested. The provider must verify geographic approval, completeness, spelling and boundary version. Without these files/dependencies the explicit map placeholder remains visible. Invalid GeoJSON leaves a warning in the R console and the placeholder in the UI.
+The supplied shapefile is converted into local display GeoJSON: 19 listed districts (all 17 Cabo Delgado districts plus Erati and Memba), 64 administrative-post boundaries, two province outlines and 65 locality points. WGS84 coordinates and district codes were checked against the supplied reference list. Source boundary metadata is dated 2019; supplied boundaries have not been independently re-certified. All 64 admin3 codes and parent districts match the supplied reference.
+
+The map works in both data modes. In demo mode it shows geographic context only and does not assign fictional areas to real districts. In operational mode `coverage.area` can contain a supplied district Pcode or an exact reference name (case, punctuation and accents normalised). Ambiguous or unrecognised names are not mapped and their record count is displayed. They remain in the assignment table and KPIs. Coral means a known selected assignment; sand means unknown or no matching assignment. Click a district to read its selected partner roles. Map province/district/administrative-post controls change only the view; the main assignment filters control the table and KPIs.
+
+OpenStreetMap is the default basemap, with visible contributor attribution. Choose **No basemap** for local boundaries without external tiles. Administrative-post boundaries, locality points and province outlines can be toggled; locality points do not establish alert, displacement or response locations. Selecting an administrative post zooms to its boundary; assignment colours continue to describe district responsibilities. Core CSV locations are not automatically equated with these points.
+
+See [GEOGRAPHY.md](GEOGRAPHY.md) for preparation, provenance and limitations. The previous `data/operational/approved_areas.geojson` hook is replaced by these bundled, code-linked layers.
 
 ## Files
 

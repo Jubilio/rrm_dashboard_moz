@@ -1,0 +1,28 @@
+"metric","unit","definition","source_row"
+"Households assisted","households","Number of assisted households in this record; repeat rounds can overlap.",2
+"Vouchers issued","vouchers","Count of vouchers issued; not the same as households or redemption.",3
+"Vouchers redeemed","vouchers","Count actually redeemed in this period.",4
+"Cash value disbursed","MZN","Actual amount paid; identify funding and currency.",5
+"Voucher value redeemed","MZN","Actual redeemed value in MZN.",6
+"Hygiene kits delivered","kits","Count complete hygiene kits delivered.",7
+"Shelter kits delivered","kits","Count complete shelter kits delivered.",8
+"Dignity kits delivered","kits","Count kits delivered; do not infer from people.",9
+"Learning kits delivered","kits","Count student kits delivered.",10
+"Food kits delivered","kits","Count food kits delivered.",11
+"NFI kits delivered","kits","Count NFI kits delivered.",12
+"Assistance packages delivered","packages","Combined package counted once; item counts belong in Extra Outputs.",13
+"Consultations delivered","consultations","Completed appointments or consultations; repeat visits remain contacts.",14
+"Nutrition screenings completed","screenings","Count screenings performed; distinguish from unique screened people.",15
+"Sessions delivered","sessions","Count sessions; participants go in reach fields.",16
+"Cases registered","cases","New registered cases in period; distinguish from case contacts.",17
+"Referrals completed","referrals","Completed referrals in period.",18
+"Students reintegrated","students","Verified reintegrations; avoid repeating the same learner.",19
+"Facilities rehabilitated","facilities","Completed facilities; catchment population is estimated reach.",20
+"Latrines constructed","latrines","Completed latrines.",21
+"Water delivered","litres","Actual litres delivered, not beneficiary estimates.",22
+"People trained","people","Unique trainees within this record.",23
+"Households interviewed","households","Assessment sample; not assistance beneficiaries.",24
+"KIIs completed","interviews","Completed key informant interviews.",25
+"Observations completed","observations","Completed observation records.",26
+"Meetings held","meetings","Count meetings; do not treat staff as beneficiaries.",27
+"People receiving specialised care","people","Unique people within this record, if verified.",28

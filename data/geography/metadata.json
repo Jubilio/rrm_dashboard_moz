@@ -1,0 +1,13 @@
+{
+  "source_archive": "shapefile(1).zip",
+  "sha256": "940e4271865f6d77a8ccee330b51913c83b87494d8387e4c3a7459fd3f0638b4",
+  "district_count": 19,
+  "province_count": 2,
+  "administrative_post_count": 64,
+  "town_count": 65,
+  "crs": "EPSG:4326",
+  "display_simplification_degrees": 0.0005,
+  "source_date": "2019-04-02",
+  "source_valid_on": "2019-06-07",
+  "note": "User-supplied boundaries, not independently re-certified. Admin3 codes match the user reference. Towns are geographic context, not verified response sites."
+}

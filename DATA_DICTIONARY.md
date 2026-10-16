@@ -154,7 +154,7 @@ Exactly one row. mode: demo or operational, matching config. source_updated is t
 
 ## Relationships
 
-`alerts.alert_id` connects routes, assessments, screening, activities and transfers. `assessments.assessment_id` connects needs. `coverage.area` optionally matches `approved_areas.geojson.area`. Coverage assignments and movement locations need a reviewed geographic crosswalk before you can equate them. No crosswalk is invented by the dashboard.
+`alerts.alert_id` connects routes, assessments, screening, activities and transfers. `assessments.assessment_id` connects needs. `coverage.area` matches a district Pcode or reference name in `data/geography/admin_reference.csv` for the coverage map. Coverage assignments and movement locations need a reviewed geographic crosswalk before you can equate them. No crosswalk is invented by the dashboard.
 
 ## Validation limits
 
@@ -169,3 +169,5 @@ Structural validation does not establish operational truth. Source owners must a
 `household_aggregates.csv` must have exactly the same columns/order as `data/household/synthetic_aggregates.csv`. All count and prevalence fields are aggregate measures; empty numeric cells can mean suppression or unresolved outcomes, distinguished by suppression flags and known/unknown denominators. `high_combination_distribution` labels exact versus partial combinations. Approval/version, synthetic flag and review flag travel with every row. Only reviewed, non-synthetic, approved-rule rows can appear in the operational aggregate tab.
 
 `data/reference/alert_registry.csv` and `severity_evidence.csv` preserve historical source text, stage rows and proposed/unresolved links. They are a separate review dataset, not inputs to ordinary demo reach or population totals. Original XLSX files remain unchanged beside them.
+
+The geographic reference also links `admin3.parent_pcode` to the district Pcode. `administrative_posts.geojson` has all 64 listed post polygons. Post filters change map extent, not district assignment KPIs.

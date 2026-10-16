@@ -169,3 +169,28 @@ h1{font-size:32px}
 .dataTables_wrapper table.dataTable{
   width:100%!important;min-width:100%;margin-left:0!important;margin-right:0!important;
 }
+
+/* Vulnerability reference: paired aggregate narratives and a full-width decision table. */
+.page-vulnerability .filters{display:grid;grid-template-columns:1.36fr 1.18fr .94fr 1fr 1fr auto;margin-bottom:20px}
+.page-vulnerability .filters .shiny-input-container{width:100%;min-width:0}
+.page-vulnerability .kpi{min-height:100px;padding:11px 19px 7px}
+.page-vulnerability .kpi-value{font-size:36px;line-height:1.15}
+.page-vulnerability .kpi .muted{font-size:12px;line-height:17px}
+.page-vulnerability .vulnerability-profiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:21px}
+.page-vulnerability .profile-summary{min-height:218px;padding:14px 20px;margin-bottom:18px}
+.page-vulnerability .profile-summary h3{font-size:20px;line-height:1.4;margin:0 0 10px}
+.profile-entry{font-size:16px;line-height:1.4}
+.profile-entry>p{margin:0}
+.profile-entry+.profile-entry{margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+.page-vulnerability .profile-provenance{font-size:14px;line-height:1.5;margin-top:20px}
+.page-vulnerability table.dataTable thead th{font-size:13px;padding:10px}
+.page-vulnerability table.dataTable tbody td{font-size:13px;padding:9px 10px!important}
+.page-vulnerability table.dataTable tbody tr:nth-child(odd){background:var(--panel)}
+.page-vulnerability table.dataTable tbody tr:nth-child(even){background:#fff}
+.page-vulnerability .dataTables_wrapper{margin-bottom:0}
+.decision-export{font-size:11px;margin-top:8px}
+.decision-export summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.decision-export .btn-export{margin-top:8px}
+@media(max-width:1250px){.page-vulnerability .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-vulnerability .kpi{padding:12px}.page-vulnerability .kpi-value{font-size:29px}.profile-entry{font-size:14px}.page-vulnerability .profile-summary h3{font-size:18px}}
+@media(max-width:900px){.page-vulnerability .vulnerability-profiles{grid-template-columns:1fr;gap:0}.page-vulnerability .profile-summary{min-height:0}}
+@media(max-width:680px){.page-vulnerability .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-vulnerability .kpi-value{font-size:26px}.page-vulnerability .profile-summary{padding:12px}.page-vulnerability .profile-provenance{font-size:12px}}

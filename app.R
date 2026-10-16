@@ -30,7 +30,10 @@ ui <- fluidPage(
           tabPanel('Dashboard records',value='dashboard',page_ui(key,key,d)),
           tabPanel('Historical severity review',value='history',history_ui('history',history)),
           selected=if(DATA_MODE=='demo') 'dashboard' else 'history')
-        else if(key=='vulnerability') tabsetPanel(tabPanel(if(DATA_MODE=='demo') 'Household analysis — draft' else 'Reviewed household aggregates',household_ui('household',history,allow_synthetic=DATA_MODE=='demo')),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
+        else if(key=='vulnerability') tabsetPanel(id='vulnerability_view',
+          tabPanel('Reviewed profile summaries',value='summaries',page_ui(key,key,d)),
+          tabPanel(if(DATA_MODE=='demo') 'Household analysis — draft' else 'Reviewed household aggregates',value='households',household_ui('household',history,allow_synthetic=DATA_MODE=='demo')),
+          selected='summaries')
         else if(key=='activity') activity_workbook_ui('activity_excel')
         else page_ui(key,key,d))))),
   tags$footer(class='app-footer',

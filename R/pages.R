@@ -13,16 +13,19 @@ filter_spec <- function(key, d) {
 page_ui <- function(id, key, d) {
   ns <- NS(id); specs <- filter_spec(key,d)
   if(key=='coverage') specs <- specs[c(2,3,1)]
+  if(key=='vulnerability') specs <- Filter(function(s) s[[1]]!='community',specs)
   if(key=='alerts') specs <- Filter(function(s) !s[[1]] %in% c('arrival','alert_id'),specs)
   date_col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
   source <- switch(key,coverage=d$coverage,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
   dates <- if(key != 'coverage') source[[date_col]] else d$metadata$source_updated
   bounds <- if(length(dates) && any(!is.na(dates))) range(dates,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
   div(class=paste('dashboard-page',paste0('page-',key)),
-    if(!key %in% c('coverage','alerts')) div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
+    if(!key %in% c('coverage','alerts','vulnerability')) div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export')),
     if(d$metadata$mode=='operational' && !nrow(source)) div(class='method-strip',paste('No operational',switch(key,coverage='responsibility assignments',alerts='core alert records',rna='assessment records',vulnerability='screening decisions',activity='core activity records'),'have been supplied for this page.')),
     div(class='filters',
+      if(key=='vulnerability') selectInput(ns('community'),'Community',choices=c('All communities'='All',setNames(sort(unique(d$screening$community)),sort(unique(d$screening$community)))),
+        selected=if(d$metadata$mode=='demo' && 'Community B' %in% d$screening$community) 'Community B' else 'All',selectize=FALSE),
       if(key=='alerts') selectInput(ns('arrival'),'Arrival geography',choices=c('All verified areas'='All',setNames(sort(unique(d$routes$arrival)),sort(unique(d$routes$arrival)))),selectize=FALSE),
       if(key=='coverage') tagList(
         selectInput(ns('map_province'),'Geography',choices=c('All verified areas'='All','Cabo Delgado'='mz01','Nampula'='mz07'),selectize=FALSE),
@@ -30,9 +33,9 @@ page_ui <- function(id, key, d) {
       else dateRangeInput(ns('dates'),switch(key, alerts='Alert issued date',rna='RNA start date',vulnerability='Tier 2 decision date',activity='Intervention start date'),start=bounds[1],end=bounds[2],format='dd M yyyy'),
       lapply(specs,function(s) {
         choices <- if(s[[1]]=='assessment_id') sort(unique(s[[3]])) else all_choices(s[[3]])
-        if(key %in% c('coverage','alerts')) {
+        if(key %in% c('coverage','alerts','vulnerability')) {
           names(choices) <- choices
-          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas',trigger='All triggers',gla='All GLAs',movement='IDP / returnee')
+          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas',trigger='All triggers',gla='All GLAs',movement='IDP / returnee',alert_id='All alerts',population='IDPs / hosts',decision='All decisions')
         }
         selected <- if(s[[1]]=='alert_id' && key %in% c('alerts','activity','vulnerability') && 'DEMO-001' %in% choices) 'DEMO-001' else choices[1]
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
@@ -57,7 +60,8 @@ page_ui <- function(id, key, d) {
         div(class='panel',h3('Calculated domain ratings and evidence provenance'),DT::DTOutput(ns('severity_calc')))))
     else if(key=='rna') div(class='two-col',div(class='panel',h3('Top needs · separate evidence streams'),DT::DTOutput(ns('table')),p(class='muted','KII priorities and HESPER counts remain separate. Counts describe only this purposive sample.')),
       div(class='panel',h3('Coverage, methods and use in response'),uiOutput(ns('details'))))
-    else if(key=='vulnerability') tagList(uiOutput(ns('details')),div(class='panel',h3('Tier 2 decisions by alert and community'),DT::DTOutput(ns('table'))))
+    else if(key=='vulnerability') tagList(uiOutput(ns('details')),div(class='panel',h3('Tier 2 decisions by alert and community'),DT::DTOutput(ns('table')),
+      tags$details(class='decision-export',tags$summary('Export decision records'),downloadButton(ns('download'),'Export filtered CSV',class='btn-export'))))
     else tagList(div(class='panel',h3('Interventions linked to selected alerts'),DT::DTOutput(ns('table'))),div(class='two-col',
       div(class='panel',h3('Delay and response timing'),uiOutput(ns('details'))),div(class='panel',h3('Transfer of response responsibilities'),DT::DTOutput(ns('transfers'))))),
     if(key!='coverage') div(class='method-strip',switch(key,
@@ -72,6 +76,13 @@ kpi_row <- function(...) div(class='kpi-row',...)
 empty_ui <- function() div(class='empty',h4('No matching records'),p('Adjust the filters or reset the selection.'))
 text_or <- function(x,fallback='Not reported') if(!length(x)||is.na(x)||!nzchar(x)) fallback else as.character(x)
 field <- function(label,value) p(strong(paste0(label,': ')),text_or(value))
+reviewed_profile_rows <- function(x) x[which(x$reviewed=='TRUE' & !is.na(x$profile_summary) & nzchar(trimws(x$profile_summary))),,drop=FALSE]
+profile_review_status <- function(x,population) {
+  x <- x[x$population==population,,drop=FALSE]
+  if(!nrow(x)) return('Unavailable')
+  n <- nrow(reviewed_profile_rows(x))
+  if(n==nrow(x)) 'Reviewed' else if(n>0) 'Partly reviewed' else 'Pending review'
+}
 page_server <- function(id,key,d) moduleServer(id,function(input,output,session) {
   specs <- filter_spec(key,d)
   observeEvent(input$reset, {
@@ -125,11 +136,14 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
         kpi('Method',x$method[1],'Evidence streams kept separate'),
         kpi('Sample',paste(x$kii_sample[1],x$hh_sample[1],x$observation_sample[1],sep=' / '),'KIIs / HH / observations')),
       vulnerability={
-        decisions <- unique(x[c('alert_id','community','decision')])
-        kpi_row(kpi('Selected alerts',length(unique(x$alert_id)),'Community-level decisions'),
+        alerts <- unique(x$alert_id)
+        profile_note <- function(population) if(nrow(reviewed_profile_rows(x[x$population==population,,drop=FALSE]))) {
+          if(d$metadata$mode=='demo') 'Illustrative profile below' else 'Reviewed aggregate below'
+        } else 'No reviewed summary available'
+        kpi_row(kpi(if(length(alerts)==1) 'Selected alert' else 'Selected alerts',if(length(alerts)==1) alerts else length(alerts),paste(unique(x$community),collapse=' / ')),
           kpi('Tier 2 decision',if(length(unique(x$decision))==1) unique(x$decision) else 'Mixed','Decision recorded in source'),
-          kpi('IDP profiles',sum(x$population=='IDP' & x$reviewed=='TRUE'),'Reviewed aggregate summaries'),
-          kpi('Host profiles',sum(x$population=='Host' & x$reviewed=='TRUE'),'Reviewed aggregate summaries'))
+          kpi('IDP profile summary',profile_review_status(x,'IDP'),profile_note('IDP')),
+          kpi('Host profile summary',profile_review_status(x,'Host'),profile_note('Host')))
       },
       activity={t <- activity_totals(x);kpi_row(kpi('Gross household reach',fmt(t$hh),'Sum of completed HH assistance'),
         kpi('Kits distributed',fmt(t$kits),'Service output; not HH'),kpi('Clinic consultations',fmt(t$consultations),'Visits; not unique people'),
@@ -151,6 +165,12 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
   output$table <- DT::renderDT({
     if(key=='coverage') DT::datatable(width='100%',display_table()[c('partner','area','role')],colnames=c('Partner','Area','Role'),rownames=FALSE,escape=TRUE,
       options=list(pageLength=4,scrollX=TRUE,autoWidth=TRUE,ordering=FALSE,language=list(emptyTable='No matching records'),dom='tp'))
+    else if(key=='vulnerability') {
+      x <- unique(filtered()[c('alert_id','community','decision','reason')])
+      y <- data.frame(`Alert / community`=paste(x$alert_id,x$community,sep=' / '),Decision=x$decision,Reason=x$reason,check.names=FALSE)
+      DT::datatable(width='100%',y,rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,dom='tp',
+        language=list(emptyTable='No decisions available for this selection.')))
+    }
     else DT::datatable(width='100%',display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
   })
   output$severity_calc <- DT::renderDT({
@@ -228,12 +248,18 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
         div(class='alert-related',field('Related alert',x$related_alert[i]),field('Overlap',x$overlap_status[i]))))),
       rna=tagList(lapply(seq_len(nrow(x)),function(i) tagList(field('Coverage',x$coverage_note[i]),field('Method and limitations',x$limitations[i]),field('Evidence to response',x$response_use[i]),field('Source',x$source[i])))),
       vulnerability={
-        y <- x[x$reviewed=='TRUE',,drop=FALSE]
-        if(!nrow(y)) return(div(class='panel',h3('Aggregate profiles'),p('No reviewed profile summary is available for this selection.')))
-        div(class='two-col',lapply(seq_len(nrow(y)),function(i) div(class='panel',
-          span(class='eyebrow',paste(y$alert_id[i],y$community[i],sep=' · ')),h3(paste(y$population[i],'profiles associated with highest concurrence')),
-          p(y$profile_summary[i]),p(class='muted',paste('Analysis:',y$analysis_version[i],'· Review:',y$review_date[i])),
-          span(class='badge','Reviewed aggregate summary'))))
+        y <- reviewed_profile_rows(x)
+        populations <- unique(c('IDP','Host',x$population))
+        div(class='two-col vulnerability-profiles',lapply(populations,function(population) {
+          z <- y[y$population==population,,drop=FALSE]
+          div(class='panel profile-summary',h3(paste(population,'profiles associated with highest concurrence')),
+            if(!nrow(z)) p(class='muted','No reviewed aggregate profile summary is available for this selection.')
+            else tagList(lapply(seq_len(nrow(z)),function(i) div(class='profile-entry',
+              strong(if(d$metadata$mode=='demo') 'Illustrative summary only' else 'Reviewed aggregate summary'),
+              p(z$profile_summary[i]),
+              p(class='muted profile-provenance',paste('Analysis version:',text_or(z$analysis_version[i]),'| Review date:',text_or(z$review_date[i]))),
+              if(length(unique(paste(y$alert_id,y$community)))>1) p(class='muted',paste(z$alert_id[i],z$community[i],sep=' · '))))))
+        }))
       },
       activity={
         y <- x[x$delivery_status=='Completed',,drop=FALSE]

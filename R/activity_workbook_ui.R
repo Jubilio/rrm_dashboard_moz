@@ -57,7 +57,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
    current(parsed);last_error(NULL);source_label(source);loaded_at(format(Sys.time(),'%Y-%m-%d %H:%M:%S %Z'))
   },error=function(e){last_error(conditionMessage(e))})
  })
- data<-shiny::reactive({shiny::req(current());current()})
+ data<-shiny::reactive({shiny::req(current(),cancelOutput=TRUE);current()})
  filter_fields<-c(month='reporting_month',alert='alert_id',district='district',partner='implementing_agency',tier='tier',sector='sector',modality='modality',funding='funding')
  shiny::observeEvent(current(),{
   a<-data()$activities

@@ -28,7 +28,7 @@ page_ui <- function(id, key, d) {
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
     uiOutput(ns('metrics')),
-    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),geography_controls(ns),uiOutput(ns('map_slot')),
+    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),geography_controls(ns),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot')),
       p(class='muted','Assignments describe geographic responsibilities; they are not evidence of a response.')),
       div(class='panel',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
     else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
@@ -72,11 +72,11 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     }
   })
   filtered <- reactive({
-    if(key=='rna') req(input$assessment_id)
+    if(key=='rna' && nrow(d$assessments)) req(input$assessment_id,cancelOutput=TRUE)
     x <- switch(key,coverage=d$coverage,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
     for(s in specs) if(s[[1]] %in% names(x)) x <- filter_equal(x,s[[1]],input[[s[[1]]]])
     if(key=='coverage') {
-      req(input$as_of)
+      req(input$as_of,cancelOutput=TRUE)
       x <- x[x$effective_from <= input$as_of & (is.na(x$effective_to)|x$effective_to >= input$as_of),,drop=FALSE]
     } else {
       col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
@@ -210,7 +210,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     })
     output$map_slot <- renderUI({
       if(is.null(layers)) return(div(class='map-placeholder',h4('Geographic map unavailable'),p('Check the supplied geography files.')))
-      tagList(rrm_map_output(session$ns('coverage_map')),uiOutput(session$ns('map_note')),
+      tagList(uiOutput(session$ns('map_note')),
         div(class='map-legend',
           span(span(class='map-swatch',style='background:#EE5859;'),'Known assignment'),
           span(span(class='map-swatch',style='background:#D2CBB8;'),'Unknown / no matching assignment')),

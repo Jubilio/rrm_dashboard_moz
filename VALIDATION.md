@@ -73,3 +73,8 @@ The Shiny WebSocket check also passed with all 64 post polygons and a Province/D
 
 
 Production defaults: `tests/check_production.R` verifies operational startup, deliberately empty core tables, real workbook record counts, absence of synthetic choices in production UI, server-side rejection of synthetic household selection, empty-page behaviour and district map isolation. Activity reporting remains subject to its unchanged source review gate.
+
+
+Map startup correction: the published application was inspected in Chrome. DT 0.34.0 threw `Cannot read properties of null (reading 'lazyRender')` while rendering a hidden empty widget, preventing the remainder of the startup response from reaching the map. A zero-column household empty state produced `x:null`; it now returns a typed empty table. Empty operational RNA tables no longer require a nonexistent assessment selection, and pending required inputs preserve outputs rather than sending null table values. Map dependencies and the output element are now part of the initial UI, eliminating dependency-registration timing during dynamic output insertion.
+
+`tests/check_production.R` now checks the actual serialized empty widgets and RNA without a fabricated assessment selection. Optional Node.js 22+ `tests/check_startup.mjs` starts R, checks initial HTTP assets and map binding, and verifies non-null household/RNA/coverage/activity widgets plus all 19 districts and 64 posts over the real Shiny WebSocket. Run from the project root with `node tests/check_startup.mjs` and Rscript on PATH. The existing five related suites pass. The hosted fix requires a new deployment; full graphical verification of the updated hosting remains pending.

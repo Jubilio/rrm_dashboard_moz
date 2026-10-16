@@ -19,10 +19,10 @@ household_server <- function(id,h,allow_synthetic=TRUE) shiny::moduleServer(id,f
  table_data<-shiny::reactive({
   synthetic<-isTRUE(allow_synthetic)&&(is.null(input$source)||input$source=='synthetic')
   path<-if(synthetic) 'data/household/synthetic_aggregates.csv' else 'data/operational/household_aggregates.csv'
-  if(!file.exists(path)) return(data.frame())
+  if(!file.exists(path)) return(data.frame(Status=character()))
   a<-read.csv(path,stringsAsFactors=FALSE,na.strings='',check.names=FALSE)
   expected<-names(read.csv('data/household/synthetic_aggregates.csv',nrows=0,check.names=FALSE))
-  if(!identical(names(a),expected)) return(data.frame())
+  if(!identical(names(a),expected)) return(data.frame(Status=character()))
   if(!synthetic) a<-a[!is.na(a$reviewed)&a$reviewed&!is.na(a$synthetic)&!a$synthetic&!is.na(a$rule_status)&a$rule_status=='approved',,drop=FALSE]
   a<-filter_equal(a,'population',input$population)
   a<-filter_equal(a,'profile',input$profile)

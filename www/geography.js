@@ -5,6 +5,7 @@
   binding.find = function (scope) { return $(scope).find('.rrm-map-output'); };
   function text(value) { var el = document.createElement('div'); el.textContent = value; return el; }
   binding.renderValue = function (el, data) {
+    if (!data || !data.districts) return;
     if (!el._rrm) {
       var map = L.map(el, {scrollWheelZoom: false, minZoom: 4, maxZoom: 18});
       var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

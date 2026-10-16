@@ -20,7 +20,7 @@ Sys.setenv(RRM_ACTIVITY_WORKBOOK = "C:/private/RRM_Activity_Reporting.xlsx")
 shiny::runApp(".")
 ```
 
-The application checks modification time and size every 10 seconds. **Refresh now** forces a reload even when file metadata is unchanged. Core CSV demo/operational configuration is independent of this activity source. The activity panel displays its own last successful refresh time. If a workbook is unavailable or malformed, the page shows the error and retains the last successfully loaded dataset and its timestamp. It does not silently substitute the supplied snapshot for a broken configured source.
+The application checks modification time and size every 10 seconds. **Refresh now** forces a reload even when file metadata is unchanged. The application defaults to operational core CSVs and opens Activity reporting. Core CSV configuration is independent of this real activity source; production mode does not change any workbook review status. The activity panel displays its own last successful refresh time. If a workbook is unavailable or malformed, the page shows the error and retains the last successfully loaded dataset and its timestamp. It does not silently substitute the supplied snapshot for a broken configured source.
 
 3. **Session upload**: use **Load a standardised workbook (.xlsx)**. The uploaded workbook is used only in that Shiny session; it does not overwrite the configured source or repository. **Use configured source** returns to the configured workbook, or to the supplied snapshot if no workbook path is set. Uploads are not a persistent editing interface, and the dashboard does not write review statuses back to Excel.
 

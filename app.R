@@ -17,30 +17,30 @@ ui <- fluidPage(
   tags$head(tags$title(paste(APP_TITLE,APP_SUBTITLE,sep=' | ')),tags$meta(name='viewport',content='width=device-width, initial-scale=1'),
     tags$link(rel='stylesheet',type='text/css',href='styles.css')),
   div(class='app-header',div(h1(APP_TITLE),p(APP_SUBTITLE)),
-    div(class=if(DATA_MODE=='demo') 'mode demo' else 'mode live',if(DATA_MODE=='demo') 'CORE CSV DEMO · WORKBOOK SOURCES LABELLED SEPARATELY' else 'CORE CSV OPERATIONAL · WORKBOOK SOURCES LABELLED SEPARATELY')),
+    div(class=if(DATA_MODE=='demo') 'mode demo' else 'mode live',if(DATA_MODE=='demo') 'CORE CSV DEMO · WORKBOOK SOURCES LABELLED SEPARATELY' else 'PRODUCTION · REPORTED INTERVENTIONS')),
   div(class='app-shell',
     tags$aside(class='app-sidebar',span(class='eyebrow','WORKSPACE'),
-      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage'),
+      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected=if(DATA_MODE=='demo') 'coverage' else 'activity'),
       div(class='sidebar-note',h4('Evidence to action'),p('Coverage · alerts · assessment · screening · response'),
         if(DATA_MODE=='demo') p('Core CSV records are illustrative. Historical and activity workbook sources, and synthetic household scenarios, are labelled separately.')),
       actionLink('methods','Methods & data sources')),
     tags$main(class='app-main',lapply(names(page_titles),function(key)
       conditionalPanel(sprintf("input.page == '%s'",key),
         if(key=='alerts') tabsetPanel(tabPanel('Historical severity review',history_ui('history',history)),tabPanel('Dashboard records',page_ui(key,key,d)))
-        else if(key=='vulnerability') tabsetPanel(tabPanel('Household analysis — draft',household_ui('household',history)),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
+        else if(key=='vulnerability') tabsetPanel(tabPanel(if(DATA_MODE=='demo') 'Household analysis — draft' else 'Reviewed household aggregates',household_ui('household',history,allow_synthetic=DATA_MODE=='demo')),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
         else if(key=='activity') activity_workbook_ui('activity_excel')
         else page_ui(key,key,d))))),
   tags$footer(class='app-footer',
     div(class='footer-meta',
-      div(if(DATA_MODE=='demo') 'Core CSV demo · workbook sources and synthetic scenarios labelled separately' else 'Aggregate operational reporting'),
-      div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))),
+      div(if(DATA_MODE=='demo') 'Core CSV demo · workbook sources and synthetic scenarios labelled separately' else 'Operational reporting · original workbook review statuses retained'),
+      div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Core metadata updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))),
     div(class='footer-brand',
       tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',
         alt='REACH — Informing more effective humanitarian action',width=308,height=68))))
 server <- function(input,output,session) {
   for(key in setdiff(names(page_titles),'activity')) page_server(key,key,d)
   history_server('history',history)
-  household_server('household',history)
+  household_server('household',history,allow_synthetic=DATA_MODE=='demo')
   activity_workbook_server('activity_excel',ACTIVITY_WORKBOOK_PATH)
   observeEvent(input$methods,showModal(modalDialog(title='Methods and data sources',
     p(d$metadata$methods_note),
@@ -49,8 +49,8 @@ server <- function(input,output,session) {
       tags$li('RNA selects one assessment round. HESPER counts use the valid household denominator for each need; purposive samples do not estimate prevalence.'),
       tags$li('Vulnerability profiles are reviewed aggregate narratives, never household records. Household sector mappings remain draft; native indicators and draft scenario outputs are distinguished.'),
       tags$li('Historical severities are source classifications. Duplicate/mismatched source IDs are retained and flagged. No estimated caseload text is converted into a verified numeric count.'),
-      tags$li('Activity KPIs sum completed assistance or outputs with matching units and measure types. Gross household reach is not unique reach.'),
-      tags$li('First response is the minimum elapsed time from linked alert date among the completed interventions in the current filter selection.'),
+      tags$li('Activity results use source-Validated records with Confirmed alert links and reconciled inputs. Pending records remain available in Records and review. Gross household reach is not unique reach.'),
+      tags$li('Activity timing uses the first validated activity per selected alert and tier across all reporting months; it is not automatically the first delivery of assistance.'),
       tags$li('Transfers follow selected alerts and geography; their dates and partners are independent of intervention filters.'),
       tags$li('Core CSV files load at startup. Activity reporting reads the configured Excel workbook, with automatic file checks, session uploads and an explicit review gate. No automatic Kobo synchronization is configured.')),
     p('See README.md and DATA_DICTIONARY.md in the project for the data contract.'),easyClose=TRUE,footer=modalButton('Close'))))

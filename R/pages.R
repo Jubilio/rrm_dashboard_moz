@@ -12,12 +12,13 @@ filter_spec <- function(key, d) {
 page_ui <- function(id, key, d) {
   ns <- NS(id); specs <- filter_spec(key,d)
   date_col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
-  source <- switch(key,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
+  source <- switch(key,coverage=d$coverage,alerts=d$alerts,rna=d$assessments,vulnerability=d$screening,activity=d$activities)
   dates <- if(key != 'coverage') source[[date_col]] else d$metadata$source_updated
   bounds <- if(length(dates) && any(!is.na(dates))) range(dates,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
   tagList(
     div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export')),
+    if(d$metadata$mode=='operational' && !nrow(source)) div(class='method-strip',paste('No operational',switch(key,coverage='responsibility assignments',alerts='core alert records',rna='assessment records',vulnerability='screening decisions',activity='core activity records'),'have been supplied for this page.')),
     div(class='filters',
       if(key=='coverage') dateInput(ns('as_of'),'Coverage as of',value=d$metadata$source_updated)
       else dateRangeInput(ns('dates'),switch(key, alerts='Alert issued date',rna='RNA start date',vulnerability='Tier 2 decision date',activity='Intervention start date'),start=bounds[1],end=bounds[2],format='dd M yyyy'),

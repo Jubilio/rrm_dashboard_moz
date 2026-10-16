@@ -1,5 +1,7 @@
 # Household analysis integration — English dashboard
 
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
 Source: `MOZ_RRM_Household_Analysis_Matrix_Draft.xlsx`, Draft 0.1, 2 October 2026. The original workbook is retained in `data/reference/`. No operational household dataset was supplied.
 
 ## Draft status and workflow

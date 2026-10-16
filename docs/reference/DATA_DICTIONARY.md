@@ -1,5 +1,7 @@
 # Data dictionary
 
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
 All CSVs use UTF-8, comma delimiters and the exact headers below. Empty cells represent missing values. Dates use YYYY-MM-DD. Counts, ranks and quantities use non-negative whole numbers; ranks start at 1. IDs are stable strings.
 
 ## coverage.csv
@@ -172,4 +174,4 @@ Structural validation does not establish operational truth. Source owners must a
 
 The geographic reference also links `admin3.parent_pcode` to the district Pcode. `administrative_posts.geojson` has all 64 listed post polygons. Post filters change map extent, not district assignment KPIs.
 
-`data/geography/settlements.csv` stores reference point IDs/names, source provenance, WGS84 coordinates and spatial administrative codes. Activity geography matching joins the full community name plus district and, when resolvable, administrative post. Match output preserves source record IDs and review statuses; it does not change source tables or allocate beneficiary/output quantities. See INTERVENTION_LOCATIONS.md.
+`data/geography/settlements.csv` stores reference point IDs/names, source provenance, WGS84 coordinates and spatial administrative codes. Activity geography matching joins the full community name plus district and, when resolvable, administrative post. Match output preserves source record IDs and review statuses; it does not change source tables or allocate beneficiary/output quantities. See [Intervention locations](INTERVENTION_LOCATIONS.md).

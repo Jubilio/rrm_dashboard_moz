@@ -1,5 +1,7 @@
 # Intervention locations and settlement reference points
 
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
 The replacement user archive `shapefile(2).zip` adds `localities` (2,550 source records) and `villages` (11,523), alongside 417 existing main-town points. Preparation retains 1,804 named valid points within the 19 listed districts: 393 localities, 1,346 villages and 65 main towns. Unnamed/invalid points and points outside or ambiguously on district boundaries are excluded. No source population, household totals or embedded project/activity attributes are copied.
 
 `data/geography/settlements.csv` is the allowlisted gazetteer. The archive hash and per-layer QA counts are in `settlements_metadata.json`. Administrative codes are calculated by point-in-polygon against the **original** WGS84 district and post geometry, not the generalised web display. Names/coordinates are supplied reference information, not independently verified intervention-site coordinates. The localities layer identifies its source as OSM (31 August 2023); no new verification date is inferred for the village or main-town layers.

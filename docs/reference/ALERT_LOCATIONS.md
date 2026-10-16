@@ -1,12 +1,14 @@
 # Alert origin and arrival map
 
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
 The Alerts dashboard maps the origin and arrival of each selected route. Charcoal markers indicate origins and coral markers indicate arrivals. Click a point or dashed connection to inspect the route ID, alert, route-specific people/household counts, caseload stage and arrival targeting. A connection is a straight origin–arrival link, not a travelled path. Shared origins display the individual linked route counts, never their sum as a unique population.
 
 The map follows Alert ID, issued date, trigger, GLA, movement and arrival filters. Arrival selection narrows displayed routes, while KPI caseloads remain alert-wide. Source classifications and evidence dates remain separate from geographic confirmation.
 
 ## Coordinate input
 
-Populate `data/operational/route_locations.csv` using `data/templates/route_locations.csv`. The file is optional: absent coordinates leave the map on its contextual boundaries and keep endpoints in the expandable coordinate review table. Existing route CSV headers are unchanged.
+For consolidated Excel input, populate the Route Locations worksheet described in [Data entry](../DATA_ENTRY.md). For CSV input, populate `data/operational/route_locations.csv` using `data/templates/route_locations.csv`. The file is optional: absent coordinates leave the map on its contextual boundaries and keep endpoints in the expandable coordinate review table. Existing route CSV headers are unchanged.
 
 | Field | Required value |
 | --- | --- |

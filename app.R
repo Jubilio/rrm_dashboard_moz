@@ -80,6 +80,6 @@ server <- function(input,output,session) {
       tags$li('Activity timing uses the first validated activity per selected alert and tier across all reporting months; it is not automatically the first delivery of assistance.'),
       tags$li('Transfers follow selected alerts and geography; their dates and partners are independent of intervention filters.'),
       tags$li('Core input loads at startup from the configured consolidated workbook or CSV files. Activity reporting reads the configured Excel workbook, with automatic file checks, session uploads and an explicit review gate. No automatic Kobo synchronization is configured.')),
-    p('See README.md and DATA_DICTIONARY.md in the project for the data contract.'),easyClose=TRUE,footer=modalButton('Close'))))
+    p('See README.md, docs/DATA_ENTRY.md and docs/reference/DATA_DICTIONARY.md for guidance and the data contract.'),easyClose=TRUE,footer=modalButton('Close'))))
 }
 shinyApp(ui,server)

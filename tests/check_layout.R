@@ -16,9 +16,11 @@ testServer(e$server,{
   session$setInputs(page='coverage')
   stopifnot(output$page_subtitle=='Geographic coverage | Cabo Delgado, Mozambique',
     output$source_label=='DRAFT LAYOUT - DEMO DATA ONLY',grepl('illustrative',output$source_footer,fixed=TRUE))
-  session$setInputs(page='activity')
+  session$setInputs(page='activity',activity_view='workbook')
   stopifnot(grepl('WORKBOOK SOURCE',output$source_label,fixed=TRUE),!grepl('DEMO',output$source_label,fixed=TRUE),
     grepl('Original review statuses',output$source_footer,fixed=TRUE))
+  session$setInputs(activity_view='overview')
+  stopifnot(grepl('DEMO DATA ONLY',output$source_label,fixed=TRUE),grepl('illustrative',output$source_footer,fixed=TRUE))
 })
 testServer(e$page_server,args=list(key='coverage',d=e$d),{
   session$setInputs(as_of=as.Date('2026-09-30'),area='All',partner='All',role='All',map_province='All',map_district='All',map_post='All')

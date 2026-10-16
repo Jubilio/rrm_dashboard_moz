@@ -13,6 +13,7 @@ filter_spec <- function(key, d) {
 page_ui <- function(id, key, d) {
   ns <- NS(id); specs <- filter_spec(key,d)
   if(key=='coverage') specs <- specs[c(2,3,1)]
+  if(key=='activity') specs <- Filter(function(s) s[[1]]!='area',specs)
   if(key=='vulnerability') specs <- Filter(function(s) s[[1]]!='community',specs)
   if(key=='alerts') specs <- Filter(function(s) !s[[1]] %in% c('arrival','alert_id'),specs)
   date_col <- switch(key,alerts='alert_date',rna='start_date',vulnerability='decision_date',activity='start_date')
@@ -20,10 +21,11 @@ page_ui <- function(id, key, d) {
   dates <- if(key != 'coverage') source[[date_col]] else d$metadata$source_updated
   bounds <- if(length(dates) && any(!is.na(dates))) range(dates,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
   div(class=paste('dashboard-page',paste0('page-',key)),
-    if(!key %in% c('coverage','alerts','vulnerability')) div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
+    if(!key %in% c('coverage','alerts','vulnerability','activity')) div(class='page-heading',div(span(class='eyebrow','RAPID RESPONSE MECHANISM'),h2(page_titles[[key]])),
         downloadButton(ns('download'),'Export filtered CSV',class='btn-export')),
     if(d$metadata$mode=='operational' && !nrow(source)) div(class='method-strip',paste('No operational',switch(key,coverage='responsibility assignments',alerts='core alert records',rna='assessment records',vulnerability='screening decisions',activity='core activity records'),'have been supplied for this page.')),
     div(class='filters',
+      if(key=='activity') selectInput(ns('area'),'Response geography',choices=c('All areas'='All',setNames(sort(unique(d$activities$area)),sort(unique(d$activities$area)))),selectize=FALSE),
       if(key=='vulnerability') selectInput(ns('community'),'Community',choices=c('All communities'='All',setNames(sort(unique(d$screening$community)),sort(unique(d$screening$community)))),
         selected=if(d$metadata$mode=='demo' && 'Community B' %in% d$screening$community) 'Community B' else 'All',selectize=FALSE),
       if(key=='alerts') selectInput(ns('arrival'),'Arrival geography',choices=c('All verified areas'='All',setNames(sort(unique(d$routes$arrival)),sort(unique(d$routes$arrival)))),selectize=FALSE),
@@ -33,9 +35,9 @@ page_ui <- function(id, key, d) {
       else dateRangeInput(ns('dates'),switch(key, alerts='Alert issued date',rna='RNA start date',vulnerability='Tier 2 decision date',activity='Intervention start date'),start=bounds[1],end=bounds[2],format='dd M yyyy'),
       lapply(specs,function(s) {
         choices <- if(s[[1]]=='assessment_id') sort(unique(s[[3]])) else all_choices(s[[3]])
-        if(key %in% c('coverage','alerts','vulnerability')) {
+        if(key %in% c('coverage','alerts','vulnerability','activity')) {
           names(choices) <- choices
-          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas',trigger='All triggers',gla='All GLAs',movement='IDP / returnee',alert_id='All alerts',population='IDPs / hosts',decision='All decisions')
+          names(choices)[1] <- switch(s[[1]],partner='All partners',role='Primary / secondary',area='All areas',trigger='All triggers',gla='All GLAs',movement='IDP / returnee',alert_id='All alerts',population='IDPs / hosts',decision='All decisions',tier='All tiers',modality='All modalities',delivery_partner='All partners')
         }
         selected <- if(s[[1]]=='alert_id' && key %in% c('alerts','activity','vulnerability') && 'DEMO-001' %in% choices) 'DEMO-001' else choices[1]
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
@@ -62,8 +64,11 @@ page_ui <- function(id, key, d) {
       div(class='panel',h3('Coverage, methods and use in response'),uiOutput(ns('details'))))
     else if(key=='vulnerability') tagList(uiOutput(ns('details')),div(class='panel',h3('Tier 2 decisions by alert and community'),DT::DTOutput(ns('table')),
       tags$details(class='decision-export',tags$summary('Export decision records'),downloadButton(ns('download'),'Export filtered CSV',class='btn-export'))))
-    else tagList(div(class='panel',h3('Interventions linked to selected alerts'),DT::DTOutput(ns('table'))),div(class='two-col',
-      div(class='panel',h3('Delay and response timing'),uiOutput(ns('details'))),div(class='panel',h3('Transfer of response responsibilities'),DT::DTOutput(ns('transfers'))))),
+    else tagList(div(class='panel activity-events',textOutput(ns('table_title'),container=tags$h3),DT::DTOutput(ns('table')),
+        tags$details(class='activity-export',tags$summary('Export intervention records'),downloadButton(ns('download'),'Export filtered CSV',class='btn-export'))),
+      div(class='two-col activity-notes',
+        div(class='panel',h3('Delay and response timing'),uiOutput(ns('details'))),
+        div(class='panel',h3('Transfer of response responsibilities'),uiOutput(ns('transfer_summary'))))),
     if(key!='coverage') div(class='method-strip',switch(key,
       coverage='Coverage uses effective assignment dates. Unknown responsibilities remain explicit. Map boundaries are supplied geographic context; locality points do not establish response locations.',
       alerts='Arrival geography selects alerts; KPI caseloads remain alert-wide. Counts across alerts may overlap and do not represent unique people. RNA totals exclude alerts awaiting verification.',
@@ -119,6 +124,18 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     }
     x
   })
+  output$table_title <- renderText({
+    ids <- unique(filtered()$alert_id)
+    if(length(ids)==1) paste('Interventions linked to',ids) else 'Interventions linked to selected alerts'
+  })
+  output$transfer_summary <- renderUI({
+    x <- filtered();y <- d$transfers[d$transfers$alert_id %in% x$alert_id,,drop=FALSE]
+    y <- filter_equal(y,'area',input$area)
+    if(!nrow(y)) return(p(class='muted','No responsibility transfers reported for this selection.'))
+    tagList(lapply(seq_len(nrow(y)),function(i) p(class='transfer-entry',
+      paste(y$component[i],'transferred from',y$from_partner[i],'to',y$to_partner[i],'on',format(y$transfer_date[i],'%d %b %Y')),
+      if(!is.na(y$note[i])) tagList(br(),span(class='muted',y$note[i])))))
+  })
   output$metrics <- renderUI({
     x <- filtered()
     if(!nrow(x)) return(empty_ui())
@@ -170,6 +187,13 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       y <- data.frame(`Alert / community`=paste(x$alert_id,x$community,sep=' / '),Decision=x$decision,Reason=x$reason,check.names=FALSE)
       DT::datatable(width='100%',y,rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,dom='tp',
         language=list(emptyTable='No decisions available for this selection.')))
+    }
+    else if(key=='activity') {
+      x <- filtered()
+      y <- data.frame(Event=x$event_id,Tier=x$tier,Modality=x$modality,`Start date`=format(x$start_date,'%d %b'),
+        Scope=paste(vapply(x$quantity,fmt,character(1)),x$unit),Partner=x$delivery_partner,Days=x$days_from_alert,check.names=FALSE)
+      DT::datatable(width='100%',y,rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,dom='tp',
+        language=list(emptyTable='No interventions available for this selection.')))
     }
     else DT::datatable(width='100%',display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
   })

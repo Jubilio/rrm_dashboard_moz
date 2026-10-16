@@ -15,7 +15,10 @@ ui <- fluidPage(
   tags$head(tags$title(paste(APP_TITLE,APP_SUBTITLE,sep=' | ')),tags$meta(name='viewport',content='width=device-width, initial-scale=1'),
     tags$link(rel='stylesheet',type='text/css',href='styles.css')),
   div(class='app-header',div(h1(APP_TITLE),p(APP_SUBTITLE)),
-    div(class=if(DATA_MODE=='demo') 'mode demo' else 'mode live',if(DATA_MODE=='demo') 'DEMO RECORDS · HISTORICAL REVIEW SEPARATE' else 'OPERATIONAL RECORDS · HISTORICAL REVIEW SEPARATE')),
+    div(class='app-branding',
+      tags$img(src='reach-logo.png',class='reach-logo reach-logo-header',
+        alt='REACH — Informing more effective humanitarian action',width=280,height=61),
+      div(class=if(DATA_MODE=='demo') 'mode demo' else 'mode live',if(DATA_MODE=='demo') 'DEMO RECORDS · HISTORICAL REVIEW SEPARATE' else 'OPERATIONAL RECORDS · HISTORICAL REVIEW SEPARATE'))),
   div(class='app-shell',
     tags$aside(class='app-sidebar',span(class='eyebrow','WORKSPACE'),
       radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage'),
@@ -27,8 +30,11 @@ ui <- fluidPage(
         if(key=='alerts') tabsetPanel(tabPanel('Historical severity review',history_ui('history',history)),tabPanel('Dashboard records',page_ui(key,key,d)))
         else if(key=='vulnerability') tabsetPanel(tabPanel('Household analysis — draft',household_ui('household',history)),tabPanel('Reviewed profile summaries',page_ui(key,key,d)))
         else page_ui(key,key,d))))),
-  tags$footer(div(if(DATA_MODE=='demo') 'Demo dashboard records · historical source review and synthetic scenarios labelled separately' else 'Aggregate operational reporting'),
-    div(paste('Last successful load:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))))
+  tags$footer(class='app-footer',
+    div(class='footer-meta',
+      div(if(DATA_MODE=='demo') 'Demo dashboard records · historical source review and synthetic scenarios labelled separately' else 'Aggregate operational reporting'),
+      div(paste('Last successful load:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version))),
+    tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',alt='REACH',width=220,height=48)))
 server <- function(input,output,session) {
   for(key in names(page_titles)) page_server(key,key,d)
   history_server('history',history)

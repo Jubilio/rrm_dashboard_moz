@@ -1,8 +1,8 @@
-# RRM dashboard — Cabo Delgado (v2)
+# RRM dashboard — Cabo Delgado
 
 The dashboard interface is entirely **English**. This update integrates the supplied 2026 severity workbook and Draft 0.1 household matrix. See **SEVERITY_INTEGRATION.md** and **HOUSEHOLD_ANALYSIS.md** for the implemented rules, source issues, private processing workflow and draft release controls.
 
-The Alerts page has separate Historical severity review and Dashboard records tabs. Vulnerability screening has separate Household analysis — draft and Reviewed profile summaries tabs. Historical source records, ordinary dashboard demo records and synthetic household scenarios are explicitly labelled and never pooled.
+The dashboard starts in production mode on Activity reporting, using the real reporting workbook or its sanitised snapshot. Historical alert evidence is labelled separately. Production vulnerability views accept reviewed operational aggregates only; synthetic household scenarios and draft scenario controls are available only in explicitly selected demo mode.
 
 
 Independent **R Shiny** dashboard implementing the five pages in `RRM_Dashboard_Page_Mockups.pdf`. It keeps the lightweight Shiny approach of the supplied WASH tracker and its coral, charcoal and white palette. The pages and data model are rebuilt for RRM. The WASH household records, saved sessions, publishing credentials and Windows package library are not carried into this project.
@@ -42,19 +42,15 @@ R 4.3 or newer is recommended. To run the optional Shiny module tests, install `
 
 Each page exports its currently filtered display table to CSV. On narrow screens the navigation becomes a horizontal list and panels stack vertically. Browser printing hides filters and navigation.
 
-## Demo versus operational data
+## Production data
 
-**The default is demo mode. Every record is illustrative.** The first alert and its figures reproduce the mock-up: 940 RNA-verified HH / 4,700 people; 180 gross HH assisted, 120 kits and 86 consultations; first response 4 days and Tier 2 response 18 days. Additional fictional records exercise filters. Do not interpret these as operational findings.
+**Production (`operational`) is the default.** Activity reporting loads the real supplied workbook snapshot (83 activities and four extra outputs), or the live source configured with `RRM_ACTIVITY_WORKBOOK`. Production does not alter source review statuses: the supplied 83 activities are still pending review and remain available in Records and review. Validated result totals remain unavailable until the required source review is recorded.
 
-To load real data:
+The eight core operational CSV tables are initially header-only because no separate approved responsibility, core-alert, assessment, screening or transfer datasets have been supplied. Those pages show explicit empty states. Historical severity records remain a separate source, and the geographic boundaries remain available. Real intervention rows are not fabricated into unrelated RNA, coverage or household tables.
 
-1. Copy the **nine core CSV files** from `data/templates/` into `data/operational/` (coverage, alerts, routes, assessments, needs, screening, activities, transfers and metadata) and populate them with approved aggregate data. Keep the exact headers and order; tables without records may retain only their header.
-2. Set metadata to `mode=operational` with a source date, version and methods note. Remove all demo content.
-3. Change `DATA_MODE` in `config.R` to `"operational"`, or set `RRM_DATA_MODE=operational` in the launch environment.
-4. Run `Rscript tests/check_data.R` for the bundled demo regression checks. Start the app in operational mode to validate your real files.
-5. Restart the Shiny process whenever source CSVs are updated. The footer records the successful startup load time; it is not a live sync indicator.
+To add core data, populate the existing files in `data/operational/` using the exact headers from `data/templates/`, update `metadata.csv` with source date/version/methods and restart the Shiny process. Missing files and malformed operational data fail explicitly and never fall back to demo records. Activity reporting has its own Excel refresh workflow; see ACTIVITY_WORKBOOK.md. Dates use `YYYY-MM-DD`, blank means unknown and controlled values are case-sensitive. Production household analysis admits only reviewed, non-synthetic aggregates generated under approved rules.
 
-Operational mode fails on missing files and never falls back to demo data. Kobo synchronization is not configured. Core CSV data requires a restart; Activity reporting has its own live Excel import/refresh workflow documented in ACTIVITY_WORKBOOK.md. Map source columns to this explicit CSV contract before use. Missing values are empty fields, never zero placeholders. Dates use `YYYY-MM-DD`; controlled vocabularies are case-sensitive.
+For isolated development demonstrations only, explicitly set `RRM_DATA_MODE=demo`. The fixtures in `data/demo/` and synthetic household scenarios remain available for regression testing; they are not the production source. Run `Rscript tests/check_production.R` to verify the default production configuration and source separation.
 
 ## Counting rules
 

@@ -1,5 +1,5 @@
 # Data contract and pure calculation helpers. No household-level data is accepted.
-read_rrm_data <- function(mode = 'demo', base_dir = '.') {
+read_rrm_data <- function(mode = 'operational', base_dir = '.') {
   if (!mode %in% c('demo', 'operational')) stop('RRM_DATA_MODE must be demo or operational.')
   names <- c('coverage','alerts','routes','assessments','needs','screening','activities','transfers','metadata')
   result <- setNames(lapply(names, function(name) {

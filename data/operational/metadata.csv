@@ -1,0 +1,2 @@
+mode,source_updated,source_version,methods_note
+operational,2026-10-16,Operational-initial-v1,"Production reporting uses the real standardised activity workbook with its original review statuses. Core assignment, alert, assessment, screening and transfer CSV sources have not yet been supplied and remain empty. Historical evidence is labelled separately."

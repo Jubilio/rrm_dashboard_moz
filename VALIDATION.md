@@ -70,3 +70,6 @@ HTTP startup and all 21 initial assets returned 200. The Shiny WebSocket check a
 Admin3 update: the replacement archive supplies 411 national administrative-post polygons; all 64 listed posts match the reference and their parent districts. Original and display geometries are checked for validity. Hierarchical map/post filters, parent consistency, locality subsets and district-only assignment colours are checked in the geography tests.
 
 The Shiny WebSocket check also passed with all 64 post polygons and a Province/District/Post selection narrowed to Mesa (`mz010102`), retaining numeric coordinates and valid map asset routes. Graphical browser rendering remains unverified.
+
+
+Production defaults: `tests/check_production.R` verifies operational startup, deliberately empty core tables, real workbook record counts, absence of synthetic choices in production UI, server-side rejection of synthetic household selection, empty-page behaviour and district map isolation. Activity reporting remains subject to its unchanged source review gate.

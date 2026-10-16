@@ -1,3 +1,3 @@
-Copy all nine CSV templates from ../templates/ into this folder and populate approved aggregate data. Set metadata.mode and config.R to operational. There is no automatic demo fallback.
+Production loads these core CSV tables by default. The eight data tables are deliberately header-only until approved operational sources are supplied. Do not populate them from demo fixtures or copy intervention records into unrelated assessment/coverage tables. Activity reporting reads the real workbook or its allowlisted snapshot independently.
 
-Optional: approved_areas.geojson with valid polygons, a declared CRS and an area field matching coverage.area.
+Keep the exact template headers and date/controlled-value contract when adding data. Update metadata with the new source version and date, then restart the app. Missing files or malformed data fail explicitly; there is no fallback to demonstration data.

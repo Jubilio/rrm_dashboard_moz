@@ -149,15 +149,15 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       activity=x[c('event_id','alert_id','area','tier','modality','start_date','quantity','unit','measure_type','delivery_status','delivery_partner','donor','days_from_alert')])
   })
   output$table <- DT::renderDT({
-    if(key=='coverage') DT::datatable(display_table()[c('partner','area','role')],colnames=c('Partner','Area','Role'),rownames=FALSE,escape=TRUE,
+    if(key=='coverage') DT::datatable(width='100%',display_table()[c('partner','area','role')],colnames=c('Partner','Area','Role'),rownames=FALSE,escape=TRUE,
       options=list(pageLength=4,scrollX=TRUE,autoWidth=TRUE,ordering=FALSE,language=list(emptyTable='No matching records'),dom='tp'))
-    else DT::datatable(display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
+    else DT::datatable(width='100%',display_table(),rownames=FALSE,escape=TRUE,options=list(pageLength=8,scrollX=TRUE,autoWidth=TRUE,language=list(emptyTable='No matching records'),dom='ftp'))
   })
   output$severity_calc <- DT::renderDT({
     y <- d$severity_calculations
-    if(is.null(y)||!nrow(y)) return(DT::datatable(data.frame(Note='No calculation inputs supplied; displayed severity is source-recorded.'),rownames=FALSE,escape=TRUE,options=list(dom='t')))
+    if(is.null(y)||!nrow(y)) return(DT::datatable(width='100%',data.frame(Note='No calculation inputs supplied; displayed severity is source-recorded.'),rownames=FALSE,escape=TRUE,options=list(dom='t')))
     y <- y[y$alert_id %in% filtered()$alert_id,,drop=FALSE]
-    DT::datatable(y,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))
+    DT::datatable(width='100%',y,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))
   })
   output$download <- downloadHandler(
     filename=function() paste0('rrm_',key,'_',d$metadata$mode,'_',Sys.Date(),'.csv'),
@@ -191,8 +191,8 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
         if(any(!x$mapped)) ' Missing or unconfirmed locations remain in coordinate review.')
     })
     output$endpoint_review <- DT::renderDT({
-      if(!is.null(location_source$error)) return(DT::datatable(data.frame(Note=location_source$error),rownames=FALSE,escape=TRUE,options=list(dom='t')))
-      DT::datatable(endpoint_links(),rownames=FALSE,escape=TRUE,options=list(pageLength=6,scrollX=TRUE))
+      if(!is.null(location_source$error)) return(DT::datatable(width='100%',data.frame(Note=location_source$error),rownames=FALSE,escape=TRUE,options=list(dom='t')))
+      DT::datatable(width='100%',endpoint_links(),rownames=FALSE,escape=TRUE,options=list(pageLength=6,scrollX=TRUE))
     })
   }
   output$routes <- renderUI({
@@ -252,7 +252,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     x <- filtered(); y <- d$transfers[d$transfers$alert_id %in% x$alert_id,,drop=FALSE]
     y <- filter_equal(y,'area',input$area)
     # Transfer dates and partners are independent of intervention-date and modality filters.
-    DT::datatable(y[c('component','from_partner','to_partner','transfer_date','note')],escape=TRUE,rownames=FALSE,
+    DT::datatable(width='100%',y[c('component','from_partner','to_partner','transfer_date','note')],escape=TRUE,rownames=FALSE,
       options=list(dom='t',scrollX=TRUE,language=list(emptyTable='No responsibility transfers reported for selected alerts and geography.')))
   })
   if(key=='coverage') {

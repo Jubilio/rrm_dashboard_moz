@@ -159,3 +159,13 @@ h1{font-size:32px}
 .page-alerts .rrm-map-output{height:clamp(300px,calc(100dvh - 390px),620px)!important;border-radius:0;border-color:var(--line)}
 .page-alerts .alert-map-status{font-size:11px;line-height:1.4;margin:4px 0 0}
 .page-alerts .map-legend{font-size:12px;margin:8px 0 4px}
+
+/* Tables fill their panel; wide datasets retain horizontal scrolling. */
+.datatables.html-widget,.datatables.html-widget-output,.dataTables_wrapper,.dataTables_scroll{
+  width:100%!important;min-width:0;box-sizing:border-box;
+}
+.dataTables_scrollHead,.dataTables_scrollBody{width:100%!important}
+.dataTables_scrollHeadInner{min-width:100%;box-sizing:content-box}
+.dataTables_wrapper table.dataTable{
+  width:100%!important;min-width:100%;margin-left:0!important;margin-right:0!important;
+}

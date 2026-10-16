@@ -70,10 +70,10 @@ geography_controls <- function(ns,include_province=TRUE) {
     shiny::p(class='muted','Map controls change the geographic view. Assignment filters above control the table and KPIs.'))
 }
 rrm_map_output <- function(outputId) {
-  dep <- htmltools::htmlDependency('rrm-geography','1.2.0',src=c(file='www'),
+  dep <- htmltools::htmlDependency('rrm-geography','1.3.0',src=c(file='www'),
       script=c('vendor/leaflet/leaflet.js','geography.js'),stylesheet=c('vendor/leaflet/leaflet.css','geography.css'))
   htmltools::attachDependencies(shiny::div(id=outputId,class='rrm-map-output',
-      role='region',`aria-label`='District coverage map',style='height:430px;'),dep)
+      role='region',`aria-label`=if(grepl('alert_map$',outputId)) 'Alert origin and arrival map' else 'District coverage map',style='height:430px;'),dep)
 }
 render_rrm_map <- function(expr,env=parent.frame(),quoted=FALSE) {
   func <- shiny::exprToFunction(expr,env,quoted)

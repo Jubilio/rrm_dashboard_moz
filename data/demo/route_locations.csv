@@ -1,0 +1,9 @@
+route_id,endpoint,location_name,longitude,latitude,coordinate_source,coordinate_status
+R01,origin,Origin A,39.70,-12.25,Synthetic layout fixture - not an observed movement,Demo
+R01,arrival,Arrival B,40.05,-12.05,Synthetic layout fixture - not an observed movement,Demo
+R02,origin,Origin A,39.70,-12.25,Synthetic layout fixture - not an observed movement,Demo
+R02,arrival,Arrival C,40.15,-12.55,Synthetic layout fixture - not an observed movement,Demo
+R03,origin,Origin C,39.90,-12.75,Synthetic layout fixture - not an observed movement,Demo
+R03,arrival,Arrival D,40.20,-12.95,Synthetic layout fixture - not an observed movement,Demo
+R04,origin,Origin E,39.55,-13.00,Synthetic layout fixture - not an observed movement,Demo
+R04,arrival,Arrival F,39.95,-13.20,Synthetic layout fixture - not an observed movement,Demo

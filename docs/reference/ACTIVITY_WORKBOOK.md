@@ -1,6 +1,8 @@
 # Excel-backed activity reporting
 
-The **Activity reporting** page now reads the standardised RRM workbook directly. The interface, filters, definitions and diagnostics are in English; the REACH footer and reference palette are retained.
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
+The **Activity reporting > Reporting workbook** view reads the standardised RRM workbook directly. The interface, filters, definitions and diagnostics are in English; the REACH footer and reference palette are retained.
 
 ## Start and refresh
 
@@ -20,7 +22,7 @@ Sys.setenv(RRM_ACTIVITY_WORKBOOK = "C:/private/RRM_Activity_Reporting.xlsx")
 shiny::runApp(".")
 ```
 
-The application checks modification time and size every 10 seconds. **Refresh now** forces a reload even when file metadata is unchanged. The application defaults to operational core CSVs and opens Activity reporting. Core CSV configuration is independent of this real activity source; production mode does not change any workbook review status. The activity panel displays its own last successful refresh time. If a workbook is unavailable or malformed, the page shows the error and retains the last successfully loaded dataset and its timestamp. It does not silently substitute the supplied snapshot for a broken configured source.
+The application checks modification time and size every 10 seconds. **Refresh now** forces a reload even when file metadata is unchanged. The application opens Geographic coverage. With no consolidated workbook or explicit mode, core pages use demo records. Activity reporting opens Dashboard overview in demo mode and Reporting workbook in operational mode. Core CSV configuration is independent of this real activity source; production mode does not change any workbook review status. The activity panel displays its own last successful refresh time. If a workbook is unavailable or malformed, the page shows the error and retains the last successfully loaded dataset and its timestamp. It does not silently substitute the supplied snapshot for a broken configured source.
 
 3. **Session upload**: use **Load a standardised workbook (.xlsx)**. The uploaded workbook is used only in that Shiny session; it does not overwrite the configured source or repository. **Use configured source** returns to the configured workbook, or to the supplied snapshot if no workbook path is set. Uploads are not a persistent editing interface, and the dashboard does not write review statuses back to Excel.
 
@@ -84,4 +86,4 @@ Set `RRM_TEST_WORKBOOK` to test the live Excel reader against the supplied workb
 
 ## Intervention map
 
-The Intervention map tab uses the same activity filters, plus Reported community, and a separate All reported / Validated results map scope. It links community names to the allowlisted settlement gazetteer without modifying workbook review or eligibility. Combined, ambiguous and conflicting locations stay unresolved. The geographic review table/export retains each source record once. No extra-output joins or reach quantities are used to allocate locations. See INTERVENTION_LOCATIONS.md for matching, provenance and the initial 38-record / seven-point result.
+The Intervention map tab uses the same activity filters, plus Reported community, and a separate All reported / Validated results map scope. It links community names to the allowlisted settlement gazetteer without modifying workbook review or eligibility. Combined, ambiguous and conflicting locations stay unresolved. The geographic review table/export retains each source record once. No extra-output joins or reach quantities are used to allocate locations. See [Intervention locations](INTERVENTION_LOCATIONS.md) for matching, provenance and the initial 38-record / seven-point result.

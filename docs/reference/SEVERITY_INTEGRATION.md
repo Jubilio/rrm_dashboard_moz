@@ -1,5 +1,7 @@
 # Alert severity integration
 
+[Documentation index](../../README.md) · Commands and source paths are relative to the project root.
+
 Source: `MOZ_RRM_Alert_Severity_2026.xlsx`, retained unchanged in `data/reference/`.
 
 ## Live dashboard calculation inputs

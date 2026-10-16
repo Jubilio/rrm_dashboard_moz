@@ -8,3 +8,11 @@ data/activity_workbook.xlsx
 
 # Live consolidated input (the fictional example is tracked separately)
 data/RRM_Dashboard_Input.xlsx
+
+# Generated documentation copies and local editor/OS state
+/README.html
+/HOUSEHOLD_ANALYSIS.html
+/SEVERITY_INTEGRATION.html
+.Ruserdata
+.DS_Store
+Thumbs.db

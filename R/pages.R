@@ -211,7 +211,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     })
   if(key=='alerts') {
     alert_layers <- tryCatch(read_map_layers(),error=function(e) NULL)
-    location_source <- tryCatch(list(data=read_alert_locations(d$metadata$mode),error=NULL),error=function(e)list(data=NULL,error=conditionMessage(e)))
+    location_source <- tryCatch(list(data=if(!is.null(d$route_locations)) d$route_locations else read_alert_locations(d$metadata$mode),error=NULL),error=function(e)list(data=NULL,error=conditionMessage(e)))
     selected_routes <- reactive({
       x <- d$routes[d$routes$alert_id %in% filtered()$alert_id,,drop=FALSE]
       filter_equal(x,'arrival',input$arrival)

@@ -8,6 +8,10 @@ read_alert_locations <- function(mode,base_dir='.') {
     empty$longitude <- numeric();empty$latitude <- numeric();return(empty)
   }
   x <- read.csv(path,colClasses='character',na.strings='',check.names=FALSE,fileEncoding='UTF-8')
+  validate_alert_locations(x,mode)
+}
+validate_alert_locations <- function(x,mode) {
+  fields <- c('route_id','endpoint','location_name','longitude','latitude','coordinate_source','coordinate_status')
   if(!identical(names(x),fields)) stop('route_locations.csv columns must match the template.')
   if(anyDuplicated(x[c('route_id','endpoint')])) stop('Duplicate route endpoint coordinates.')
   if(any(is.na(x$route_id)|!nzchar(trimws(x$route_id)))||any(!x$endpoint %in% c('origin','arrival'))) stop('Route endpoint IDs or types are invalid.')

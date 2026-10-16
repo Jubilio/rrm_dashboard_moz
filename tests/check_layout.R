@@ -9,7 +9,7 @@ stopifnot(grepl('value="coverage" checked="checked"',html,fixed=TRUE),
   lengths(regmatches(html,gregexpr('id="coverage-map_province"',html,fixed=TRUE)))==1L)
 coverage_html <- as.character(e$page_ui('coverage','coverage',e$d))
 stopifnot(grepl('id="coverage-coverage_map"',coverage_html,fixed=TRUE),
-  !grepl('Partner and area responsibilities',coverage_html,fixed=TRUE),
+  grepl('Partner and area responsibilities',coverage_html,fixed=TRUE),
   !grepl('Map view and sources',coverage_html,fixed=TRUE),
   !grepl('Coverage uses effective assignment dates',coverage_html,fixed=TRUE))
 testServer(e$server,{

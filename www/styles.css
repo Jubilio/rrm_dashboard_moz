@@ -109,3 +109,12 @@ h1{font-size:32px}
 .footer-brand{width:168px}
 @media(max-width:1250px){.app-sidebar{padding-top:160px}}
 @media(max-width:680px){.app-header{padding-top:14px;min-height:0}.app-sidebar{padding:12px 0}.app-sidebar .radio{margin:0}.app-sidebar .radio label{height:46px}.page-coverage .rrm-map-output{height:55dvh!important;min-height:320px}.app-footer{padding:8px 16px}.footer-brand{width:140px}}
+
+/* Keep responsibilities visible alongside the enlarged coverage map. */
+.page-coverage .coverage-panels{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:16px}
+.page-coverage .coverage-panels>.panel{min-height:0;margin-bottom:0;padding:12px}
+.page-coverage .coverage-responsibilities h3{font-size:16px;line-height:1.4;margin-bottom:12px}
+.page-coverage .coverage-responsibilities table.dataTable thead th{font-size:12px;padding:9px 8px}
+.page-coverage .coverage-responsibilities table.dataTable tbody td{font-size:12px;padding:10px 8px!important}
+.page-coverage .coverage-responsibilities .dataTables_paginate{font-size:10px}
+@media(max-width:1050px){.page-coverage .coverage-panels{grid-template-columns:1fr}.page-coverage .coverage-responsibilities{margin-top:12px}}

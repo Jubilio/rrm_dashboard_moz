@@ -35,7 +35,9 @@ page_ui <- function(id, key, d) {
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
     uiOutput(ns('metrics')),
-    if(key=='coverage') div(class='panel coverage-map-panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot')))
+    if(key=='coverage') div(class='two-col coverage-panels',
+      div(class='panel coverage-map-panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
+      div(class='panel coverage-responsibilities',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
     else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
       div(class='panel',h3('Alert summary and severity evidence'),uiOutput(ns('details')))),
       div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),

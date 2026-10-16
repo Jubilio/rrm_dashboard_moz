@@ -84,10 +84,10 @@ history_server <- function(id,h) shiny::moduleServer(id,function(input,output,se
   if(all_scope) h$evidence else h$evidence[h$evidence$linked_alert_id %in% ids | h$evidence$source_alert_id %in% ids,,drop=FALSE]
  })
  output$metrics <- shiny::renderUI({a<-registry();kpi_row(kpi('Alerts',nrow(a),'Distinct registry IDs'),kpi('RNA completed',sum(a$rna_done=='Yes'),'Registry completion flag'),kpi('Pending closure',sum(a$provisional_status=='Pending closure'),'>80 days; formal confirmation required'),kpi('Latest recorded Critical',sum(a$recorded_latest_severity=='Critical',na.rm=TRUE),'May include retained alert ratings'))})
- output$registry <- DT::renderDT(DT::datatable(registry(),rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8)))
- output$evidence <- DT::renderDT(DT::datatable(evidence()[c('record_key','source_alert_id','linked_alert_id','link_status','stage','stage_date','conditions_rating','protection_rating','recorded_override','domain_recalculation','source_rule_recalculation','recorded_severity','calculation_agrees','completeness','confidence','caseload_text','verification_note','rationale','source_file')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=6)))
+ output$registry <- DT::renderDT(DT::datatable(width='100%',registry(),rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8)))
+ output$evidence <- DT::renderDT(DT::datatable(width='100%',evidence()[c('record_key','source_alert_id','linked_alert_id','link_status','stage','stage_date','conditions_rating','protection_rating','recorded_override','domain_recalculation','source_rule_recalculation','recorded_severity','calculation_agrees','completeness','confidence','caseload_text','verification_note','rationale','source_file')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=6)))
  output$issues <- DT::renderDT({e<-evidence();i<-is.na(e$confidence)|grepl('review required',e$link_status)|!e$calculation_agrees|e$source_override_asserted
-   DT::datatable(e[i,c('record_key','source_alert_id','linked_alert_id','link_status','confidence','verification_note','completeness')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))})
+   DT::datatable(width='100%',e[i,c('record_key','source_alert_id','linked_alert_id','link_status','confidence','verification_note','completeness')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))})
  output$calculation <- shiny::renderUI({
   num<-function(x) if(is.null(x)||!length(x)||is.na(x)||identical(x,'')) NA_real_ else as.numeric(x)
   s<-severity_result(num(input$conditions),num(input$protection),num(input$verified_hh),input$verified)

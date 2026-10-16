@@ -15,7 +15,8 @@ history <- read_history()
 d <- apply_alert_severity(read_rrm_data(DATA_MODE))
 ui <- fluidPage(
   tags$head(tags$title(paste(APP_TITLE,APP_SUBTITLE,sep=' | ')),tags$meta(name='viewport',content='width=device-width, initial-scale=1'),
-    tags$link(rel='stylesheet',type='text/css',href='styles.css')),
+    tags$link(rel='stylesheet',type='text/css',href='styles.css'),
+    tags$script(src='tables.js',defer='defer')),
   div(class='app-header',div(h1(APP_TITLE),textOutput('page_subtitle',container=tags$p)),
     textOutput('source_label',container=function(...) div(class='mode',...))),
   div(class='app-shell',

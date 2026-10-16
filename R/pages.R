@@ -1,3 +1,4 @@
+source('R/geography.R',local=TRUE)
 page_titles <- c(coverage='Geographic coverage',alerts='Alerts',rna='Light RNA',vulnerability='Vulnerability screening',activity='Activity reporting')
 all_choices <- function(x) c('All', sort(unique(x[!is.na(x)])))
 filter_spec <- function(key, d) {
@@ -26,7 +27,7 @@ page_ui <- function(id, key, d) {
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
     uiOutput(ns('metrics')),
-    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),uiOutput(ns('map_slot')),
+    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),geography_controls(ns),uiOutput(ns('map_slot')),
       p(class='muted','Assignments describe geographic responsibilities; they are not evidence of a response.')),
       div(class='panel',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
     else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
@@ -39,7 +40,7 @@ page_ui <- function(id, key, d) {
     else tagList(div(class='panel',h3('Interventions linked to selected alerts'),DT::DTOutput(ns('table'))),div(class='two-col',
       div(class='panel',h3('Delay and response timing'),uiOutput(ns('details'))),div(class='panel',h3('Transfer of response responsibilities'),DT::DTOutput(ns('transfers'))))),
     div(class='method-strip',switch(key,
-      coverage='Coverage uses effective assignment dates. Unknown responsibilities remain explicit. Verified boundaries are required for a geographic map.',
+      coverage='Coverage uses effective assignment dates. Unknown responsibilities remain explicit. Map boundaries are supplied geographic context; locality points do not establish response locations.',
       alerts='Arrival geography selects alerts; KPI caseloads remain alert-wide. Counts across alerts may overlap and do not represent unique people. RNA totals exclude alerts awaiting verification.',
       rna='One assessment round at a time. No pooling of sites or extrapolation to the affected population. Reviewed ranking is supplied by the source.',
       vulnerability='Only reviewed aggregate profile summaries are shown. No household scores, registries, individual results or eligibility lists.',
@@ -57,7 +58,11 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       choices <- if(s[[1]]=='assessment_id') sort(unique(s[[3]])) else all_choices(s[[3]])
       updateSelectInput(session,s[[1]],selected=choices[1])
     }
-    if(key=='coverage') updateDateInput(session,'as_of',value=d$metadata$source_updated)
+    if(key=='coverage') {
+      updateDateInput(session,'as_of',value=d$metadata$source_updated)
+      updateSelectInput(session,'map_province',selected='All')
+      updateSelectInput(session,'map_district',selected='All')
+    }
     else {
       x <- switch(key,alerts=d$alerts$alert_date,rna=d$assessments$start_date,vulnerability=d$screening$decision_date,activity=d$activities$start_date)
       b <- if(length(x)&&any(!is.na(x))) range(x,na.rm=TRUE) else c(Sys.Date(),Sys.Date())
@@ -185,28 +190,30 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
       options=list(dom='t',scrollX=TRUE,language=list(emptyTable='No responsibility transfers reported for selected alerts and geography.')))
   })
   if(key=='coverage') {
-    geo_file <- file.path('data','operational','approved_areas.geojson')
-    can_map <- d$metadata$mode=='operational' && file.exists(geo_file) && requireNamespace('sf',quietly=TRUE) && requireNamespace('leaflet',quietly=TRUE)
-    geo <- if(can_map) tryCatch({
-      g <- sf::st_read(geo_file,quiet=TRUE)
-      if(!'area' %in% names(g) || is.na(sf::st_crs(g))) stop('GeoJSON needs an area field and a declared CRS.')
-      if(any(!sf::st_is_valid(g))) stop('Invalid geographic polygons.')
-      if(!all(as.character(sf::st_geometry_type(g)) %in% c('POLYGON','MULTIPOLYGON'))) stop('Only polygon boundaries are accepted.')
-      sf::st_transform(g,4326)
-    },error=function(e) {warning(conditionMessage(e));NULL}) else NULL
+    layers <- tryCatch(read_map_layers(),error=function(e) {warning(conditionMessage(e));NULL})
+    observeEvent(input$map_province, {
+      r <- map_reference(); r <- r[r$level=='admin2',,drop=FALSE]
+      if(input$map_province!='All') r <- r[r$parent_pcode==input$map_province,,drop=FALSE]
+      choices <- c('All'='All',setNames(r$pcode,r$label))
+      selected <- if(!is.null(input$map_district)&&input$map_district %in% choices) input$map_district else 'All'
+      updateSelectInput(session,'map_district',choices=choices,selected=selected)
+    })
     output$map_slot <- renderUI({
-      if(is.null(geo)) div(class='map-placeholder',span(class='map-symbol','◎'),h4('Approved geographic map'),
-        p('Add verified boundaries and coverage assignments to activate the map.'),span(class='badge','No geographic boundaries supplied'))
-      else tagList(leaflet::leafletOutput(session$ns('coverage_map'),height=390),p(class='muted','Grey areas have no known matching assignment at the selected date. Labels list all selected partner roles.'))
+      if(is.null(layers)) return(div(class='map-placeholder',h4('Geographic map unavailable'),p('Check the supplied geography files.')))
+      tagList(rrm_map_output(session$ns('coverage_map')),uiOutput(session$ns('map_note')),
+        div(class='map-legend',
+          span(span(class='map-swatch',style='background:#EE5859;'),'Known assignment'),
+          span(span(class='map-swatch',style='background:#D2CBB8;'),'Unknown / no matching assignment')),
+        p(class='muted',if(d$metadata$mode=='demo') 'Geographic context only. Fictional demo areas are not assigned to real districts.' else 'Colours reflect the current assignment filters and effective date. Click a district for partner roles.'),
+        p(class='muted','Supplied boundaries: 2019. No administrative-post polygons supplied. Localities are context only. OpenStreetMap requires internet; choose No basemap to use local boundaries.'))
     })
-    if(!is.null(geo)) output$coverage_map <- leaflet::renderLeaflet({
-      x <- filtered(); g <- geo
-      labs <- vapply(g$area,function(area) {
-        y <- x[x$area==area,,drop=FALSE]
-        paste(area,if(nrow(y)) paste(paste(y$partner,y$role,sep=': '),collapse='; ') else 'Unknown / no matching assignment',sep=' | ')
-      },character(1))
-      assigned <- g$area %in% x$area[x$role!='Unknown']
-      leaflet::addPolygons(leaflet::leaflet(g),color='#ffffff',weight=1,fillColor=ifelse(assigned,'#ef595c','#cbd0d5'),fillOpacity=0.75,label=labs)
-    })
+    if(!is.null(layers)) {
+      map_data <- reactive(coverage_map_payload(filtered(),d$metadata$mode,input$map_province,input$map_district,layers))
+      output$coverage_map <- render_rrm_map({map_data()})
+      output$map_note <- renderUI({
+        n <- map_data()$unmapped
+        if(n>0) p(class='map-notice',paste(n,'filtered assignment record(s) could not be linked to a listed district. They remain in the table and KPIs.'))
+      })
+    }
   }
 })

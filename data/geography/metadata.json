@@ -1,0 +1,12 @@
+{
+  "source_archive": "shapefile.zip",
+  "sha256": "aa29ef9b778443e5e7491bdfd5350713088b21b019359d2f029affc51f6cc196",
+  "district_count": 19,
+  "province_count": 2,
+  "town_count": 65,
+  "crs": "EPSG:4326",
+  "display_simplification_degrees": 0.0005,
+  "source_date": "2019-04-02",
+  "source_valid_on": "2019-06-07",
+  "note": "User-supplied boundaries, not independently re-certified. No admin3 geometry. Towns are geographic context, not verified response sites."
+}

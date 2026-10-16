@@ -154,7 +154,7 @@ Exactly one row. mode: demo or operational, matching config. source_updated is t
 
 ## Relationships
 
-`alerts.alert_id` connects routes, assessments, screening, activities and transfers. `assessments.assessment_id` connects needs. `coverage.area` optionally matches `approved_areas.geojson.area`. Coverage assignments and movement locations need a reviewed geographic crosswalk before you can equate them. No crosswalk is invented by the dashboard.
+`alerts.alert_id` connects routes, assessments, screening, activities and transfers. `assessments.assessment_id` connects needs. `coverage.area` matches a district Pcode or reference name in `data/geography/admin_reference.csv` for the coverage map. Coverage assignments and movement locations need a reviewed geographic crosswalk before you can equate them. No crosswalk is invented by the dashboard.
 
 ## Validation limits
 

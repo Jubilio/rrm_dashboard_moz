@@ -28,7 +28,7 @@ source("install_packages.R")
 shiny::runApp(".", launch.browser = TRUE)
 ```
 
-R 4.3 or newer is recommended. To run the optional Shiny module tests, install `testthat` first (`install.packages("testthat")`). Required packages: `shiny`, `DT`, `readxl`. Fonts and styling do not require an external web font. Optional maps require `sf` and `leaflet`.
+R 4.3 or newer is recommended. To run the optional Shiny module tests, install `testthat` first (`install.packages("testthat")`). Required packages: `shiny`, `DT`, `readxl`. Fonts and styling do not require an external web font. The supplied map uses locally bundled Leaflet 1.9.4, with no R geospatial package required. Only the optional OpenStreetMap basemap requires internet.
 
 ## Pages
 
@@ -70,9 +70,15 @@ Operational mode fails on missing files and never falls back to demo data. Kobo 
 - The current Excel timing table uses the first validated activity per selected alert/tier across all reported months, as documented in ACTIVITY_WORKBOOK.md. The older CSV helper retains its original filtered completed-intervention calculation for compatibility. No unapproved timeliness threshold is applied.
 - Responsibility transfers follow selected alert IDs and response geography, independently of intervention-date, tier, modality and delivery-partner filters. They do not add reach.
 
-## Optional approved geographic map
+## Supplied geographic map
 
-Place an approved polygon GeoJSON at `data/operational/approved_areas.geojson`. It must have a declared CRS and an `area` field exactly matching coverage assignments. Install `sf` and `leaflet`. In operational mode the application loads valid polygons, transforms to WGS84 and displays selected responsibilities. Coral means a known matching assignment; grey means unknown or no selected assignment. Hover labels list all selected partner roles. No external basemap is requested. The provider must verify geographic approval, completeness, spelling and boundary version. Without these files/dependencies the explicit map placeholder remains visible. Invalid GeoJSON leaves a warning in the R console and the placeholder in the UI.
+The supplied shapefile is converted into local display GeoJSON: 19 listed districts (all 17 Cabo Delgado districts plus Erati and Memba), two province outlines and 65 locality points. WGS84 coordinates and district codes were checked against the supplied reference list. Source boundary metadata is dated 2019; supplied boundaries have not been independently re-certified. No admin3 polygons were supplied.
+
+The map works in both data modes. In demo mode it shows geographic context only and does not assign fictional areas to real districts. In operational mode `coverage.area` can contain a supplied district Pcode or an exact reference name (case, punctuation and accents normalised). Ambiguous or unrecognised names are not mapped and their record count is displayed. They remain in the assignment table and KPIs. Coral means a known selected assignment; sand means unknown or no matching assignment. Click a district to read its selected partner roles. Map province/district controls change only the view; the main assignment filters control the table and KPIs.
+
+OpenStreetMap is the default basemap, with visible contributor attribution. Choose **No basemap** for local boundaries without external tiles. Locality points and province outlines are optional layers; locality points do not establish alert, displacement or response locations. Core CSV locations are not automatically equated with these points.
+
+See [GEOGRAPHY.md](GEOGRAPHY.md) for preparation, provenance and limitations. The previous `data/operational/approved_areas.geojson` hook is replaced by these bundled, code-linked layers.
 
 ## Files
 

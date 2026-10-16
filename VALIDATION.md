@@ -36,7 +36,7 @@ The new framework and integration checks passed with R 4.3.3, Shiny 1.8.0 and DT
 - End-to-end private processing of 96 synthetic records in native-only and draft-scenario modes. Candidate aggregate outputs exclude household IDs and default to unreviewed.
 - Application startup and HTTP 200 for the updated interface and all 20 linked scripts/stylesheets.
 
-Remaining limitations: a full graphical browser review and download-click testing remain outstanding. No approved boundary file, final revised Kobo export or actual household dataset was supplied. Optional map rendering, actual source-code mapping, sample-design estimates and deployment were not verified. These limitations do not change the explicitly tested calculation results.
+Remaining limitations: a full graphical browser review and download-click testing remain outstanding. User-supplied district/province boundaries have since been integrated (see GEOGRAPHY.md). No final revised Kobo export or actual household dataset was supplied. Actual household source-code mapping, sample-design estimates and deployment were not verified. These limitations do not change the explicitly tested calculation results.
 
 Additional repeat commands from the project root:
 
@@ -61,3 +61,8 @@ source("tests/check_activity_workbook.R")
 ```
 
 For the original XLSX reader check also set RRM_TEST_WORKBOOK to the private source workbook path. See ACTIVITY_WORKBOOK.md for configuration and refresh behaviour.
+
+
+Supplied map validation: `tests/check_geography.R` verifies all 19 district codes, the 85-row reference hierarchy, operational joins (including accent/case variants), unknown assignments, geographic extent filters, demo isolation and Shiny JSON output. Python preparation checked WGS84 and valid input polygons. Full graphical browser review remains outstanding.
+
+HTTP startup and all 21 initial assets returned 200. The Shiny WebSocket check also verifies map JSON types, 19-to-2 district filtering and the four dynamically loaded map assets. Browser rendering and live OSM tile availability remain unverified.

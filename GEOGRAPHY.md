@@ -20,3 +20,5 @@ The locally bundled Leaflet 1.9.4 JavaScript/CSS is BSD-2-Clause licensed (see `
 The administrative-post boundaries are a separate context layer (visible by default) with names and Pcodes. The three cascading map selectors limit the geographic view only. Selecting a post zooms to its boundary and limits context towns to unambiguous point-in-polygon matches using the original geometry. District assignment colours remain district-level; no district total, responsibility or response count is distributed to posts. The post popup explicitly labels the parent district responsibility.
 
 Map assets and the output element load in the initial Shiny UI. This allows a hidden Geographic coverage page to bind before data arrives and resize when opened. Empty operational tables retain a non-null schema so table rendering cannot interrupt map delivery.
+
+The later `shapefile(2).zip` adds settlement points. Their preparation and intervention-community matching are documented in INTERVENTION_LOCATIONS.md. Coverage assignments remain separate from the Activity reporting Intervention map.

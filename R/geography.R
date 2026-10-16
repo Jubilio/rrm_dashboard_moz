@@ -70,7 +70,7 @@ geography_controls <- function(ns) {
     shiny::p(class='muted','Map controls change the geographic view. Assignment filters above control the table and KPIs.'))
 }
 rrm_map_output <- function(outputId) {
-  dep <- htmltools::htmlDependency('rrm-geography','1.1.1',src=c(file='www'),
+  dep <- htmltools::htmlDependency('rrm-geography','1.2.0',src=c(file='www'),
       script=c('vendor/leaflet/leaflet.js','geography.js'),stylesheet=c('vendor/leaflet/leaflet.css','geography.css'))
   htmltools::attachDependencies(shiny::div(id=outputId,class='rrm-map-output',
       role='region',`aria-label`='District coverage map',style='height:430px;'),dep)
@@ -79,3 +79,5 @@ render_rrm_map <- function(expr,env=parent.frame(),quoted=FALSE) {
   func <- shiny::exprToFunction(expr,env,quoted)
   shiny::createRenderFunction(func,function(value,session,name,...) value,rrm_map_output)
 }
+
+source("R/intervention_locations.R",local=TRUE)

@@ -34,7 +34,7 @@ stopifnot(length(p$posts$features)==1L,length(p$districts$features)==1L)
 d <- read_rrm_data('demo')
 testServer(page_server,args=list(key='coverage',d=d),{
   session$setInputs(as_of=as.Date('2026-09-30'),area='All',partner='All',role='All',map_province='All',map_district='All',map_post='All')
-  stopifnot(length(map_data()$districts$features)==19L,!is.null(output$coverage_map),!is.null(output$map_slot))
+  stopifnot(length(map_data()$districts$features)==19L,!is.null(output$coverage_map),is.null(output$map_slot))
   before <- nrow(filtered())
   session$setInputs(map_province='mz07',map_district='All')
   stopifnot(length(map_data()$districts$features)==2L,nrow(filtered())==before)

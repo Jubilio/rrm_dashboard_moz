@@ -86,3 +86,35 @@ h3{font-size:20px;line-height:1.5;margin:0 0 10px;font-weight:700}
 .page-coverage .muted{font-size:12px;line-height:16px;margin-top:4px}
 .page-coverage .coverage-map-caption{margin-top:8px}
 .page-coverage .map-details{margin-top:4px;line-height:14px}
+
+/* Give coverage the full content width and reserve the viewport for the map. */
+.app-header{min-height:90px;padding-top:18px}
+h1{font-size:32px}
+.app-sidebar{padding-top:90px}
+.app-sidebar .radio label{height:56px;font-size:14px}
+.app-sidebar .radio{margin-bottom:10px}
+.sidebar-note{font-size:11px;margin-top:20px}
+.page-coverage .filters{margin-bottom:16px}
+.page-coverage .kpi-row{margin-bottom:16px}
+.page-coverage .kpi{min-height:84px;padding:8px 14px}
+.page-coverage .kpi-title{font-size:14px;line-height:20px}
+.page-coverage .kpi-value{font-size:34px}
+.page-coverage .kpi .muted{font-size:11px;line-height:15px}
+.page-coverage .kpi:last-child .kpi-value{font-size:25px;line-height:36px}
+.page-coverage .coverage-map-panel{width:100%;min-height:0;margin-bottom:0;padding:12px}
+.page-coverage .coverage-map-panel h3{font-size:18px;margin-bottom:8px}
+.page-coverage .rrm-map-output{height:clamp(320px,calc(100dvh - 370px),760px)!important}
+.app-footer{padding-top:8px;padding-bottom:8px;align-items:center;font-size:10px;line-height:1.4;gap:12px}
+.footer-meta>div+div{font-size:10px;margin-top:2px}
+.footer-brand{width:168px}
+@media(max-width:1250px){.app-sidebar{padding-top:160px}}
+@media(max-width:680px){.app-header{padding-top:14px;min-height:0}.app-sidebar{padding:12px 0}.app-sidebar .radio{margin:0}.app-sidebar .radio label{height:46px}.page-coverage .rrm-map-output{height:55dvh!important;min-height:320px}.app-footer{padding:8px 16px}.footer-brand{width:140px}}
+
+/* Keep responsibilities visible alongside the enlarged coverage map. */
+.page-coverage .coverage-panels{grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:16px}
+.page-coverage .coverage-panels>.panel{min-height:0;margin-bottom:0;padding:12px}
+.page-coverage .coverage-responsibilities h3{font-size:16px;line-height:1.4;margin-bottom:12px}
+.page-coverage .coverage-responsibilities table.dataTable thead th{font-size:12px;padding:9px 8px}
+.page-coverage .coverage-responsibilities table.dataTable tbody td{font-size:12px;padding:10px 8px!important}
+.page-coverage .coverage-responsibilities .dataTables_paginate{font-size:10px}
+@media(max-width:1050px){.page-coverage .coverage-panels{grid-template-columns:1fr}.page-coverage .coverage-responsibilities{margin-top:12px}}

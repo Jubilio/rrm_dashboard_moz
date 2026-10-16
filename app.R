@@ -30,7 +30,7 @@ ui <- fluidPage(
         else if(key=='activity') activity_workbook_ui('activity_excel')
         else page_ui(key,key,d))))),
   tags$footer(class='app-footer',
-    div(class='footer-meta',
+    conditionalPanel("input.page != 'coverage'",class='footer-meta',
       textOutput('source_footer'),
       div(paste('Core CSV loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
         ' · ',actionLink('methods','Methods and sources'))),

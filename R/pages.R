@@ -35,9 +35,9 @@ page_ui <- function(id, key, d) {
         selectInput(ns(s[[1]]),s[[2]],choices=choices,selected=selected,selectize=FALSE)
       }),actionButton(ns('reset'),'Reset filters',class='btn-reset')),
     uiOutput(ns('metrics')),
-    if(key=='coverage') div(class='two-col',div(class='panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
-      div(class='panel',h3('Partner and area responsibilities'),DT::DTOutput(ns('table')),
-        p(class='responsibility-note','Assignments are coverage responsibilities, not evidence that a response took place.')))
+    if(key=='coverage') div(class='two-col coverage-panels',
+      div(class='panel coverage-map-panel',h3('Assigned GLA coverage'),rrm_map_output(ns('coverage_map')),uiOutput(ns('map_slot'))),
+      div(class='panel coverage-responsibilities',h3('Partner and area responsibilities'),DT::DTOutput(ns('table'))))
     else if(key=='alerts') tagList(div(class='two-col',div(class='panel',h3('Origin to arrival and targeted locations'),uiOutput(ns('routes'))),
       div(class='panel',h3('Alert summary and severity evidence'),uiOutput(ns('details')))),
       div(class='panel',h3('Stage-specific alert evidence'),DT::DTOutput(ns('table'))),
@@ -47,7 +47,7 @@ page_ui <- function(id, key, d) {
     else if(key=='vulnerability') tagList(uiOutput(ns('details')),div(class='panel',h3('Tier 2 decisions by alert and community'),DT::DTOutput(ns('table'))))
     else tagList(div(class='panel',h3('Interventions linked to selected alerts'),DT::DTOutput(ns('table'))),div(class='two-col',
       div(class='panel',h3('Delay and response timing'),uiOutput(ns('details'))),div(class='panel',h3('Transfer of response responsibilities'),DT::DTOutput(ns('transfers'))))),
-    div(class='method-strip',switch(key,
+    if(key!='coverage') div(class='method-strip',switch(key,
       coverage='Coverage uses effective assignment dates. Unknown responsibilities remain explicit. Map boundaries are supplied geographic context; locality points do not establish response locations.',
       alerts='Arrival geography selects alerts; KPI caseloads remain alert-wide. Counts across alerts may overlap and do not represent unique people. RNA totals exclude alerts awaiting verification.',
       rna='One assessment round at a time. No pooling of sites or extrapolation to the affected population. Reviewed ranking is supplied by the source.',
@@ -219,12 +219,7 @@ page_server <- function(id,key,d) moduleServer(id,function(input,output,session)
     })
     output$map_slot <- renderUI({
       if(is.null(layers)) return(div(class='map-placeholder',h4('Geographic map unavailable'),p('Check the supplied geography files.')))
-      tagList(
-        p(class='muted coverage-map-caption',if(d$metadata$mode=='demo') 'Geographic context only. Demo areas are fictional; no district assignments are implied.' else 'Coral: known assignment. Sand: unknown or no matching assignment.'),
-        p(class='muted','Filter partner and role; keep unknown coverage explicit.'),
-        tags$details(class='map-details',tags$summary('Map view and sources'),downloadButton(session$ns('download'),'Export filtered assignments',class='btn-export'),geography_controls(session$ns,include_province=FALSE),
-          uiOutput(session$ns('map_note')),
-          p(class='muted','Supplied boundaries: 2019. Localities provide context, not response locations. OpenStreetMap requires internet; choose No basemap for local boundaries.')))
+      NULL
     })
     if(!is.null(layers)) {
       map_data <- reactive(coverage_map_payload(filtered(),d$metadata$mode,input$map_province,input$map_district,layers,input$map_post))

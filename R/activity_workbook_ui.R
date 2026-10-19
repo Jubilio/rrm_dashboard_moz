@@ -1,3 +1,4 @@
+source('R/table_labels.R', local=TRUE)
 activity_workbook_ui <- function(id) {
  ns<-shiny::NS(id)
  shiny::tagList(
@@ -101,7 +102,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  result_table<-function(x) {
   titles<-c(record_id='Record ID',alert_id='Alert ID',tier='Tier',funding='Funding scope',metric='Output metric',quantity='Quantity',unit='Unit',n_records='Records',n_known='Records with a reported quantity',households='Households reported',hh_basis='Household counting basis',people_scope='People reach scope',people_basis='People counting basis',people_total='Reported people',age_sex_group='Age / sex group',subset='Population subset',age_people='Complete age/sex total',status_people='Complete population-status total',eligible='Included in validated results',eligibility_note='Review outcome',previous_agency='Previous implementing agency',first_validated_start='First validated start',days_from_alert='Days from alert shared date',source_row='Source row')
   names(x)<-vapply(names(x),function(n) if(n %in% names(titles)) titles[[n]] else tools::toTitleCase(gsub('_',' ',n,fixed=TRUE)),character(1))
-  DT::datatable(width='100%',x,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8,language=list(emptyTable='No records available for this selection.')))
+  rrm_datatable(width='100%',x,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8,language=list(emptyTable='No records available for this selection.')))
  }
  output$source_status<-shiny::renderUI({d<-current();shiny::tagList(shiny::p(shiny::strong(source_label())),
   shiny::p(class='muted',paste('Last successful refresh:',if(is.null(loaded_at())) 'Not loaded' else loaded_at())),

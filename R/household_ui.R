@@ -1,3 +1,4 @@
+source('R/table_labels.R', local=TRUE)
 household_ui <- function(id,h,allow_synthetic=TRUE) {
  ns<-shiny::NS(id)
  shiny::tagList(shiny::div(class='page-heading',shiny::div(shiny::span(class='eyebrow',if(allow_synthetic) 'HOUSEHOLD MATRIX · DRAFT 0.1' else 'REVIEWED OPERATIONAL AGGREGATES'),shiny::h2('Cross-sector need concurrence'))),
@@ -32,8 +33,8 @@ household_server <- function(id,h,allow_synthetic=TRUE) shiny::moduleServer(id,f
   a<-table_data();if(!nrow(a)) return(shiny::div(class='empty',shiny::h4('No reviewed, approved aggregate data available'),shiny::p('Generate aggregates from approved rules, review them, and save household_aggregates.csv in data/operational/.')))
   shiny::div(class='method-strip',if(isTRUE(allow_synthetic)&&(is.null(input$source)||input$source=='synthetic')) 'SYNTHETIC EXAMPLES ONLY — not linked to the historical alert registry; no operational households represented.' else 'Reviewed operational aggregates. No household records or eligibility lists are displayed.')
  })
- output$summary<-DT::renderDT(DT::datatable(width='100%',table_data(),escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=8)))
- output$rules<-DT::renderDT({a<-h$rules;names(a)<-c('Source row','Measure','Inputs','Level 1','Level 2','Level 3','Level 4','Missingness / aggregation','Basis');DT::datatable(width='100%',a,escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=5))})
- output$decisions<-DT::renderDT({a<-h$decisions;names(a)<-c('Source row','Decision','Draft proposal','Agreement needed','Reviewer','Status','Agreed rule / date');DT::datatable(width='100%',a,escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=5))})
+ output$summary<-DT::renderDT(rrm_datatable(width='100%',table_data(),escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=8)))
+ output$rules<-DT::renderDT({a<-h$rules;names(a)<-c('Source row','Measure','Inputs','Level 1','Level 2','Level 3','Level 4','Missingness / aggregation','Basis');rrm_datatable(width='100%',a,escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=5))})
+ output$decisions<-DT::renderDT({a<-h$decisions;names(a)<-c('Source row','Decision','Draft proposal','Agreement needed','Reviewer','Status','Agreed rule / date');rrm_datatable(width='100%',a,escape=TRUE,rownames=FALSE,options=list(scrollX=TRUE,pageLength=5))})
  output$export<-shiny::downloadHandler(filename=function() paste0('rrm_household_aggregates_',if(allow_synthetic) input$source else 'operational','_',Sys.Date(),'.csv'),content=function(file) write.csv(table_data(),file,row.names=FALSE,na=''))
 })

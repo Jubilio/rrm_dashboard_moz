@@ -56,7 +56,7 @@ server <- function(input,output,session) {
   output$source_label <- renderText({
     if(workbook_view()) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
-    else if(DATA_MODE=='demo') 'DRAFT LAYOUT - DEMO DATA ONLY'
+    else if(DATA_MODE=='demo') ''
     else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
   })
   output$source_footer <- renderText({

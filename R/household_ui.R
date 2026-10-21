@@ -5,7 +5,7 @@ household_ui <- function(id,h,allow_synthetic=TRUE) {
   if(allow_synthetic) shiny::div(class='method-strip','DRAFT MAPPINGS — not approved for targeting. Four sectors are counted once each; demographic characteristics and coping are not severity weights. The supplied workbook contains no assessed household dataset.'),
   shiny::div(class='filters',shiny::selectInput(ns('source'),'Aggregate source',if(allow_synthetic) c('Synthetic draft scenarios'='synthetic','Reviewed operational aggregates'='operational') else c('Reviewed operational aggregates'='operational')),
     shiny::selectInput(ns('population'),'Population',c('All','IDP','Host')),
-    shiny::selectInput(ns('profile'),'Profile comparison',c('All households'='all_households','Head sex'='hhh_sex','Hosting others'='hosting_others','Repeated displacement'='repeat_displacement','Functional difficulty'='functional_difficulty_present')),
+    shiny::selectInput(ns('profile'),'Profile comparison',c('All households'='all_households','Head gender'='hhh_sex','Hosting others'='hosting_others','Repeated displacement'='repeat_displacement','Functional difficulty'='functional_difficulty_present')),
     shiny::downloadButton(ns('export'),'Export displayed aggregates')),
   shiny::uiOutput(ns('status')),
   shiny::div(class='panel',shiny::h3('Concurrence by profile · denominators and uncertainty'),DT::DTOutput(ns('summary')),

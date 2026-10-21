@@ -45,7 +45,7 @@ ui <- fluidPage(
   tags$footer(class='app-footer',
     conditionalPanel("input.page != 'coverage'",class='footer-meta',
       textOutput('source_footer'),
-      div(paste('Core input loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
+      div(paste('Core input loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated),
         ' · ',actionLink('methods','Methods and sources'))),
     div(class='footer-brand',
       tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',

@@ -24,9 +24,7 @@ ui <- fluidPage(
     textOutput('source_label',container=function(...) div(class='mode',...))),
   div(class='app-shell',
     tags$aside(class='app-sidebar',
-      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage'),
-      div(class='sidebar-note',p('Select a page to explore the dashboard.'),
-        if(DATA_MODE=='demo') p('Filters and values are design examples. Replace all demo records before use.'))),
+      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage')),
     tags$main(class='app-main',lapply(names(page_titles),function(key)
       conditionalPanel(sprintf("input.page == '%s'",key),
         if(key=='alerts') tabsetPanel(id='alerts_view',
@@ -45,7 +43,7 @@ ui <- fluidPage(
   tags$footer(class='app-footer',
     conditionalPanel("input.page != 'coverage'",class='footer-meta',
       textOutput('source_footer'),
-      div(paste('Core input loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated,' | Version:',d$metadata$source_version),
+      div(paste('Core input loaded:',attr(d,'loaded_at'),' | Source updated:',d$metadata$source_updated),
         ' · ',actionLink('methods','Methods and sources'))),
     div(class='footer-brand',
       tags$img(src='reach-logo.png',class='reach-logo reach-logo-footer',
@@ -56,13 +54,13 @@ server <- function(input,output,session) {
   output$source_label <- renderText({
     if(workbook_view()) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
-    else if(DATA_MODE=='demo') 'DRAFT LAYOUT - DEMO DATA ONLY'
+    else if(DATA_MODE=='demo') ''
     else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
   })
   output$source_footer <- renderText({
     if(workbook_view()) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'Historical severity evidence is a separate source. Source classifications and evidence dates are retained.'
-    else if(DATA_MODE=='demo') 'Layout mock-up. All figures and DEMO records on this page are illustrative, not operational data.'
+    else if(DATA_MODE=='demo') ''
     else 'Operational core data. Coverage responsibilities are not evidence of an intervention.'
   })
   for(key in names(page_titles)) page_server(key,key,d)
@@ -83,3 +81,4 @@ server <- function(input,output,session) {
     p('See README.md, docs/DATA_ENTRY.md and docs/reference/DATA_DICTIONARY.md for guidance and the data contract.'),easyClose=TRUE,footer=modalButton('Close'))))
 }
 shinyApp(ui,server)
+

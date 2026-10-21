@@ -55,7 +55,7 @@ server <- function(input,output,session) {
     if(workbook_view()) 'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
     else if(identical(input$page,'alerts') && identical(input$alerts_view,'history')) 'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
     else if(DATA_MODE=='demo') ''
-    else 'OPERATIONAL DATA · SOURCE REVIEW REQUIRED'
+    else 'OPERATIONAL DATA'
   })
   output$source_footer <- renderText({
     if(workbook_view()) 'Activity reporting uses the supplied workbook. Original review statuses are retained.'

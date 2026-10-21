@@ -20,7 +20,7 @@ validate_alert_locations <- function(x,mode,allow_incomplete=FALSE) {
   status <- x$coordinate_status
   if(allow_incomplete) status <- status[!is.na(status)]
   if(any(!status %in% allowed)) stop('Coordinate status is not permitted in this data mode.')
-  if(mode=='operational'&&any(grepl('DEMO',as.matrix(x),ignore.case=TRUE),na.rm=TRUE)) stop('Operational route locations contain DEMO labels.')
+  if(mode=='operational'&&any(grepl('(^|[^[:alnum:]])DEMO([^[:alnum:]]|$)',as.matrix(x),ignore.case=TRUE),na.rm=TRUE)) stop('Operational route locations contain DEMO labels.')
   for(field in c('longitude','latitude')) {
     raw <- x[[field]];x[[field]] <- suppressWarnings(as.numeric(raw))
     if(any(!is.na(raw)&(!is.finite(x[[field]])|abs(x[[field]])>if(field=='longitude') 180 else 90))) stop('Invalid route ',field)

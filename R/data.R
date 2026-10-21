@@ -68,7 +68,8 @@ validate_rrm_tables <- function(result,mode,base_dir='.',allow_severity_inputs=T
   ranked <- result$needs[!is.na(result$needs$rank),,drop=FALSE]
   if (anyDuplicated(result$needs[c('assessment_id','need')]) || anyDuplicated(ranked[c('assessment_id','rank')])) stop('Duplicate need or rank within an assessment.')
   if (nrow(result$metadata) != 1 || result$metadata$mode != mode) stop('Metadata must contain one row whose mode matches config.')
-  if (mode == 'operational' && any(vapply(result, function(x) any(grepl('DEMO', as.matrix(x), ignore.case=TRUE), na.rm=TRUE), logical(1)))) stop('Operational data still contains DEMO labels.')
+  # Match a demo label/token, not ordinary words such as demonstrates/demonstrated.
+  if (mode == 'operational' && any(vapply(result, function(x) any(grepl('(^|[^[:alnum:]])DEMO([^[:alnum:]]|$)', as.matrix(x), ignore.case=TRUE), na.rm=TRUE), logical(1)))) stop('Operational data still contains DEMO labels.')
   for (name in c('routes','assessments','screening','activities','transfers'))
     if (!all(result[[name]]$alert_id %in% result$alerts$alert_id)) stop(name, ': unknown alert_id')
   if (!all(result$needs$assessment_id %in% result$assessments$assessment_id)) stop('needs: unknown assessment_id')

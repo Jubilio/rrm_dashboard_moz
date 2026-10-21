@@ -6,7 +6,7 @@ All paths and commands in this guide are relative to the project root unless sta
 
 ## Load the file
 
-Copy the example to **`data/RRM_Dashboard_Input.xlsx`** in the application project and restart Shiny. The application reads this path automatically when it exists. Keep this live input out of the public repository; it is excluded by .gitignore. Include it in your private shinyapps.io deployment bundle when publishing.
+The current application default is **`data/RRM_Dashboard_Input_RNA_populated.xlsx`**. Save updates to that file and restart Shiny. Check `INPUT_WORKBOOK_PATH` in `config.R` if you maintain another filename. Include the file in the shinyapps.io deployment bundle when publishing.
 
 Alternatively, use an explicit absolute path in the **R console** before starting the app:
 
@@ -36,13 +36,25 @@ Keep input worksheet names and row 1 headers exactly as supplied. Dates may be E
 | Transfers | One responsibility handover | transfer_id |
 | Metadata | Source mode, date, version and methods | Exactly one row |
 
-ReadMe and Field Guide are not imported. Additional worksheets are ignored. Unknown or missing input columns, malformed dates/counts, duplicate keys, invalid categories and broken alert/assessment links are rejected using the same checks as the CSV pipeline. Input formulas are not recalculated by the importer; use entered values.
+ReadMe and Field Guide are not imported. Additional worksheets are ignored. Unknown or missing input columns, malformed dates/counts, duplicate keys, invalid categories and broken alert/assessment links are rejected. Input formulas are not recalculated by the importer; use entered values.
+
+## Information still being collected
+
+The consolidated Excel reader accepts blank dates, sample counts, need ranks, HESPER counts, quantities, descriptive fields and review/status fields. Blanks (including non-breaking spaces copied from documents) remain `NA`. They are never replaced with zero, an estimated date or an invented ranking. Pages display a data-pending notice. Light RNA shows **Not ranked** and **Unavailable** where appropriate.
+
+Keep identifiers and links populated: alert IDs, assessment IDs, activity IDs, assessment/alert references and need names are required. Coverage also needs area, partner and role; routes need origin, arrival and caseload stage. Metadata still needs exactly one row with mode `demo` or `operational`. Entirely unavailable worksheets may contain only their original headers.
+
+Use **Include records without a date** to retain undated records while filtering. Turning it off excludes them. Undated interventions have no response-delay calculation. Coverage assignments with no effective start remain in the source but are excluded from dated active-coverage results. RNA caseloads without severity or evidence date remain in the source and evidence table but do not contribute to verified KPIs. Missing activity status does not mean Completed. Missing quantities do not become zero; totals sum reported quantities, and the data-pending notice indicates incomplete inputs.
+
+Known invalid values still stop loading: negative or non-integer counts, malformed dates, repeated IDs/ranks, unsupported categories, invalid coordinates and broken links. Fix these using the source. For a strict completeness check, run `read_dashboard_workbook(INPUT_WORKBOOK_PATH, allow_incomplete=FALSE)`. CSV ingestion retains strict validation.
+
+Run `Rscript tests/check_incomplete_input.R` to test missing values and integrity checks.
 
 ## Mode and source separation
 
 The example has Metadata.mode=`demo`. If RRM_DATA_MODE is not explicitly set, the app uses the workbook's metadata mode. For actual inputs, replace all example records, update source date/version/methods and set Metadata.mode=`operational`. If RRM_DATA_MODE is explicitly set, it must match the workbook. Operational data rejects DEMO labels and Demo coordinate status. Do not mark records reviewed merely to populate summaries.
 
-The consolidated workbook replaces the core CSV inputs as a single source, including alert endpoint coordinates. It never mixes its Route Locations sheet with the CSV coordinate file. Missing or invalid endpoints remain unmapped. RNA severity and evidence dates must be supplied in Alerts when RNA caseloads are supplied; optional CSV severity calculation inputs are not applied to the consolidated workbook. Historical severity evidence, reviewed household analysis inputs and the standardised real activity-reporting workbook remain separate sources.
+The consolidated workbook replaces the core CSV inputs as a single source, including alert endpoint coordinates. It never mixes its Route Locations sheet with the CSV coordinate file. Missing or unconfirmed endpoints remain unmapped. RNA severity and evidence dates are needed before caseloads contribute to verified KPIs; optional CSV severity calculation inputs are not applied to the consolidated workbook. Historical severity evidence, reviewed household analysis inputs and the standardised real activity-reporting workbook remain separate sources.
 
 With no default workbook and no explicit RRM_INPUT_WORKBOOK setting, the app retains the existing CSV workflow. An explicitly configured missing or invalid workbook fails clearly; it does not fall back to CSV/demo inputs.
 

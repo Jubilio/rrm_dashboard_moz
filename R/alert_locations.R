@@ -10,13 +10,16 @@ read_alert_locations <- function(mode,base_dir='.') {
   x <- read.csv(path,colClasses='character',na.strings='',check.names=FALSE,fileEncoding='UTF-8')
   validate_alert_locations(x,mode)
 }
-validate_alert_locations <- function(x,mode) {
+validate_alert_locations <- function(x,mode,allow_incomplete=FALSE) {
   fields <- c('route_id','endpoint','location_name','longitude','latitude','coordinate_source','coordinate_status')
   if(!identical(names(x),fields)) stop('route_locations.csv columns must match the template.')
   if(anyDuplicated(x[c('route_id','endpoint')])) stop('Duplicate route endpoint coordinates.')
   if(any(is.na(x$route_id)|!nzchar(trimws(x$route_id)))||any(!x$endpoint %in% c('origin','arrival'))) stop('Route endpoint IDs or types are invalid.')
   allowed <- if(mode=='demo') 'Demo' else c('Confirmed','Pending','Rejected')
-  if(any(!x$coordinate_status %in% allowed)) stop('Coordinate status is not permitted in this data mode.')
+  if(allow_incomplete) allowed <- union(allowed,c('Pending','Rejected'))
+  status <- x$coordinate_status
+  if(allow_incomplete) status <- status[!is.na(status)]
+  if(any(!status %in% allowed)) stop('Coordinate status is not permitted in this data mode.')
   if(mode=='operational'&&any(grepl('DEMO',as.matrix(x),ignore.case=TRUE),na.rm=TRUE)) stop('Operational route locations contain DEMO labels.')
   for(field in c('longitude','latitude')) {
     raw <- x[[field]];x[[field]] <- suppressWarnings(as.numeric(raw))

@@ -5,6 +5,6 @@ account: athman
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 18196494
-bundleId: 12720386
+bundleId: 12720441
 url: https://athman.shinyapps.io/rrm_dashboard/
 version: 1

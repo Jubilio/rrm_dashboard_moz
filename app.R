@@ -24,9 +24,7 @@ ui <- fluidPage(
     textOutput('source_label',container=function(...) div(class='mode',...))),
   div(class='app-shell',
     tags$aside(class='app-sidebar',
-      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage'),
-      div(class='sidebar-note',p('Select a page to explore the dashboard.'),
-        if(DATA_MODE=='demo') p('Filters and values are design examples. Replace all demo records before use.'))),
+      radioButtons('page',NULL,choices=setNames(names(page_titles),page_titles),selected='coverage')),
     tags$main(class='app-main',lapply(names(page_titles),function(key)
       conditionalPanel(sprintf("input.page == '%s'",key),
         if(key=='alerts') tabsetPanel(id='alerts_view',

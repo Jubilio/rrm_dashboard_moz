@@ -1,4 +1,7 @@
 source('R/table_labels.R', local=TRUE)
+source('R/source_links.R', local=TRUE)
+source('R/alert_detail.R', local=TRUE)
+source('R/alert_summary.R', local=TRUE)
 severity_labels <- c('Low','Moderate','High','Critical')
 level_number <- function(x) {
   if(!length(x)||is.na(x)) return(NA_integer_)
@@ -29,6 +32,14 @@ alert_status <- function(alert_date,rna_done,as_of=Sys.Date(),closed=FALSE) {
 read_history <- function(base='data/reference') {
   read <- function(file) read.csv(file.path(base,file),colClasses='character',na.strings='',check.names=FALSE,fileEncoding='UTF-8')
   a <- read('alert_registry.csv'); e <- read('severity_evidence.csv')
+  if (!'consortium_response_status' %in% names(a))
+    a$consortium_response_status <- rep(NA_character_, nrow(a))
+  a$consortium_response_status <- trimws(a$consortium_response_status)
+  a$consortium_response_status[!is.na(a$consortium_response_status) &
+                               !nzchar(a$consortium_response_status)] <- NA_character_
+  if (any(!is.na(a$consortium_response_status) &
+          !a$consortium_response_status %in% c('Yes','No','Pending go/no-go')))
+    stop('Historical consortium_response_status must be Yes, No, Pending go/no-go, or blank.')
   a$registry_quality <- vapply(seq_len(nrow(a)),function(i) {
     flags<-character(0)
     if(a$rna_done[i]=='Yes'&&is.na(a$rna_date[i])) flags<-c(flags,'RNA marked complete but date missing')
@@ -43,22 +54,41 @@ read_history <- function(base='data/reference') {
   e$source_rule_recalculation <- ifelse(e$source_override_asserted,'Critical',e$domain_recalculation)
   e$calculation_agrees <- e$source_rule_recalculation==e$recorded_severity
   e$verification_note <- ifelse(e$source_override_asserted,'Workbook asserts override; underlying verified numeric registration is not supplied.','Possible/unknown overrides are not activated.')
-  list(registry=a,evidence=e,
+  links_path <- file.path(base,'source_links.csv')
+  links <- if (file.exists(links_path)) read('source_links.csv') else NULL
+  list(registry=a,evidence=e,source_links=links,
        rules=read('household_rules.csv'),decisions=read('pending_decisions.csv'))
+}
+history_review_reasons <- function(e) {
+  vapply(seq_len(nrow(e)), function(i) {
+    reasons <- character()
+    if (is.na(e$confidence[i]) || !nzchar(trimws(e$confidence[i])))
+      reasons <- c(reasons, 'Missing confidence')
+    if (!is.na(e$link_status[i]) && grepl('review required', e$link_status[i]))
+      reasons <- c(reasons, 'Alert ID requires confirmation')
+    if (isFALSE(e$calculation_agrees[i]))
+      reasons <- c(reasons, 'Severity calculation differs from source')
+    if (isTRUE(e$source_override_asserted[i]))
+      reasons <- c(reasons, 'Source override requires household verification')
+    paste(reasons, collapse='; ')
+  }, character(1))
 }
 history_ui <- function(id,h) {
  ns <- shiny::NS(id)
  shiny::tagList(shiny::div(class='page-heading',shiny::div(shiny::span(class='eyebrow','SUPPLIED WORKBOOK · HISTORICAL REVIEW'),shiny::h2('Alert severity registry'))),
   shiny::div(class='method-strip','Source classifications are preserved. Recalculations use the workbook domain ratings and explicit source override assertions, not an independently verified household register. Estimated caseload text is never treated as a verified count.'),
+  shiny::p(class='muted','Click an Alert source or RNA source to open its document in a new tab. Link unavailable means no document URL has been supplied.'),
   shiny::div(class='filters',shiny::dateInput(ns('as_of'),'Status as of',Sys.Date()),
    shiny::selectInput(ns('district'),'Arrival district',all_choices(h$registry$arrival_district)),
    shiny::selectInput(ns('organisation'),'Reporting organisation',all_choices(h$registry$organisation)),
    shiny::selectInput(ns('alert'),'Alert ID',all_choices(h$registry$alert_id)),
    shiny::downloadButton(ns('export'),'Export registry')),
   shiny::uiOutput(ns('metrics')),
+  shiny::uiOutput(ns('alert_summary')),
+  shiny::div(class='panel',shiny::h3('Latest alerts'),DT::DTOutput(ns('latest_alerts'))),
   shiny::div(class='panel',shiny::h3('Registry · one row per alert'),DT::DTOutput(ns('registry'))),
-  shiny::div(class='panel',shiny::h3('Stage-specific evidence · original source rows retained'),DT::DTOutput(ns('evidence'))),
-  shiny::div(class='panel',shiny::h3('Source quality issues requiring review'),DT::DTOutput(ns('issues'))),
+  shiny::div(class='panel',shiny::h3('Alert and RNA severity'),DT::DTOutput(ns('evidence'))),
+  shiny::div(class='panel',shiny::h3('Records requiring review'),DT::DTOutput(ns('issues'))),
   shiny::div(class='panel',shiny::h3('Severity calculator · manual verified inputs'),
     shiny::p('Use reviewed domain ratings. Unknown information is not Low. No numeric confidence score is invented.'),
     shiny::div(class='filters',shiny::selectInput(ns('conditions'),'Current humanitarian conditions',c('Unknown'='',setNames(1:4,severity_labels))),
@@ -66,7 +96,7 @@ history_ui <- function(id,h) {
       shiny::numericInput(ns('verified_hh'),'Alert-linked households',NA,min=0,step=1),shiny::checkboxInput(ns('verified'),'Count independently verified for this alert',FALSE)),
     shiny::uiOutput(ns('calculation'))))
 }
-history_server <- function(id,h) shiny::moduleServer(id,function(input,output,session) {
+history_server <- function(id,h,d=NULL,activity=NULL) shiny::moduleServer(id,function(input,output,session) {
  registry <- shiny::reactive({
   a <- h$registry
   a <- filter_equal(a,'arrival_district',input$district);a <- filter_equal(a,'organisation',input$organisation);a <- filter_equal(a,'alert_id',input$alert)
@@ -85,10 +115,48 @@ history_server <- function(id,h) shiny::moduleServer(id,function(input,output,se
   if(all_scope) h$evidence else h$evidence[h$evidence$linked_alert_id %in% ids | h$evidence$source_alert_id %in% ids,,drop=FALSE]
  })
  output$metrics <- shiny::renderUI({a<-registry();kpi_row(kpi('Alerts',nrow(a),'Distinct registry IDs'),kpi('RNA completed',sum(a$rna_done=='Yes'),'Registry completion flag'),kpi('Pending closure',sum(a$provisional_status=='Pending closure'),'>80 days; formal confirmation required'),kpi('Latest recorded Critical',sum(a$recorded_latest_severity=='Critical',na.rm=TRUE),'May include retained alert ratings'))})
- output$registry <- DT::renderDT(rrm_datatable(width='100%',registry(),rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8)))
- output$evidence <- DT::renderDT(rrm_datatable(width='100%',evidence()[c('record_key','source_alert_id','linked_alert_id','link_status','stage','stage_date','conditions_rating','protection_rating','recorded_override','domain_recalculation','source_rule_recalculation','recorded_severity','calculation_agrees','completeness','confidence','caseload_text','verification_note','rationale','source_file')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=6)))
- output$issues <- DT::renderDT({e<-evidence();i<-is.na(e$confidence)|grepl('review required',e$link_status)|!e$calculation_agrees|e$source_override_asserted
-   rrm_datatable(width='100%',e[i,c('record_key','source_alert_id','linked_alert_id','link_status','confidence','verification_note','completeness')],rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))})
+ output$alert_summary <- shiny::renderUI({
+   alert_summary_ui(alert_summary_values(registry(),activity$activities,reporting=TRUE),reporting=TRUE)
+ })
+ output$latest_alerts <- DT::renderDT({latest_alert_table(registry(),session$ns('open_alert_detail'))})
+ shiny::observeEvent(input$open_alert_detail, {
+   shiny::req(length(input$open_alert_detail)==1L,
+              input$open_alert_detail %in% registry()$alert_id)
+   show_alert_detail(input$open_alert_detail,d,h,activity)
+ })
+ shiny::observeEvent(input$latest_alerts_rows_selected, {
+   shiny::req(length(input$latest_alerts_rows_selected)==1L)
+   rows <- latest_alert_rows(registry())
+   selected <- input$latest_alerts_rows_selected
+   shiny::req(selected >= 1L, selected <= nrow(rows))
+   show_alert_detail(rows$alert_id[selected],d,h,activity)
+   DT::selectRows(DT::dataTableProxy('latest_alerts',session=session),NULL)
+ })
+ # Keep the original source value in registry() for audit exports only.
+ output$registry <- DT::renderDT({
+   a <- registry()[setdiff(names(registry()),'rna_done_raw')]
+   a$consortium_response_status <- vapply(a$consortium_response_status,text_or,character(1))
+   linked <- source_link_table(a,h$source_links)
+   rrm_datatable(width='100%',linked$data,rownames=FALSE,escape=linked$escape,options=list(scrollX=TRUE,pageLength=8))
+ })
+ output$evidence <- DT::renderDT({
+   a <- evidence()
+   a <- a[intersect(c('linked_alert_id','stage','stage_date','recorded_severity','source_rule_recalculation','calculation_agrees','confidence','completeness','conditions_rating','protection_rating','domain_recalculation','recorded_override','caseload_text','rationale','source_file','source_url','record_key','source_alert_id','link_status','verification_note'),names(a))]
+   linked <- source_link_table(a,h$source_links)
+   headings <- rrm_column_labels(names(linked$data))
+   short <- c(linked_alert_id='Alert ID',stage_date='Date',recorded_severity='Recorded severity',source_rule_recalculation='Recalculated severity',calculation_agrees='Match')
+   selected <- names(linked$data) %in% names(short)
+   headings[selected] <- unname(short[names(linked$data)[selected]])
+   linked$data$calculation_agrees <- ifelse(is.na(a$calculation_agrees),'Not available',ifelse(a$calculation_agrees,'Yes','No'))
+   rrm_datatable(width='100%',linked$data,colnames=headings,rownames=FALSE,escape=linked$escape,options=list(scrollX=TRUE,pageLength=6))
+ })
+ output$issues <- DT::renderDT({
+   e <- evidence()
+   e$review_reason <- history_review_reasons(e)
+   a <- e[nzchar(e$review_reason),c('linked_alert_id','stage','review_reason','source_alert_id','record_key','link_status','confidence','verification_note','completeness'),drop=FALSE]
+   headings <- rrm_column_labels(names(a))
+   headings[1] <- 'Alert ID'
+   rrm_datatable(width='100%',a,colnames=headings,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=5))})
  output$calculation <- shiny::renderUI({
   num<-function(x) if(is.null(x)||!length(x)||is.na(x)||identical(x,'')) NA_real_ else as.numeric(x)
   s<-severity_result(num(input$conditions),num(input$protection),num(input$verified_hh),input$verified)

@@ -5,6 +5,7 @@ activity_workbook_ui <- function(id) {
   shiny::div(class='page-heading',shiny::div(shiny::span(class='eyebrow','STANDARDISED WORKBOOK'),shiny::h2('Activity reporting')),
     shiny::downloadButton(ns('export'),'Export displayed records')),
   shiny::div(class='panel',shiny::h3('Data source'),shiny::uiOutput(ns('source_status')),
+    shiny::checkboxInput(ns('demo_examples'),'Show fictional populated examples (separate demonstration data)',FALSE),
     shiny::div(class='filters',shiny::fileInput(ns('upload'),'Load a standardised workbook (.xlsx)',accept='.xlsx'),
       shiny::actionButton(ns('clear_upload'),'Use configured source'),shiny::actionButton(ns('refresh'),'Refresh now')),
     shiny::p(class='muted','A configured workbook is checked automatically every 10 seconds. Uploads are session-specific. Only an explicit allowlist of reporting fields is used; reporting contacts and private references are excluded.')),
@@ -37,8 +38,14 @@ activity_workbook_ui <- function(id) {
         shiny::p(class='muted','Age bands retain the source 0–59 months, 5–17 years, 18–49 years and 50+ years. Disability and population-status figures are subsets, not additional reach.')),
       shiny::div(class='panel',shiny::h3('Population and disability subsets · do not add to total reach'),DT::DTOutput(ns('subsets')))),
     shiny::tabPanel('Timing, handovers and evidence',
+      shiny::div(class='panel',shiny::h3('How days and activity dates are defined'),
+        shiny::p('Days from alert = Activity Start minus Alert Shared Date, in calendar days, including weekends and holidays. Example: alert shared on 1 September and activity started on 5 September = 4 days. A same-day start = 0 days. Activity End is not used to calculate this delay.'),
+        shiny::p('Activity Start and Activity End are the first and last days of the activity covered by this reporting record. They may be the same day. Activity End does not confirm closure of the overall response. For activities continuing across months, report a separate period in each month; keep dates as dates rather than entering "Ongoing".'),
+        shiny::p('Missing or invalid required dates exclude a record from validated timing results; they are never estimated. An end before the start or an activity starting before its linked alert shared date requires correction.'),
+        shiny::p(class='muted','The timing summary takes the earliest validated activity start for each selected alert and tier across all reported months. The month filter does not restrict this summary; other filters select the alert IDs, then all validated activities for those alerts are considered. Assessment and coordination can be included, so this is not necessarily time to first assistance delivery.')),
       shiny::div(class='panel',shiny::h3('First validated activity by selected alert and tier · all reported months'),DT::DTOutput(ns('timing')),
         shiny::p(class='muted','Timing uses the workbook Alerts shared date, not shock or arrival dates. It includes assessment and coordination activities if validated; it is not automatically first delivery of assistance.')),
+      shiny::div(class='panel',shiny::h3('Reported delay reasons'),DT::DTOutput(ns('delays'))),
       shiny::div(class='panel',shiny::h3('Transfers and evidence use'),DT::DTOutput(ns('handovers')))),
     shiny::tabPanel('Records and review',shiny::div(class='panel',shiny::h3('Imported activity records'),
       shiny::checkboxInput(ns('show_all'),'Include pending and excluded records for review',TRUE),DT::DTOutput(ns('records')),
@@ -59,15 +66,18 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   shiny::invalidateLater(10000,session);input$refresh
   file<-if(isTRUE(use_upload())&&!is.null(input$upload)) input$upload$datapath else workbook_path
   uploaded<-isTRUE(use_upload())&&!is.null(input$upload)
-  source<-if(nzchar(file)) if(uploaded) 'Session upload' else 'Configured workbook' else 'Supplied workbook snapshot'
-  paths<-if(nzchar(file)) file else file.path(snapshot_dir,paste0(c('activities','extra','alerts','metrics','metadata'),'.csv'))
+  demo<-isTRUE(input$demo_examples)
+  active_snapshot<-if(demo) 'data/activity_demo' else snapshot_dir
+  if(demo) file<-''
+  source<-if(demo) 'DEMONSTRATION - fictional examples; not operational results' else if(nzchar(file)) if(uploaded) 'Session upload' else 'Configured workbook' else 'Supplied workbook snapshot'
+  paths<-if(nzchar(file)) file else file.path(active_snapshot,paste0(c('activities','extra','alerts','metrics','metadata'),'.csv'))
   info<-file.info(paths)
   stamp<-paste(source,paste(info$size,as.numeric(info$mtime),collapse='|'),input$refresh,collapse='|')
   if(identical(shiny::isolate(signature()),stamp)) return()
   signature(stamp)
   tryCatch({
    if(nzchar(file)&&!file.exists(file)) stop('Configured workbook is unavailable. Correct its location or load another workbook.')
-   raw<-if(nzchar(file)) read_activity_workbook(file) else read_activity_snapshot(snapshot_dir)
+   raw<-if(nzchar(file)) read_activity_workbook(file) else read_activity_snapshot(active_snapshot)
    parsed<-prepare_activity_data(raw)
    current(parsed);last_error(NULL);source_label(source);loaded_at(format(Sys.time(),'%Y-%m-%d %H:%M:%S %Z'))
   },error=function(e){last_error(conditionMessage(e))})
@@ -97,6 +107,13 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   x
  }
  records<-shiny::reactive(apply_filters(data()$activities))
+ delay_records<-shiny::reactive({
+  a<-records()
+  a<-a[,c('record_id','alert_id','implementing_agency','activity','start_date','end_date',
+           'days_from_alert','delay_reason','review_status','link_status'),drop=FALSE]
+  a$delay_reason[is.na(a$delay_reason)]<-''
+  a
+ })
  eligible<-shiny::reactive({x<-records();x[x$eligible,,drop=FALSE]})
  outputs<-shiny::reactive({x<-apply_filters(data()$outputs);x[x$eligible,,drop=FALSE]})
  result_table<-function(x) {
@@ -105,6 +122,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   rrm_datatable(width='100%',x,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8,language=list(emptyTable='No records available for this selection.')))
  }
  output$source_status<-shiny::renderUI({d<-current();shiny::tagList(shiny::p(shiny::strong(source_label())),
+  if(grepl('^DEMONSTRATION',source_label())) shiny::div(class='map-notice',role='status','Fictional examples only. All tables, filters, map and exports in this panel use demonstration data. Validation labels describe simulated review, not partner confirmation. Turn off the examples to return to your reporting source.'),
   shiny::p(class='muted',paste('Last successful refresh:',if(is.null(loaded_at())) 'Not loaded' else loaded_at())),
   if(!is.null(d)) shiny::p(class='muted',paste('Source updated:',d$metadata$source_updated[1])))})
  output$load_error<-shiny::renderUI({e<-last_error();if(is.null(e))return(NULL)
@@ -153,14 +171,15 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   result_table(activity_group_sum(do.call(rbind,rows),c('tier','funding','people_scope','people_basis','subset'),'quantity'))
  })
  output$timing<-DT::renderDT(result_table(timing_data()))
+ output$delays<-DT::renderDT(result_table(delay_records()))
  output$handovers<-DT::renderDT({
   a<-eligible();cols<-c('record_id','alert_id','implementing_agency','previous_agency','handover_date','handover_reason','delay_reason','evidence_source','evidence_use')
   result_table(a[,cols,drop=FALSE])
  })
  displayed_records<-shiny::reactive({a<-records();if(!isTRUE(input$show_all)) a<-a[a$eligible,,drop=FALSE]
-  a[,c('record_id','alert_id','link_status','reporting_month','start_date','end_date','district','community','location_coverage','tier','sector','activity','modality','implementing_agency','funding','metric','quantity','unit','households','hh_basis','people_total','age_people','status_people','people_scope','people_basis','review_status','eligible','eligibility_note'),drop=FALSE]})
+  a[,c('record_id','alert_id','link_status','reporting_month','start_date','end_date','delay_reason','district','community','location_coverage','tier','sector','activity','modality','implementing_agency','funding','metric','quantity','unit','households','hh_basis','people_total','age_people','status_people','people_scope','people_basis','review_status','eligible','eligibility_note'),drop=FALSE]})
  output$records<-DT::renderDT(result_table(displayed_records()))
  output$issues<-DT::renderDT({q<-data()$issues;q<-q[q$record_id %in% records()$record_id,,drop=FALSE];result_table(q)})
  output$definitions<-DT::renderDT(result_table(data()$metrics[,c('metric','unit','definition'),drop=FALSE]))
- output$export<-shiny::downloadHandler(filename=function() paste0('rrm_activity_',if(isTRUE(input$show_all)) 'review' else 'validated','_',Sys.Date(),'.csv'),content=function(file)write.csv(displayed_records(),file,row.names=FALSE,na=''))
+ output$export<-shiny::downloadHandler(filename=function() paste0(if(grepl('^DEMONSTRATION',source_label())) 'DEMO_' else '', 'rrm_activity_',if(isTRUE(input$show_all)) 'review' else 'validated','_',Sys.Date(),'.csv'),content=function(file)write.csv(displayed_records(),file,row.names=FALSE,na=''))
 })

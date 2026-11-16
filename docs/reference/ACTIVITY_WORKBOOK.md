@@ -1,5 +1,13 @@
 # Excel-backed activity reporting
 
+## Populated fictional examples
+
+In Activity reporting > Reporting workbook, enable **Show fictional populated examples** in Data source. This switches this panel to a separate demonstration dataset; it does not edit the configured workbook, supplied snapshot or other dashboard pages. Disable the option to return to the configured source or session upload. All tables, filters and exports in this panel follow the selected source; example record IDs and activity export filenames carry a DEMO prefix.
+
+The two fictional records demonstrate 20 and 10 households, 100 and 50 people with reconciled age/sex and population breakdowns, disability subsets, activity starts 4 and 11 days after an alert, and a dated handover from Demo Partner A to Demo Partner B. Each includes a fictional evidence source and explanation of its use. Counts across activities are gross and may overlap. Validation labels simulate review only. The fictional community is deliberately unmapped. These are demonstration values, never operational results or links to real reports.
+
+The isolated source is `data/activity_demo/`; rebuild it with `Rscript scripts/create_activity_demo.R`. Check reconciliation and source switching with `Rscript tests/check_activity_demo.R`.
+
 [Documentation index](../../README.md) · Commands and source paths are relative to the project root.
 
 The **Activity reporting > Reporting workbook** view reads the standardised RRM workbook directly. The interface, filters, definitions and diagnostics are in English; the REACH footer and reference palette are retained.

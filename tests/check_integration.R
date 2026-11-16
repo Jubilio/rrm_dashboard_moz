@@ -6,6 +6,11 @@ stopifnot(d$severity_calculations$override[d$severity_calculations$alert_id=='DE
 testServer(history_server,args=list(h=h),{
  session$setInputs(as_of=as.Date('2026-10-16'),district='All',organisation='All',alert='All',conditions='2',protection='3',verified_hh=900,verified=FALSE)
  stopifnot(nrow(registry())==18,nrow(evidence())==33,!is.null(output$registry),!is.null(output$evidence),!is.null(output$issues),!is.null(output$calculation))
+ # The visible table has one completion column; audit/export data retain both.
+ registry_widget <- jsonlite::fromJSON(output$registry,simplifyVector=FALSE)
+ stopifnot(grepl('RNA completed',registry_widget$x$container,fixed=TRUE),
+   !grepl('RNA completed (source value)',registry_widget$x$container,fixed=TRUE),
+   all(c('rna_done_raw','rna_done') %in% names(registry())))
  stopifnot(grepl('High',paste(as.character(output$calculation),collapse=' ')))
  session$setInputs(verified=TRUE)
  stopifnot(grepl('Critical',paste(as.character(output$calculation),collapse=' ')))
@@ -13,6 +18,8 @@ testServer(history_server,args=list(h=h),{
  stopifnot(all(registry()$provisional_status=='Not yet issued as of selection'))
  session$setInputs(district='Absent')
  stopifnot(nrow(registry())==0,nrow(evidence())==0,!is.null(output$metrics))
+ empty_widget <- jsonlite::fromJSON(output$registry,simplifyVector=FALSE)
+ stopifnot(!grepl('RNA completed (source value)',empty_widget$x$container,fixed=TRUE))
 })
 testServer(household_server,args=list(h=h),{
  session$setInputs(source='synthetic',population='All',profile='all_households')

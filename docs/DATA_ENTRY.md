@@ -40,6 +40,10 @@ ReadMe and Field Guide are not imported. Additional worksheets are ignored. Unkn
 
 ## Information still being collected
 
+Historical document links: populate `data/reference/source_links.csv` with `filename,url`, using the exact filename recorded in Alert source, RNA source or Source file and its HTTPS document URL (for example, a SharePoint or Drive link). Filenames must be unique. The historical registry and evidence tables open supplied links in a new tab; viewers still need access at the destination. No destination is inferred from a filename. Missing links display **link unavailable**. Alternatively, the registry accepts `alert_source_url` and `rna_source_url`, and severity evidence accepts `source_url`. Explicit URL columns take precedence over the mapping. Keep source filenames for audit; restart the application after changes.
+
+The Alerts worksheet accepts an optional `consortium_response_status` column, preferably appended after the original columns. Enter exactly `Yes`, `No`, or `Pending go/no-go` for each alert. Leave it blank when no decision is reported; the interface shows **Not reported**. Existing workbooks without this column remain compatible. The status appears in alert details, the evidence table, the status filter and CSV exports. It is an explicitly reported consortium decision, never inferred from population status, severity or recorded activities. Historical review has a separate optional column with the same name and values in `data/reference/alert_registry.csv`; its values are not copied from current alerts.
+
 The consolidated Excel reader accepts blank dates, sample counts, need ranks, HESPER counts, quantities, descriptive fields and review/status fields. Blanks (including non-breaking spaces copied from documents) remain `NA`. They are never replaced with zero, an estimated date or an invented ranking. Pages display a data-pending notice. Light RNA shows **Not ranked** and **Unavailable** where appropriate.
 
 Keep identifiers and links populated: alert IDs, assessment IDs, activity IDs, assessment/alert references and need names are required. Coverage also needs area, partner and role; routes need origin, arrival and caseload stage. Metadata still needs exactly one row with mode `demo` or `operational`. Entirely unavailable worksheets may contain only their original headers.
@@ -88,6 +92,14 @@ The supplied fictional example links DEMO-001 in Alerts to R01/R02 in Routes, DE
 | Output units | HH assistance, kits and consultations remain distinct; other units are retained in records/exports. |
 | Dates | Enter actual dates. Assessment end and coverage end cannot precede their starts; activities cannot precede the linked alert. |
 | Input headers | Do not rename, translate, reorder or delete required columns. Ranking note remains an input field even though it is hidden in Light RNA. |
+
+## Delay reasons
+
+The partner reporting the activity supplies its reason in **Activities → delay_reason** in the consolidated input (or `activities.csv`), or **Activity Entry → Delay Reason** in the standardised reporting workbook. Use the existing activity row and its Record/Event ID and Alert ID; do not create a second activity just to report a reason. Save the source and refresh or restart the relevant view. The dashboard displays the supplied text; it is not an entry form.
+
+Write a short factual explanation: **cause; effect on the activity; action taken or next step**, including actual dates when known. For example, a fictional entry could read: “Flooded access road; distribution postponed; alternative access under assessment.” Preserve the partner's wording and language. Leave the field blank when no reason is reported. Do not enter a guessed cause, copy a reason to unrelated activities, or interpret blank as “no delay”.
+
+Days from alert measures elapsed calendar days, not lateness against an agreed deadline. A positive interval does not automatically require a delay reason or establish that an activity was late. Report reasons only when the partner identifies a delay; no automatic delay threshold is imposed. Pending and excluded workbook records retain their review and link statuses in the **Reported delay reasons** table and are not thereby validated.
 
 ## Preparing real inputs
 

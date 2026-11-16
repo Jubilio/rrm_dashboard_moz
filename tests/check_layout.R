@@ -1,8 +1,21 @@
 library(shiny)
-old_mode <- Sys.getenv('RRM_DATA_MODE',unset=NA_character_)
-Sys.unsetenv('RRM_DATA_MODE')
-e <- new.env(parent=globalenv());sys.source('app.R',envir=e)
-if(is.na(old_mode)) Sys.unsetenv('RRM_DATA_MODE') else Sys.setenv(RRM_DATA_MODE=old_mode)
+e <- new.env(parent=globalenv())
+local({
+  settings <- c('RRM_DATA_MODE','RRM_INPUT_WORKBOOK')
+  previous <- Sys.getenv(settings,unset=NA_character_)
+  on.exit(for (name in settings) {
+    if (is.na(previous[[name]])) Sys.unsetenv(name)
+    else do.call(Sys.setenv,setNames(list(previous[[name]]),name))
+  })
+  # Exercise CSV fixtures independently of the configured deployment workbook.
+  Sys.setenv(RRM_DATA_MODE='demo',RRM_INPUT_WORKBOOK='')
+  # Windows removes environment variables assigned an empty string.
+  # Override only this app environment to select the CSV input path reliably.
+  e$Sys.getenv <- function(x, unset='', ...) {
+    if (identical(x,'RRM_INPUT_WORKBOOK')) '' else base::Sys.getenv(x,unset=unset,...)
+  }
+  sys.source('app.R',envir=e)
+})
 stopifnot(e$DATA_MODE=='demo',e$d$metadata$mode=='demo')
 html <- as.character(e$ui)
 stopifnot(grepl('value="coverage" checked="checked"',html,fixed=TRUE),

@@ -60,6 +60,39 @@ read_activity_snapshot <- function(directory='data/activity_snapshot') {
   read.csv(p,colClasses='character',na.strings='',check.names=FALSE,fileEncoding='UTF-8')
  }),names)
 }
+# Add display context only when the supplied source uniquely corroborates the
+# core event. Never merge rows, infer a community from a district, or alter reach.
+add_activity_communities <- function(d, source = NULL) {
+ a <- d$activities
+ if ('community' %in% names(a)) return(d)
+ a$community <- rep(NA_character_, nrow(a))
+ a$community_source <- rep(NA_character_, nrow(a))
+ if (d$metadata$mode == 'demo' || is.null(source) || !nrow(source)) {
+  d$activities <- a
+  return(d)
+ }
+ pairs <- c(alert_id='alert_id', area='district', modality='activity',
+            delivery_partner='implementing_agency', tier='tier')
+ required <- c('record_id','community','start_date','quantity',unname(pairs))
+ if (!all(required %in% names(source))) stop('Activity community source is missing required fields.')
+ duplicate <- duplicated(source$record_id) | duplicated(source$record_id,fromLast=TRUE)
+ ix <- match(a$event_id,source$record_id)
+ valid <- !is.na(ix) & !is.na(a$event_id)
+ valid[!is.na(ix)] <- valid[!is.na(ix)] & !duplicate[ix[!is.na(ix)]]
+ for (field in names(pairs)) {
+  same <- activity_trim(a[[field]]) == activity_trim(source[[pairs[[field]]]][ix])
+  valid <- valid & !is.na(same) & same
+ }
+ same_date <- as.Date(a$start_date) == activity_date(source$start_date[ix])
+ same_quantity <- a$quantity == suppressWarnings(as.numeric(source$quantity[ix]))
+ valid <- valid & !is.na(same_date) & same_date & !is.na(same_quantity) & same_quantity
+ community <- activity_trim(source$community[ix])
+ valid <- valid & !is.na(community)
+ a$community[valid] <- community[valid]
+ a$community_source[valid] <- 'Supplied activity reporting snapshot; matched Record ID and event details'
+ d$activities <- a
+ d
+}
 prepare_activity_data <- function(raw) {
  a<-raw$activities;e<-raw$extra;l<-raw$alerts;m<-raw$metrics
  for(n in names(a))a[[n]]<-activity_trim(a[[n]])

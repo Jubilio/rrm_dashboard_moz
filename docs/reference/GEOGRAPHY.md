@@ -8,6 +8,10 @@
 
 Source district metadata has `date = 2019-04-02` and `validOn = 2019-06-07`. These dates describe the supplied layer, not a new approval or completeness assessment. Geometry is WGS84, EPSG:4326. The display polygons are generalised at 0.0005 degrees with topology preserved within each polygon; this is for web display, not measurement, surveying or a new authoritative boundary product. The original attachment remains untouched. The archive SHA256 and preparation parameters are recorded in `data/geography/metadata.json`.
 
+Coverage cells may contain multiple district names or codes separated by commas or semicolons. Map links expand each district while source rows, tables and KPI counts remain unchanged. Explicit spelling aliases are Meuda to Mueda, Montepez to Montepuez, Mteuge to Metuge, and Pemba to Cidade de Pemba. The user-confirmed abbreviation MDP maps to Mocimboa da Praia. Unknown tokens, including unconfirmed abbreviations, remain unmatched and trigger a notice even when other districts in the same cell are recognised. Partner, role and effective-date filters apply before these links are expanded.
+
+The coverage Area filter lists individual district labels, deduplicating spelling variants and expanded source lists. Selecting a district retains every source assignment containing it, combines with partner/role/date filters, and focuses the map on that district. All areas restores the full selection. Source rows and exported assignment lists are preserved; the Assigned areas KPI counts distinct districts rather than distinct district-list cells.
+
 Rebuild from the original attachment from the project root:
 
 ```sh

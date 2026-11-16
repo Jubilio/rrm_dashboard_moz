@@ -19,7 +19,7 @@ read_dashboard_workbook <- function(path,mode=NULL,base_dir='.',allow_incomplete
     x <- as.data.frame(readxl::read_excel(path,sheet=input_sheet_names[[key]],col_types='text',
       .name_repair='minimal',trim_ws=TRUE,progress=FALSE),stringsAsFactors=FALSE)
     expected <- names(read.csv(file.path(base_dir,'data','templates',paste0(key,'.csv')),nrows=0,check.names=FALSE))
-    if(!identical(names(x),expected)) stop(input_sheet_names[[key]],': headers must match the supplied example exactly.')
+    if(!rrm_input_headers_match(key,names(x),expected)) stop(input_sheet_names[[key]],': headers must match the supplied example exactly.')
     for(field in names(x)) {x[[field]] <- trimws(gsub('\u00a0',' ',x[[field]],fixed=TRUE));x[[field]][!is.na(x[[field]])&!nzchar(x[[field]])] <- NA_character_}
     if(nrow(x)) x <- x[rowSums(!is.na(x))>0,,drop=FALSE]
     for(field in intersect(input_date_fields,names(x))) {

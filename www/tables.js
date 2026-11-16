@@ -4,6 +4,38 @@
   var pending = new Set();
   var frame = null;
   var widths = new WeakMap();
+  var topScrolls = new WeakMap();
+  function updateTopScroll(table) {
+    var container = table.closest('.dataTables_scroll, .dt-scroll');
+    if (!container) return;
+    var body = container.querySelector('.dataTables_scrollBody, .dt-scroll-body');
+    if (!body || !body.contains(table)) return;
+    var state = topScrolls.get(table);
+    if (!state) {
+      var bar = document.createElement('div');
+      bar.className = 'rrm-table-top-scroll';
+      bar.tabIndex = 0;
+      bar.setAttribute('role', 'region');
+      bar.setAttribute('aria-label', 'Scroll table horizontally');
+      var track = document.createElement('div');
+      bar.appendChild(track);
+      container.insertBefore(bar, container.firstChild);
+      var fromTop = function () {
+        if (Math.abs(body.scrollLeft - bar.scrollLeft) > 1) body.scrollLeft = bar.scrollLeft;
+      };
+      var fromBody = function () {
+        if (Math.abs(bar.scrollLeft - body.scrollLeft) > 1) bar.scrollLeft = body.scrollLeft;
+      };
+      bar.addEventListener('scroll', fromTop, {passive: true});
+      body.addEventListener('scroll', fromBody, {passive: true});
+      state = {bar: bar, track: track, body: body, fromBody: fromBody};
+      topScrolls.set(table, state);
+    }
+    state.bar.style.width = body.clientWidth + 'px';
+    state.track.style.width = body.scrollWidth + 'px';
+    state.bar.hidden = body.clientWidth === 0 || body.scrollWidth <= body.clientWidth + 1;
+    state.bar.scrollLeft = body.scrollLeft;
+  }
   var observer = window.ResizeObserver ? new ResizeObserver(function (entries) {
     entries.forEach(function (entry) {
       var node = entry.target;
@@ -27,6 +59,7 @@
       tables.forEach(function (table) {
         if (!table.isConnected || !table.getClientRects().length || table.getBoundingClientRect().width === 0) return;
         if ($.fn.dataTable && $.fn.dataTable.isDataTable(table)) $(table).DataTable().columns.adjust();
+        updateTopScroll(table);
       });
     });
   }
@@ -38,7 +71,16 @@
   function start() {
     if (!window.jQuery) return;
     $(document).on('init.dt.rrmWidth', function (event, settings) { watch(settings.nTable); });
+    $(document).on('draw.dt.rrmWidth column-sizing.dt.rrmWidth', function (event, settings) {
+      updateTopScroll(settings.nTable);
+    });
     $(document).on('destroy.dt.rrmWidth', function (event, settings) {
+      var state = topScrolls.get(settings.nTable);
+      if (state) {
+        state.body.removeEventListener('scroll', state.fromBody);
+        state.bar.remove();
+        topScrolls.delete(settings.nTable);
+      }
       var widget = settings.nTable.closest('.datatables');
       if (observer && widget) observer.unobserve(widget);
     });

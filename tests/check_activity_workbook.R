@@ -42,11 +42,23 @@ testServer(activity_workbook_server,args=list(workbook_path='',snapshot_dir=tmp)
  session$setInputs(month='All',alert='All',district='All',partner='All',tier='All',sector='All',modality='All',funding='All',show_all=TRUE,refresh=0)
  stopifnot(nrow(data()$activities)==1,nrow(eligible())==1,nrow(displayed_records())==1,!is.null(output$metrics),!is.null(output$outputs),!is.null(output$people),!is.null(output$demographics),!is.null(output$subsets),!is.null(output$handovers),!is.null(output$timing))
  old<-loaded_at()
+ stopifnot(nrow(delay_records())==1L,delay_records()$delay_reason=='',
+           'delay_reason' %in% names(displayed_records()),!is.null(output$delays))
+ # Reasons stay attached to their activity even before partner validation.
+ b<-base$activities;b$delay_reason<-'Access blocked; delivery postponed; alternate route under review'
+ b$review_status<-NA_character_
+ write.csv(b,file.path(tmp,'activities.csv'),row.names=FALSE,na='')
+ session$setInputs(refresh=10)
+ stopifnot(nrow(eligible())==0L,nrow(delay_records())==1L,
+   delay_records()$delay_reason==b$delay_reason,
+   delay_records()$record_id==b$record_id,
+   delay_records()$review_status=='Pending review',!is.null(output$delays))
  b<-base$activities;b$quantity<-'0';write.csv(b,file.path(tmp,'activities.csv'),row.names=FALSE,na='')
  session$setInputs(refresh=1);stopifnot(eligible()$quantity==0,is.null(last_error()))
  unlink(file.path(tmp,'metrics.csv'));session$setInputs(refresh=2)
  stopifnot(!is.null(last_error()),eligible()$quantity==0)
  session$setInputs(partner='Absent');stopifnot(nrow(records())==0,!is.null(output$metrics),!is.null(output$outputs),!is.null(output$subsets),!is.null(output$timing))
+ stopifnot(nrow(delay_records())==0L,!is.null(output$delays))
  if(nzchar(path)) {
   session$setInputs(partner='All',upload=data.frame(name='report.xlsx',size=file.info(path)$size,type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',datapath=path))
   stopifnot(nrow(data()$activities)==83,is.null(last_error()),source_label()=='Session upload')

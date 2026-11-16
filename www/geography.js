@@ -37,7 +37,9 @@
       style: function (f) { return {color: '#58585A', weight: 1, fillColor: f.properties.assigned ? '#EE5859' : '#D2CBB8', fillOpacity: contextMode ? 0.08 : 0.6}; },
       onEachFeature: function (f, layer) {
         var p = f.properties;
-        layer.bindTooltip(text(p.district + ' · ' + p.pcode));
+        layer.bindTooltip(text(p.district + ' · ' + p.pcode +
+          (contextMode ? '' : '\nGLA: ' + p.assignment)),
+          {className: contextMode ? '' : 'rrm-coverage-tooltip'});
         layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + (contextMode ? ' — District boundary (context only)' : ' — ' + p.assignment)));
         layer.on('mouseover', function () { layer.setStyle({weight: 3}); });
         layer.on('mouseout', function () { state.districts.resetStyle(layer); });
@@ -49,8 +51,10 @@
       style: {color: '#58585A', weight: data.selected_post === 'All' ? 0.8 : 3, dashArray: '3 3', fill: true, fillOpacity: 0},
       onEachFeature: function (f, layer) {
         var p = f.properties;
-        layer.bindTooltip(text(p.administrative_post + ' · ' + p.pcode));
         var parent = districtProperties[p.district_pcode];
+        layer.bindTooltip(text(p.administrative_post + ' · ' + p.pcode +
+          (contextMode ? '' : '\nDistrict GLA (' + p.district + '): ' + (parent ? parent.assignment : 'Unknown'))),
+          {className: contextMode ? '' : 'rrm-coverage-tooltip'});
         layer.bindPopup(text(p.administrative_post + ' | ' + p.district + ' | ' + p.pcode +
           (contextMode ? ' — Administrative-post boundary (context only)' :
           ' — Administrative-post boundary. District responsibility: ' + (parent ? parent.assignment : 'Unknown') +

@@ -11,7 +11,13 @@ testServer(page_server,args=list(key='activity',d=d),{
     output$table_title=='Interventions linked to DEMO-001')
   table <- jsonlite::fromJSON(output$table,simplifyVector=FALSE)
   stopifnot(grepl('<th>Scope',table$x$container,fixed=TRUE),grepl('<th>Partner',table$x$container,fixed=TRUE),
+    grepl('<th>Delay reason',table$x$container,fixed=TRUE),
+    identical(display_table()$delay_reason,filtered()$delay_reason),
     'measure_type' %in% names(display_table()),'donor' %in% names(display_table()))
+  stopifnot(grepl('<th>Alert ID',table$x$container,fixed=TRUE),
+    grepl('<th>Response geography',table$x$container,fixed=TRUE),
+    identical(display_table()$alert_id,filtered()$alert_id),
+    identical(display_table()$area,filtered()$area))
   stopifnot(grepl('Shelter follow-up',paste(unlist(output$transfer_summary),collapse=' '),fixed=TRUE),
     grepl('Partner-reported access constraints',paste(unlist(output$details),collapse=' '),fixed=TRUE))
   session$setInputs(tier='Tier 2')
@@ -24,5 +30,8 @@ testServer(page_server,args=list(key='activity',d=d),{
   session$setInputs(area='Unknown')
   stopifnot(nrow(filtered())==0L,!is.null(jsonlite::fromJSON(output$table,simplifyVector=FALSE)$x),
     grepl('No responsibility transfers',paste(unlist(output$transfer_summary),collapse=' '),fixed=TRUE))
+  empty_table <- jsonlite::fromJSON(output$table,simplifyVector=FALSE)
+  stopifnot(grepl('<th>Alert ID',empty_table$x$container,fixed=TRUE),
+    grepl('<th>Response geography',empty_table$x$container,fixed=TRUE))
 })
 message('PASS: activity overview layout, distinct metric units, friendly table with full audit exports, filters, timing, independent transfers and empty widgets.')

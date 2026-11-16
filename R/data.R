@@ -1,4 +1,8 @@
 # Data contract and pure calculation helpers. No household-level data is accepted.
+rrm_input_headers_match <- function(table, fields, expected) {
+  optional <- if (table == 'alerts') 'consortium_response_status' else character()
+  !anyDuplicated(fields) && identical(fields[!fields %in% optional], expected)
+}
 read_rrm_data <- function(mode = 'operational', base_dir = '.') {
   if (!mode %in% c('demo', 'operational')) stop('RRM_DATA_MODE must be demo or operational.')
   names <- c('coverage','alerts','routes','assessments','needs','screening','activities','transfers','metadata')
@@ -8,12 +12,14 @@ read_rrm_data <- function(mode = 'operational', base_dir = '.') {
     if (!file.exists(file)) stop('Missing ', file, '. Copy and populate every CSV template first.')
     x <- read.csv(file, colClasses = 'character', na.strings = '', check.names = FALSE, fileEncoding = 'UTF-8')
     expected <- names(read.csv(template, nrows = 0, check.names = FALSE))
-    if (!identical(names(x), expected)) stop(name, ': columns must match the template exactly (including order).')
+    if (!rrm_input_headers_match(name, names(x), expected)) stop(name, ': columns must match the template exactly (including order).')
     x
   }), names)
   validate_rrm_tables(result,mode,base_dir)
 }
 validate_rrm_tables <- function(result,mode,base_dir='.',allow_severity_inputs=TRUE,allow_incomplete=FALSE) {
+  if (!'consortium_response_status' %in% names(result$alerts))
+    result$alerts$consortium_response_status <- rep(NA_character_, nrow(result$alerts))
   # Missing information stays NA; never infer zero, a date, rank or review status.
   for (name in names(result)) for (col in names(result[[name]])) {
     if(is.character(result[[name]][[col]])) {
@@ -22,6 +28,9 @@ validate_rrm_tables <- function(result,mode,base_dir='.',allow_severity_inputs=T
       result[[name]][[col]] <- value
     }
   }
+  response <- result$alerts$consortium_response_status
+  if (any(!is.na(response) & !response %in% c('Yes','No','Pending go/no-go')))
+    stop('alerts: consortium_response_status must be Yes, No, Pending go/no-go, or blank.')
   issues <- data.frame(table=character(),column=character(),row=integer(),issue=character())
   pending <- function(name,col,rows,message='Not reported') {
     if(length(rows)) issues <<- rbind(issues,data.frame(table=name,column=col,row=rows+1L,issue=message))

@@ -1,7 +1,8 @@
 ## Presentation labels only: source field names and download schemas stay intact.
 rrm_column_labels <- function(fields) {
   labels <- c(
-    alert_id='Alert ID', arrival_district='Arrival district', movement='Population movement',
+    consortium_response_status='Consortium response status',
+    alert_id='Alert ID', arrival_district='Arrival district', movement='Population status (source)',
     rna_done_raw='RNA completed (source value)', rna_done='RNA completed',
     tier2_done='Tier 2 completed', tier2_date='Tier 2 date',
     recorded_alert_severity='Alert severity (source)', recorded_latest_severity='Latest severity (source)',
@@ -41,4 +42,30 @@ rrm_datatable <- function(data, ...) {
   args <- list(...)
   if (is.null(args$colnames)) args$colnames <- rrm_column_labels(colnames(data))
   do.call(DT::datatable, c(list(data=data), args))
+}
+
+latest_alert_rows <- function(x) {
+  # ISO dates sort chronologically; missing issue dates remain at the end.
+  x <- x[order(-as.numeric(as.Date(x$alert_date)), x$alert_id, na.last=TRUE), , drop=FALSE]
+  fields <- intersect(c('alert_date','alert_id','organisation','gla','arrival_district',
+                        'trigger','population','alert_severity','recorded_alert_severity',
+                        'consortium_response_status'), names(x))
+  x[fields]
+}
+
+latest_alert_table <- function(x, detail_input=NULL) {
+  rows <- latest_alert_rows(x)
+  escape <- TRUE
+  if (!is.null(detail_input)) {
+    buttons <- vapply(rows$alert_id, function(id) as.character(htmltools::tags$button(
+      type='button',class='btn btn-default btn-sm rrm-alert-detail-button',
+      `data-input`=detail_input,`data-alert`=id,'View details')),character(1))
+    rows <- data.frame(Details=buttons,rows,check.names=FALSE)
+    escape <- seq_len(ncol(rows))[-1L]
+  }
+  rrm_datatable(rows, width='100%', rownames=FALSE, escape=escape,
+    selection='none',
+    callback=DT::JS("table.on('click.rrmAlertDetail', '.rrm-alert-detail-button', function(event) { event.preventDefault(); event.stopPropagation(); Shiny.setInputValue(this.getAttribute('data-input'), this.getAttribute('data-alert'), {priority: 'event'}); });"),
+    options=list(pageLength=5, scrollX=TRUE, ordering=FALSE, dom='tp',
+                 language=list(emptyTable='No alerts available for this selection.')))
 }

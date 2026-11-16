@@ -5,9 +5,18 @@ html <- as.character(page_ui('alerts','alerts',d))
 stopifnot(grepl('id="alerts-alert_id"',html,fixed=TRUE),
   lengths(regmatches(html,gregexpr('id="alerts-alert_id"',html,fixed=TRUE)))==1L,
   grepl('Origin to arrival and targeted locations',html,fixed=TRUE),grepl('<details',html,fixed=TRUE))
+stopifnot(grepl('Latest alerts',html,fixed=TRUE),
+          grepl('id="alerts-latest_alerts"',html,fixed=TRUE))
+fixture <- data.frame(alert_id=c('older','undated','newer','same-date'),
+                      alert_date=as.Date(c('2026-01-01',NA,'2026-11-01','2026-11-01')))
+stopifnot(identical(latest_alert_rows(fixture)$alert_id,
+                    c('newer','same-date','older','undated')),
+          nrow(latest_alert_rows(fixture[FALSE,]))==0L)
 testServer(page_server,args=list(key='alerts',d=d),{
   session$setInputs(alert_id='DEMO-001',arrival='All',trigger='All',gla='All',movement='All',dates=as.Date(c('2026-09-01','2026-09-30')))
   stopifnot(nrow(filtered())==1L,filtered()$rna_people==4700,filtered()$rna_hh==940)
+  stopifnot(identical(latest_alert_rows(filtered())$alert_id,'DEMO-001'),
+            !is.null(output$latest_alerts))
   routes <- paste(unlist(output$routes),collapse=' ')
   stopifnot(grepl('route-connections',routes,fixed=TRUE),grepl('Origin A',routes,fixed=TRUE),
     grepl('Arrival B',routes,fixed=TRUE),grepl('Arrival C',routes,fixed=TRUE),

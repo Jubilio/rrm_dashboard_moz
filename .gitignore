@@ -17,3 +17,6 @@ data/RRM_Dashboard_Input.xlsx
 .Ruserdata
 .DS_Store
 Thumbs.db
+
+# Browser automation output (Playwright MCP)
+.playwright-mcp/

@@ -93,7 +93,7 @@ history_ui <- function(id,h) {
     shiny::p('Use reviewed domain ratings. Unknown information is not Low. No numeric confidence score is invented.'),
     shiny::div(class='filters',shiny::selectInput(ns('conditions'),'Current humanitarian conditions',c('Unknown'='',setNames(1:4,severity_labels))),
       shiny::selectInput(ns('protection'),'Current protection / ongoing threat',c('Unknown'='',setNames(1:4,severity_labels))),
-      shiny::numericInput(ns('verified_hh'),'Alert-linked households',NA,min=0,step=1),shiny::checkboxInput(ns('verified'),'Count independently verified for this alert',FALSE)),
+      shiny::numericInput(ns('verified_hh'),'Alert-linked households',NULL,min=0,step=1),shiny::checkboxInput(ns('verified'),'Count independently verified for this alert',FALSE)),
     shiny::uiOutput(ns('calculation'))))
 }
 history_server <- function(id,h,d=NULL,activity=NULL) shiny::moduleServer(id,function(input,output,session) {

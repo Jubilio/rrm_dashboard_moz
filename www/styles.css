@@ -59,7 +59,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-1px;margin:0 
 .panel{padding:14px 20px;border-radius:0;margin:0 0 14px}
 h3{font-size:20px;line-height:1.5;margin:0 0 10px;font-weight:700}
 .page-coverage .two-col>.panel{min-height:401px}
-.page-coverage .rrm-map-output{height:267px!important;border-radius:0;border-color:var(--line)}
+.page-coverage .rrm-map-output{height:267px!important}
 .page-coverage .muted{font-size:13px;line-height:1.4;margin:8px 0 0;color:var(--ink)}
 .page-coverage .coverage-map-caption{margin-top:12px}
 .map-details{margin-top:8px;font-size:12px;color:var(--ink)}
@@ -156,9 +156,8 @@ h1{font-size:32px}
 @media(max-width:1050px){.page-alerts .alert-panels{grid-template-columns:1fr}.page-alerts .alert-panels>.panel{min-height:0}.page-alerts .alert-metrics>.empty{grid-column:span 1}}
 @media(max-width:680px){.page-alerts .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-alerts .alert-selection select{font-size:22px}.page-alerts .kpi-value{font-size:30px}.page-alerts .kpi:last-child .kpi-value{font-size:21px}.page-alerts .alert-panels>.panel{padding:12px}.route-arrival p{font-size:13px}.route-arrival .route-target{font-size:11px}.route-diagram h4{font-size:15px}.route-origin,.route-arrival{padding:8px}}
 /* Geographic alert endpoints share the existing local Leaflet binding. */
-.page-alerts .rrm-map-output{height:clamp(300px,calc(100dvh - 390px),620px)!important;border-radius:0;border-color:var(--line)}
+.page-alerts .rrm-map-output{height:clamp(300px,calc(100dvh - 390px),620px)!important}
 .page-alerts .alert-map-status{font-size:11px;line-height:1.4;margin:4px 0 0}
-.page-alerts .map-legend{font-size:12px;margin:8px 0 4px}
 
 /* Tables fill their panel; wide datasets retain horizontal scrolling. */
 .datatables.html-widget,.datatables.html-widget-output,.dataTables_wrapper,.dataTables_scroll{

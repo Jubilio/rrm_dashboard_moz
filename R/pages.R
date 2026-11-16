@@ -291,6 +291,13 @@ page_ui <- function(id, key, d) {
           class = 'panel coverage-map-panel',
           h3('Assigned GLA coverage'),
           rrm_map_output(ns('coverage_map')),
+          div(class = 'map-legend', span(
+            span(class = 'map-swatch', style = 'background:#EE5859;'),
+            'District with assigned GLA'
+          ), span(
+            span(class = 'map-swatch', style = 'background:#D2CBB8;'),
+            'No GLA assigned'
+          )),
           p(class = 'muted coverage-map-caption',
             'Hover over an area to see the district GLA and role. Click for details.'),
           uiOutput(ns('map_slot')),
@@ -315,10 +322,10 @@ page_ui <- function(id, key, d) {
             h3('Origin to arrival and targeted locations'),
             rrm_map_output(ns('alert_map')),
             div(class = 'map-legend', span(
-              span(class = 'map-swatch', style = 'background:#58585A;'),
+              span(class = 'map-swatch map-swatch-point', style = 'background:#58585A;'),
               'Origin'
             ), span(
-              span(class = 'map-swatch', style = 'background:#EE5859;'),
+              span(class = 'map-swatch map-swatch-point', style = 'background:#EE5859;'),
               'Arrival'
             )),
             uiOutput(ns('alert_map_note'))

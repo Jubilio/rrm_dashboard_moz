@@ -1,8 +1,15 @@
-.rrm-map-output { width:100%; background:#F3F4F4; border:1px solid #D2CBB8; border-radius:6px; z-index:0; }
+/* Shared frame for every RRM map; pages only override the height. */
+.rrm-map-output { width:100%; height:clamp(320px,calc(100dvh - 390px),620px); background:#F3F4F4; border:1px solid #C7C8CA; border-radius:0; z-index:0; }
+/* Muted basemap: the same OpenStreetMap tiles, desaturated so RRM data carries the colour. */
+.rrm-map-output .leaflet-tile-pane { filter:grayscale(1) brightness(1.06) contrast(.85); opacity:.85; }
 .rrm-map-output .leaflet-popup-content { white-space:pre-wrap; line-height:1.6; }
 .rrm-map-output .rrm-coverage-tooltip { white-space:pre-line; max-width:280px; line-height:1.5; }
 .rrm-map-output .leaflet-control-layers { font:12px/1.5 Arial,sans-serif; }
+.rrm-map-output .leaflet-bar a, .rrm-map-output .leaflet-control-layers { border-radius:0; }
+.rrm-map-output .leaflet-bar, .rrm-map-output .leaflet-control-layers { border:1px solid #C7C8CA; box-shadow:none; }
 .map-filters { display:flex; gap:12px; flex-wrap:wrap; }
 .map-filters .form-group { flex:1 1 170px; min-width:0; }
-.map-legend { display:flex; gap:16px; flex-wrap:wrap; margin:10px 0; font-size:12px; }
-.map-swatch { display:inline-block; width:12px; height:12px; margin-right:5px; border:1px solid #58585A; }
+.map-legend { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin:8px 0 4px; font-size:12px; color:#58585A; }
+.map-legend > span { display:inline-flex; align-items:center; }
+.map-swatch { display:inline-block; width:12px; height:12px; margin-right:6px; border:1px solid #FFFFFF; box-shadow:0 0 0 1px #C7C8CA; }
+.map-swatch-point { border-radius:50%; }

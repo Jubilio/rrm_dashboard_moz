@@ -212,7 +212,7 @@ geography_controls <- function(ns, include_province = TRUE) {
 rrm_map_output <- function(outputId) {
   dep <- htmltools::htmlDependency(
     'rrm-geography',
-    '1.3.1',
+    '1.4.0',
     src = c(file = 'www'),
     script = c('vendor/leaflet/leaflet.js', 'geography.js'),
     stylesheet = c('vendor/leaflet/leaflet.css', 'geography.css')
@@ -225,8 +225,7 @@ rrm_map_output <- function(outputId) {
       `aria-label` = if (grepl('alert_map$', outputId))
         'Alert origin and arrival map'
       else
-        'District coverage map',
-      style = 'height:430px;'
+        'District coverage map'
     ),
     dep
   )

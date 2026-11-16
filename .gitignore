@@ -20,3 +20,7 @@ Thumbs.db
 
 # Browser automation output (Playwright MCP)
 .playwright-mcp/
+
+# Local deployment script (holds account credentials) and raw partner reporting workbooks
+run.R
+data/activity_report/

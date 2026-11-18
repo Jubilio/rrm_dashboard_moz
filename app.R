@@ -7,6 +7,7 @@ if (length(missing))
        paste(missing, collapse = ', '))
 library(shiny)
 source('config.R', local = TRUE)
+source('R/footer_branding.R', local = TRUE)
 source('R/data.R', local = TRUE)
 source('R/pages.R', local = TRUE)
 source('R/input_workbook.R', local = TRUE)
@@ -29,7 +30,7 @@ ui <- fluidPage(
   tags$head(
     tags$title(paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),
     tags$meta(name = 'viewport', content = 'width=device-width, initial-scale=1'),
-    tags$link(rel = 'stylesheet', type = 'text/css', href = 'styles.css'),
+    tags$link(rel = 'stylesheet', type = 'text/css', href = paste0('styles.css?v=', as.numeric(file.info('www/styles.css')$mtime))),
     tags$script(src = 'tables.js', defer = 'defer')
   ),
   div(
@@ -103,6 +104,7 @@ ui <- fluidPage(
   ),
   tags$footer(
     class = 'app-footer',
+    style = 'flex-wrap:wrap;',
     conditionalPanel(
       "input.page != 'coverage'",
       class = 'footer-meta',
@@ -127,7 +129,8 @@ ui <- fluidPage(
         width = 308,
         height = 68
       )
-    )
+    ),
+    footer_acknowledgements()
   )
 )
 server <- function(input, output, session) {

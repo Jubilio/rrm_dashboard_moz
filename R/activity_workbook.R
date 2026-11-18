@@ -5,6 +5,10 @@ alert_fields <- c(alert_id='Alert ID',alert_date='Alert Shared Date',lead_agency
 metric_fields <- c(metric='Output Metric',unit='Unit',definition='Counting Definition')
 activity_trim <- function(x) {x<-trimws(as.character(x));x[is.na(x)|!nzchar(x)]<-NA_character_;x}
 activity_select <- function(x,mapping,sheet) {
+ if(identical(sheet,'Alerts')) {
+  if(!'Response Status' %in% names(x)) x[['Response Status']]<-NA_character_
+  mapping<-c(mapping,response_status='Response Status')
+ }
  missing<-setdiff(unname(mapping),names(x));if(length(missing)) stop(sheet,': missing columns: ',paste(missing,collapse=', '))
  x<-as.data.frame(x[,unname(mapping),drop=FALSE],stringsAsFactors=FALSE);names(x)<-names(mapping)
  for(n in names(x)) x[[n]]<-activity_trim(x[[n]])
@@ -101,7 +105,12 @@ prepare_activity_data <- function(raw) {
  required<-names(activity_fields)
  if(!all(required %in% names(a))||!all(names(extra_fields) %in% names(e))||!all(names(alert_fields) %in% names(l))) stop('Activity snapshot schema does not match the adapter.')
  # Snapshots also follow an exact allowlist; extra columns can never be published by UI/export.
- a<-a[,c(required,'source_row'),drop=FALSE];e<-e[,c(names(extra_fields),'source_row'),drop=FALSE];l<-l[,c(names(alert_fields),'source_row'),drop=FALSE];m<-m[,c(names(metric_fields),'source_row'),drop=FALSE]
+ if(!'response_status' %in% names(l)) l$response_status<-NA_character_
+ status<-tolower(activity_trim(l$response_status))
+ l$response_status<-ifelse(!is.na(status)&status=='ongoing','Ongoing',ifelse(!is.na(status)&status=='closed','Closed','Not reported'))
+ a$response_status<-l$response_status[match(a$alert_id,l$alert_id)]
+ a$response_status[is.na(a$response_status)|a$alert_id %in% l$alert_id[duplicated(l$alert_id)|duplicated(l$alert_id,fromLast=TRUE)]|is.na(a$link_status)|a$link_status!='Confirmed']<-'Not reported'
+ a<-a[,c(required,'source_row','response_status'),drop=FALSE];e<-e[,c(names(extra_fields),'source_row'),drop=FALSE];l<-l[,c(names(alert_fields),'response_status','source_row'),drop=FALSE];m<-m[,c(names(metric_fields),'source_row'),drop=FALSE]
  a<-a[!is.na(a$record_id),,drop=FALSE];e<-e[!is.na(e$record_id),,drop=FALSE]
  issues<-list()
  add<-function(id,row,issue,blocking=TRUE,sheet='Activity Entry') {

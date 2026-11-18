@@ -1,3 +1,43 @@
+# District reach uses whole activity records, never settlement matches or extra outputs.
+district_reach_payload <- function(activities, measure, layers=read_map_layers()) {
+  payload <- coverage_map_payload(data.frame(area=character(),partner=character(),role=character()),
+                                  'operational', layers=layers)
+  payload$kind <- 'district_reach'
+  a <- activities[which(activities$eligible &
+    activities$people_scope %in% c('Direct service users','Participants','Members of assisted households') &
+    activities$people_basis == 'Unique within record' &
+    paste(activities$people_scope, activities$people_basis, sep=' / ') == measure), , drop=FALSE]
+  codes <- vapply(a$district, location_reference_code, character(1), level='admin2')
+  provinces <- vapply(a$province, location_reference_code, character(1), level='admin1')
+  valid <- !is.na(codes) & (is.na(provinces) | substr(codes,1,4)==provinces)
+  payload$reach_unresolved <- sum(!valid)
+  a <- a[which(valid), , drop=FALSE]; codes <- codes[which(valid)]
+  # Duplicate IDs cannot establish independent reach; keep the district unavailable.
+  duplicate <- duplicated(a$record_id) | duplicated(a$record_id,fromLast=TRUE)
+  payload$reach <- list(type='FeatureCollection',features=list())
+  payload$reach_missing <- 0L
+  for (code in unique(codes)) {
+    ix <- which(codes==code)
+    if (any(duplicate[ix]) || any(!is.finite(a$people_total[ix]) | a$people_total[ix]<0)) {
+      payload$reach_missing <- payload$reach_missing + 1L
+      next
+    }
+    features <- Filter(function(f) identical(f$properties$pcode,code),layers$districts$features)
+    if (length(features)!=1L) {payload$reach_unresolved <- payload$reach_unresolved+length(ix);next}
+    f <- features[[1]]
+    f$properties$people <- sum(a$people_total[ix])
+    f$properties$record_count <- length(ix)
+    f$properties$measure <- measure
+    payload$reach$features[[length(payload$reach$features)+1L]] <- f
+  }
+  # Show only districts associated with this measure; unavailable districts retain boundaries.
+  if (length(codes)) {
+    payload$districts$features <- Filter(function(f) f$properties$pcode %in% codes,payload$districts$features)
+    payload$posts$features <- Filter(function(f) f$properties$district_pcode %in% codes,payload$posts$features)
+  }
+  payload
+}
+
 # Geographic linkage is separate from source validation and never allocates reach.
 read_settlement_points <- function(path='data/geography/settlements.csv') {
   x <- read.csv(path,stringsAsFactors=FALSE,colClasses='character',na.strings='',fileEncoding='UTF-8')
@@ -97,7 +137,10 @@ intervention_map_payload <- function(activities,links,points,layers=read_map_lay
   for(id in unique(links$point_id[links$match_status=='Matched'])) {
     ix<-which(links$match_status=='Matched'&!is.na(links$point_id)&links$point_id==id)
     p<-points[match(id,points$point_id),,drop=FALSE];a<-activities[ix,,drop=FALSE]
-    properties<-list(point_id=id,name=p$name,district=p$district,admin_post=p$admin_post,source_layer=p$source_layer,
+    statuses<-if('response_status' %in% names(a)) a$response_status else rep('Not reported',nrow(a))
+    statuses[is.na(statuses)|!statuses %in% c('Ongoing','Closed')]<-'Not reported'
+    response_status<-if(length(unique(statuses))==1L) statuses[1] else 'Mixed'
+    properties<-list(response_status=response_status,ongoing_records=sum(statuses=='Ongoing'),closed_records=sum(statuses=='Closed'),unknown_status_records=sum(statuses=='Not reported'),point_id=id,name=p$name,district=p$district,admin_post=p$admin_post,source_layer=p$source_layer,
       record_count=length(unique(a$record_id)),validated_records=length(unique(a$record_id[a$eligible])),
       other_records=length(unique(a$record_id[!a$eligible])),
       agencies=paste(sort(unique(a$implementing_agency[!is.na(a$implementing_agency)])),collapse=', '),

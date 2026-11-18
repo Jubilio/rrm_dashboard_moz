@@ -212,7 +212,7 @@ geography_controls <- function(ns, include_province = TRUE) {
 rrm_map_output <- function(outputId) {
   dep <- htmltools::htmlDependency(
     'rrm-geography',
-    '1.4.0',
+    '1.5.0',
     src = c(file = 'www'),
     script = c('vendor/leaflet/leaflet.js', 'geography.js'),
     stylesheet = c('vendor/leaflet/leaflet.css', 'geography.css')

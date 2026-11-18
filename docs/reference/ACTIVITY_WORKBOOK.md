@@ -1,5 +1,11 @@
 # Excel-backed activity reporting
 
+## Response status on intervention points
+
+Optionally add **Response Status** inside the **RRMAlerts** Excel table on the **Alerts** sheet. Use **Ongoing** or **Closed** for each alert (snapshot column: `response_status`). Existing workbooks remain compatible. Missing or unrecognised values, duplicate alert IDs and unconfirmed links display as **Not reported**; Activity End never implies response closure.
+
+Intervention points are orange for ongoing responses, blue for closed responses, purple for mixed statuses at the same location (including known and unknown statuses), and grey when status is unreported. Popups retain validation counts and show record counts by response status. Filters and map record scope determine which linked records contribute to each point.
+
 ## Populated fictional examples
 
 In Activity reporting > Reporting workbook, enable **Show fictional populated examples** in Data source. This switches this panel to a separate demonstration dataset; it does not edit the configured workbook, supplied snapshot or other dashboard pages. Disable the option to return to the configured source or session upload. All tables, filters and exports in this panel follow the selected source; example record IDs and activity export filenames carry a DEMO prefix.

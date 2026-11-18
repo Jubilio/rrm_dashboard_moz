@@ -10,18 +10,15 @@ invisible(parse('R/activity_workbook_ui.R'))
 message('PASS: demo counts, dates, handover and evidence reconcile; UI syntax is valid.')
 source('R/data.R');source('R/pages.R');source('R/activity_workbook_ui.R')
 library(shiny)
+stopifnot(!grepl('demo_examples',as.character(activity_workbook_ui('test')),fixed=TRUE))
 testServer(activity_workbook_server,{
  session$setInputs(demo_examples=FALSE,show_all=TRUE)
  original<-data()$activities
  session$setInputs(demo_examples=TRUE)
- stopifnot(nrow(eligible())==2L,grepl('^DEMONSTRATION',source_label()),
-  all(grepl('^DEMO-',displayed_records()$record_id)),
+ stopifnot(identical(data()$activities,original),source_label()=='Supplied workbook snapshot',
   !is.null(output$households),!is.null(output$people),!is.null(output$demographics),
   !is.null(output$subsets),!is.null(output$timing),!is.null(output$handovers))
- session$setInputs(tier='Tier 2')
- # Timing retains every tier for the selected alert across all reported months.
- stopifnot(nrow(eligible())==1L,eligible()$households==10,nrow(timing_data())==2L)
- session$setInputs(tier='All',demo_examples=FALSE)
+ session$setInputs(demo_examples=FALSE)
  stopifnot(identical(data()$activities,original),!grepl('^DEMONSTRATION',source_label()))
 })
-message('PASS: fictional examples reconcile, populate results, filter and restore the operational source.')
+message('PASS: fictional example control removed; legacy input cannot replace the reporting source.')

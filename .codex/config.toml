@@ -1,0 +1,8 @@
+[mcp_servers.positron]
+command = "cmd.exe"
+args = [
+    "/d",
+    "/c",
+    "@",
+    'c:\Users\USER\AppData\Roaming\Positron\User\globalStorage\positron.positron-supervisor\mcp\Positron MCP\positron-mcp.cmd',
+]

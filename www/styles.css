@@ -228,3 +228,13 @@ h1{font-size:32px}
 @media(max-width:1250px){.page-activity .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-activity .filters .btn-reset{margin-top:0}.page-activity .kpi{padding:12px}.page-activity .kpi-value{font-size:32px}}
 @media(max-width:900px){.page-activity .activity-notes{grid-template-columns:1fr;gap:0}}
 @media(max-width:680px){.page-activity .filters{grid-template-columns:repeat(2,minmax(0,1fr))}.page-activity .kpi-value{font-size:30px}.page-activity .activity-events{padding:12px}.page-activity .activity-notes .panel{padding:12px}}
+
+/* Partner and donor acknowledgement strip. Preserve original logo proportions. */
+.app-footer{flex-wrap:wrap}
+.footer-acknowledgements{flex:0 0 100%;display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:24px;align-items:center;border-top:1px solid var(--line);padding:16px 0 4px;margin-top:8px;background:#fff}
+.footer-brand-heading{font:700 12px Arial,Helvetica,sans-serif;letter-spacing:.3px;color:var(--ink);margin:0 0 12px;text-transform:uppercase}
+.footer-partner-logos{display:flex;flex-wrap:wrap;align-items:center;gap:18px 24px}
+.footer-partner-logo{display:block;width:125px;height:48px;object-fit:contain}
+.footer-donor{text-align:center;border-left:1px solid var(--line);padding-left:20px}
+.footer-donor-logo{display:block;width:100%;height:88px;object-fit:contain}
+@media(max-width:680px){.footer-acknowledgements{grid-template-columns:minmax(0,1fr);gap:20px}.footer-partner-logos{justify-content:center;gap:16px}.footer-partners .footer-brand-heading{text-align:center}.footer-partner-logo{width:115px;height:44px}.footer-donor{border-left:0;border-top:1px solid var(--line);padding:16px 0 0}.footer-donor-logo{width:110px;height:100px;margin:0 auto}}

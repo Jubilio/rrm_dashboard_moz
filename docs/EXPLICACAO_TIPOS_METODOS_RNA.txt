@@ -1,0 +1,149 @@
+TIPOS E MÉTODOS DE RNA NO RRM MOÇAMBIQUE
+Nota explicativa para acompanhamento do dashboard
+Comentário 12 | Data: 17 de novembro de 2026
+
+OBJETIVO
+
+Este documento explica as principais designações utilizadas para avaliações
+rápidas de necessidades (RNA) no projeto. Serve de referência para a equipa
+e os parceiros e não acrescenta conteúdo à interface do dashboard.
+
+Uma avaliação, um instrumento de recolha e uma versão histórica do formulário
+são conceitos diferentes. Por isso, Light RNA, HESPER e legacy não devem ser
+interpretados automaticamente como três tipos equivalentes de avaliação.
+
+1. LIGHT RNA
+
+A Light RNA é uma avaliação rápida ligada a um alerta RRM. Procura compreender
+as necessidades prioritárias nas comunidades ou locais avaliados e apoiar o
+planeamento da resposta imediata de Tier 1.
+
+A nota metodológica do projeto descreve um pacote com três componentes:
+entrevistas com informantes-chave, entrevistas individuais do tipo HESPER
+com membros da comunidade e observação estruturada. Cada componente fornece
+uma perspetiva diferente; os resultados devem ser analisados em conjunto.
+
+Os resultados referem-se aos locais e às pessoas efetivamente avaliados.
+Não constituem, por si só, estimativas representativas de todo o distrito
+ou da população afetada. Também não determinam, isoladamente, a ativação
+de Tier 2 ou a seleção de agregados familiares para assistência.
+
+2. ENTREVISTAS COM INFORMANTES-CHAVE — KII E ABORDAGEM AoK
+
+KII designa entrevistas com informantes-chave. Podem participar líderes
+comunitários, representantes de pessoas deslocadas, representantes de mulheres
+ou outras pessoas com conhecimento relevante sobre o local e a população.
+
+AoK, ou Area of Knowledge, refere-se à abordagem que utiliza esse conhecimento
+para analisar condições e necessidades ao nível da comunidade. A Light RNA
+utiliza uma versão simplificada dessa abordagem; a documentação de Tier 2
+descreve uma análise comunitária e setorial mais aprofundada.
+
+As entrevistas ajudam a identificar prioridades, causas, barreiras, grupos
+afetados e lacunas de resposta. O número de informantes que refere um problema
+não corresponde ao número de agregados familiares que enfrenta esse problema.
+Divergências entre informantes devem ser mantidas e analisadas.
+
+3. ENTREVISTAS DO TIPO HESPER
+
+No pacote Light RNA descrito na nota metodológica, estas entrevistas recolhem
+diretamente as perceções de adultos sobre problemas considerados sérios e
+sobre as suas prioridades. Complementam a perspetiva dos informantes-chave.
+
+A nota descreve entrevistas individuais com adultos selecionados de forma
+intencional, com atenção à diversidade de perfis e à distribuição espacial.
+Não se trata de um inquérito estatisticamente representativo da população.
+
+Há duas medidas diferentes:
+- Problema sério: o entrevistado identifica determinada necessidade como séria.
+- Prioridade: o entrevistado inclui essa necessidade entre as suas prioridades.
+Uma necessidade pode ser séria sem estar entre as três primeiras prioridades.
+
+Os resultados devem indicar o numerador e o denominador válido de cada item.
+Por exemplo, 10/12 significa que 10 das 12 respostas válidas para aquele item
+identificaram um problema sério. Não significa que 83% de toda a população
+afetada enfrenta esse problema. O denominador pode variar entre perguntas
+quando existem respostas em falta ou não válidas.
+
+Atenção à unidade de análise: a nota metodológica descreve entrevistas com
+adultos, enquanto o contrato atual de dados do dashboard contém campos HESPER
+associados à amostra de agregados familiares. Para cada relatório histórico,
+é necessário confirmar se os números se referem a pessoas entrevistadas ou
+a agregados familiares representados. Não se deve trocar uma unidade pela
+outra sem verificar o instrumento e o relatório de origem.
+
+4. OBSERVAÇÃO ESTRUTURADA
+
+A observação regista condições diretamente visíveis no local, como o estado
+de abrigos, pontos de água, instalações sanitárias ou serviços acessíveis.
+
+Pode confirmar, complementar ou contrariar relatos das entrevistas. Aquilo
+que não foi observado não deve ser interpretado como inexistente: pode não
+ter sido visível, acessível ou seguro observar. A observação não substitui
+as entrevistas nem constitui uma contagem de todas as pessoas com necessidades.
+
+5. LEGACY OU FORMATO ANTERIOR
+
+Não foi localizada uma definição formal de legacy nos documentos consultados.
+Nesta nota, o termo é entendido provisoriamente como uma referência a dados,
+relatórios ou instrumentos de versões anteriores. Esta interpretação precisa
+de confirmação pela equipa antes de ser adotada como classificação oficial.
+
+Legacy não identifica, por si só, um método de recolha, uma qualidade inferior
+ou um resultado inválido. Um relatório anterior pode conter KII, observação,
+entrevistas com membros da comunidade ou uma combinação dessas componentes.
+
+Para interpretar esses registos, verificar o formulário ou relatório original,
+a data, os instrumentos utilizados, a população, a amostra e as limitações.
+Quando faltarem contagens ou denominadores, manter a informação narrativa
+disponível sem fabricar indicadores HESPER ou equivalências entre versões.
+
+6. TIER 1 E TIER 2
+
+Tier 1 e Tier 2 situam a avaliação e a resposta no processo operacional RRM;
+não são nomes de instrumentos de recolha nem níveis de severidade.
+
+A Light RNA de Tier 1 apoia a compreensão rápida das necessidades e a resposta
+imediata. Pode também identificar questões que exigem análise adicional.
+
+A documentação de Tier 2 descreve a combinação de análise de agregados
+familiares, entrevistas comunitárias AoK e observações relevantes. Essa análise
+apoia o planeamento de respostas ao nível dos agregados e dos serviços ou da
+comunidade. Os resultados analíticos permanecem distintos da validação pelos
+parceiros e das decisões finais de assistência.
+
+7. COMO COMPARAR E UTILIZAR OS RESULTADOS
+
+Antes de comparar avaliações, confirmar alerta, local, datas, versão do
+instrumento, população avaliada, unidade de análise e método de seleção.
+
+Manter separados os resultados de KII, HESPER e observação, explicando onde
+convergem e onde divergem. Apresentar as limitações juntamente com as conclusões.
+
+Não somar amostras de rondas diferentes como se fossem pessoas distintas,
+nem calcular uma prevalência conjunta sem um desenho analítico adequado.
+As mesmas pessoas podem ter participado em várias rondas.
+
+Os três principais problemas resumem prioridades, mas não substituem os
+restantes resultados. Contagens de necessidades, classificação de severidade,
+população afetada e pessoas alcançadas pela assistência medem coisas diferentes.
+
+FONTES CONSULTADAS
+
+Caminhos relativos à pasta 8_RRM_2026:
+
+1_Setup/3_Sampling_and_tools/Revised approach brainstorming/
+REACH_MOZ-RRM_Light_RNA_Methodological_Note_July2026.docx
+
+1_Setup/3_Sampling_and_tools/Revised approach brainstorming/
+REACH_MOZ-RRM_T2_assessments_Methodological_Note_July2026.docx
+
+Documentação do dashboard:
+docs/USER_GUIDE.md — Light RNA e Vulnerability screening.
+docs/DATA_ENTRY.md — registo de avaliações e necessidades.
+docs/reference/DATA_DICTIONARY.md — Assessments e Needs.
+
+Esta nota explica os documentos consultados; não constitui aprovação de uma
+nova metodologia nem confirmação de que todos os relatórios históricos usam
+o mesmo instrumento. A definição de legacy e a unidade dos registos HESPER
+históricos permanecem sujeitas a confirmação na fonte.

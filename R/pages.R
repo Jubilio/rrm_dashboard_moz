@@ -299,7 +299,7 @@ page_ui <- function(id, key, d) {
             'No GLA assigned'
           )),
           p(class = 'muted coverage-map-caption',
-            'Hover over an area to see the district GLA and role. Click for details.'),
+            'Hover over an area to see the district GLA and role. Click for details. Click a partner icon to show its primary and secondary districts.'),
           uiOutput(ns('map_slot')),
           uiOutput(ns('map_note'))
         ),

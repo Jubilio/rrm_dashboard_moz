@@ -97,6 +97,31 @@ read_map_layers <- function(path = file.path('data', 'geography')) {
     posts = read('administrative_posts')
   )
 }
+# Map icons served from www/map_icons; partners without an icon get a text button.
+map_partner_icons <- c(NRC = 'map_icons/nrc.svg', SI = 'map_icons/si.svg',
+                       ACF = 'map_icons/acf.svg', SCI = 'map_icons/sci.svg')
+map_partner_names <- c(NRC = 'Norwegian Refugee Council', SI = 'Solidarités International',
+                       ACF = 'Action Against Hunger', SCI = 'Save the Children')
+# Per-partner district pcodes by role, for the clickable partner icons on the map.
+coverage_partner_layers <- function(assignments, links) {
+  ok <- !is.na(assignments$partner) & nzchar(trimws(assignments$partner))
+  partners <- sort(unique(trimws(assignments$partner[ok])))
+  lapply(partners, function(p) {
+    codes <- function(role) {
+      rows <- which(trimws(assignments$partner) == p & assignments$role == role)
+      unique(stats::na.omit(links$pcode[links$assignment_row %in% rows]))
+    }
+    primary <- codes('Primary')
+    list(
+      partner = p,
+      name = if (p %in% names(map_partner_names)) unname(map_partner_names[[p]]) else p,
+      icon = if (p %in% names(map_partner_icons)) unname(map_partner_icons[[p]]) else '',
+      primary = as.list(primary),
+      # A district listed under both roles for one partner is shown as primary.
+      secondary = as.list(setdiff(codes('Secondary'), primary))
+    )
+  })
+}
 coverage_map_payload <- function(assignments,
                                  mode,
                                  province = 'All',
@@ -168,6 +193,7 @@ coverage_map_payload <- function(assignments,
     provinces = provinces,
     towns = towns,
     posts = posts,
+    partners = if (mode == 'demo') list() else coverage_partner_layers(assignments, links),
     selected_post = post,
     unmapped = if (mode == 'demo')
       0L
@@ -212,7 +238,7 @@ geography_controls <- function(ns, include_province = TRUE) {
 rrm_map_output <- function(outputId) {
   dep <- htmltools::htmlDependency(
     'rrm-geography',
-    '1.5.0',
+    '1.6.0',
     src = c(file = 'www'),
     script = c('vendor/leaflet/leaflet.js', 'geography.js'),
     stylesheet = c('vendor/leaflet/leaflet.css', 'geography.css')

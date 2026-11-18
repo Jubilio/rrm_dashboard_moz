@@ -6,6 +6,8 @@
   function text(value) { var el = document.createElement('div'); el.textContent = value; return el; }
   /* One visual language for every RRM map: REACH ink/red/sand, white-edged points. */
   var INK = '#58585A', RED = '#EE5859', SAND = '#D2CBB8', MUTED = '#79797B';
+  /* Partner view: primary in REACH red, secondary in REACH ink, so the two roles differ in hue and lightness. */
+  var PRIMARY = RED, SECONDARY = INK;
   function point(fill, radius) { return {radius: radius, color: '#FFFFFF', weight: 1.5, opacity: 1, fillColor: fill, fillOpacity: 1}; }
   binding.renderValue = function (el, data) {
     if (!data || !data.districts) return;
@@ -35,14 +37,29 @@
     var showPosts = !state.posts || m.hasLayer(state.posts) || data.selected_post !== 'All';
     if (state.control) m.removeControl(state.control);
     if (state.reachLegend) { m.removeControl(state.reachLegend); state.reachLegend = null; }
+    if (state.partnerControl) { m.removeControl(state.partnerControl); state.partnerControl = null; }
+    if (state.partnerLegend) { m.removeControl(state.partnerLegend); state.partnerLegend = null; }
+    /* Partner icons (coverage map only): clicking one shows its primary and secondary districts. */
+    var partners = (!contextMode && data.partners) || [];
+    if (state.partner && !partners.some(function (p) { return p.partner === state.partner; })) state.partner = null;
+    function partnerRole(pcode) {
+      var p = partners.filter(function (x) { return x.partner === state.partner; })[0];
+      if (!p) return null;
+      if (p.primary.indexOf(pcode) >= 0) return 'Primary';
+      if (p.secondary.indexOf(pcode) >= 0) return 'Secondary';
+      return 'None';
+    }
     ['districts','towns','provinces','posts','settlements','interventions','alertPoints','alertConnections','districtReach'].forEach(function (key) {
       if (state[key]) m.removeLayer(state[key]);
     });
     state.districts = L.geoJSON(data.districts, {
       style: function (f) {
-        return contextMode ?
-          {color: INK, weight: 1, opacity: 0.55, fillColor: SAND, fillOpacity: 0.06} :
-          {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: f.properties.assigned ? RED : SAND, fillOpacity: 0.5};
+        if (contextMode) return {color: INK, weight: 1, opacity: 0.55, fillColor: SAND, fillOpacity: 0.06};
+        var role = state.partner ? partnerRole(f.properties.pcode) : null;
+        if (role === 'Primary') return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: PRIMARY, fillOpacity: 0.8};
+        if (role === 'Secondary') return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: SECONDARY, fillOpacity: 0.8};
+        if (role === 'None') return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: SAND, fillOpacity: 0.25};
+        return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: f.properties.assigned ? RED : SAND, fillOpacity: 0.5};
       },
       onEachFeature: function (f, layer) {
         var p = f.properties;
@@ -54,6 +71,56 @@
         layer.on('mouseout', function () { state.districts.resetStyle(layer); });
       }
     }).addTo(m);
+    function updatePartnerView() {
+      state.districts.setStyle(state.districts.options.style);
+      if (state.partnerControl) state.partnerControl.getContainer().querySelectorAll('button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-partner') === state.partner));
+      });
+      if (state.partnerLegend) { m.removeControl(state.partnerLegend); state.partnerLegend = null; }
+      if (!state.partner) return;
+      var p = partners.filter(function (x) { return x.partner === state.partner; })[0];
+      state.partnerLegend = L.control({position: 'bottomright'});
+      state.partnerLegend.onAdd = function () {
+        var box = L.DomUtil.create('div', 'rrm-partner-legend');
+        var title = document.createElement('strong'); title.textContent = p.name + ' (' + p.partner + ')';
+        box.appendChild(title);
+        [[PRIMARY, 'Primary districts', p.primary.length], [SECONDARY, 'Secondary districts', p.secondary.length]].forEach(function (r) {
+          var row = document.createElement('div'), sw = document.createElement('span');
+          sw.className = 'map-swatch'; sw.style.background = r[0];
+          row.appendChild(sw); row.appendChild(document.createTextNode(r[1] + ' (' + r[2] + ')'));
+          box.appendChild(row);
+        });
+        var hint = document.createElement('div'); hint.className = 'rrm-partner-hint';
+        hint.textContent = 'Click the icon again to show all partners.';
+        box.appendChild(hint);
+        return box;
+      };
+      state.partnerLegend.addTo(m);
+    }
+    if (partners.length) {
+      state.partnerControl = L.control({position: 'topleft'});
+      state.partnerControl.onAdd = function () {
+        var box = L.DomUtil.create('div', 'rrm-partner-icons leaflet-bar');
+        box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Show districts by partner');
+        partners.forEach(function (p) {
+          var b = L.DomUtil.create('button', 'rrm-partner-btn', box);
+          b.type = 'button'; b.title = p.name + ': show primary and secondary districts';
+          b.setAttribute('data-partner', p.partner);
+          b.setAttribute('aria-pressed', String(p.partner === state.partner));
+          if (p.icon) { var img = document.createElement('img'); img.src = p.icon; img.alt = p.partner; b.appendChild(img); }
+          else b.textContent = p.partner;
+          L.DomEvent.on(b, 'click', function (e) {
+            L.DomEvent.stop(e);
+            state.partner = state.partner === p.partner ? null : p.partner;
+            updatePartnerView();
+          });
+        });
+        L.DomEvent.disableClickPropagation(box); L.DomEvent.disableScrollPropagation(box);
+        return box;
+      };
+      state.partnerControl.addTo(m);
+    }
+    updatePartnerView();
     var districtProperties = {};
     data.districts.features.forEach(function (f) { districtProperties[f.properties.pcode] = f.properties; });
     state.posts = L.geoJSON(data.posts, {

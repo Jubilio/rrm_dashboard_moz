@@ -19,15 +19,18 @@ local({
 stopifnot(e$DATA_MODE=='demo',e$d$metadata$mode=='demo')
 html <- as.character(e$ui)
 stopifnot(grepl('value="coverage" checked="checked"',html,fixed=TRUE),
-  lengths(regmatches(html,gregexpr('id="coverage-map_province"',html,fixed=TRUE)))==1L)
+  !grepl('id="coverage-map_province"',html,fixed=TRUE))
 coverage_html <- as.character(e$page_ui('coverage','coverage',e$d))
 stopifnot(grepl('id="coverage-coverage_map"',coverage_html,fixed=TRUE),
-  grepl('Partner and area responsibilities',coverage_html,fixed=TRUE),
+  !grepl('Partner and area responsibilities',coverage_html,fixed=TRUE),
+  grepl('coverage-intro-text',coverage_html,fixed=TRUE),
+  !grepl('id="coverage-metrics"',coverage_html,fixed=TRUE),
+  !grepl('id="coverage-partner"',coverage_html,fixed=TRUE),
   !grepl('Map view and sources',coverage_html,fixed=TRUE),
   !grepl('Coverage uses effective assignment dates',coverage_html,fixed=TRUE))
 testServer(e$server,{
   session$setInputs(page='coverage')
-  stopifnot(output$page_subtitle=='Geographic coverage | Cabo Delgado, Mozambique',
+  stopifnot(output$page_subtitle=='RNA Intro | Cabo Delgado, Mozambique',
     output$source_label=='DRAFT LAYOUT - DEMO DATA ONLY',grepl('illustrative',output$source_footer,fixed=TRUE))
   session$setInputs(page='activity',activity_view='workbook')
   stopifnot(grepl('WORKBOOK SOURCE',output$source_label,fixed=TRUE),!grepl('DEMO',output$source_label,fixed=TRUE),
@@ -44,4 +47,8 @@ testServer(e$page_server,args=list(key='coverage',d=e$d),{
   session$setInputs(as_of=as.Date('2025-01-01'))
   stopifnot(nrow(filtered())==0L)
 })
-message('PASS: default demo layout, coverage-first navigation, single geography input, source labels, reference KPIs and coverage filters.')
+# The intro page has no filter inputs; coverage defaults to the source date.
+testServer(e$page_server,args=list(key='coverage',d=e$d),{
+  stopifnot(nrow(filtered())>0L)
+})
+message('PASS: default demo layout, coverage-first navigation, single geography input, source labels, reference KPIs and RNA Intro layout.')

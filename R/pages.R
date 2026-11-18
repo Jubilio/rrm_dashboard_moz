@@ -4,7 +4,7 @@ source('R/alert_summary.R', local = TRUE)
 source('R/geography.R', local = TRUE)
 source('R/alert_locations.R', local = TRUE)
 page_titles <- c(
-  coverage = 'Geographic coverage',
+  coverage = 'RNA Intro',
   alerts = 'Alerts',
   rna = 'Light RNA',
   vulnerability = 'Vulnerability screening',
@@ -142,7 +142,7 @@ page_ui <- function(id, key, d) {
           activity = 'core activity records'
         ), 'have been supplied for this page.')
       ),
-    div(
+    if (key != 'coverage') div(
       class = 'filters',
       if (key == 'activity')
         selectInput(
@@ -282,7 +282,7 @@ page_ui <- function(id, key, d) {
         ),
         uiOutput(ns('metrics'), class = 'alert-metrics')
       )
-    else
+    else if (key != 'coverage')
       uiOutput(ns('metrics')),
     if (key == 'coverage')
       div(
@@ -291,22 +291,16 @@ page_ui <- function(id, key, d) {
           class = 'panel coverage-map-panel',
           h3('Assigned GLA coverage'),
           rrm_map_output(ns('coverage_map')),
-          div(class = 'map-legend', span(
-            span(class = 'map-swatch', style = 'background:#EE5859;'),
-            'District with assigned GLA'
-          ), span(
-            span(class = 'map-swatch', style = 'background:#D2CBB8;'),
-            'No GLA assigned'
-          )),
           p(class = 'muted coverage-map-caption',
             'Hover over an area to see the district GLA and role. Click for details. Click a partner icon to show its primary and secondary districts.'),
           uiOutput(ns('map_slot')),
           uiOutput(ns('map_note'))
         ),
         div(
-          class = 'panel coverage-responsibilities',
-          h3('Partner and area responsibilities'),
-          DT::DTOutput(ns('table'))
+          class = 'panel coverage-intro-text',
+          h3('Rapid Needs Assessment (RNA)'),
+          # Placeholder: replace with the RNA introduction text.
+          p(class = 'muted', 'RNA introduction text to be added.')
         )
       )
     else if (key == 'alerts')
@@ -527,11 +521,13 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
         else if (s[[1]] %in% names(x))
           x <- filter_equal(x, s[[1]], input[[s[[1]]]])
       if (key == 'coverage') {
-        req(input$as_of, cancelOutput = TRUE)
+        as_of <- if (!is.null(input$as_of)) input$as_of
+          else if (!is.na(d$metadata$source_updated)) d$metadata$source_updated
+          else Sys.Date()
         x <- x[which(
           !is.na(x$effective_from) &
-            x$effective_from <= input$as_of &
-            (is.na(x$effective_to) | x$effective_to >= input$as_of)
+            x$effective_from <= as_of &
+            (is.na(x$effective_to) | x$effective_to >= as_of)
         ), , drop = FALSE]
       } else {
         col <- switch(

@@ -134,7 +134,7 @@ h1{font-size:32px}
 .page-alerts .filter-panel .shiny-input-container{width:100%;min-width:0;margin:0}
 .page-alerts .filter-panel label{display:block;font-size:13px;line-height:1.35;color:var(--ink);margin:0 0 4px}
 .page-alerts .filter-panel .form-control{height:auto;min-height:36px;padding:6px 8px;font-size:13px;background:var(--bg)}
-.page-alerts .alert-panels{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"selection map";gap:16px;margin-bottom:16px}
+.page-alerts .alert-panels{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"map selection";gap:16px;margin-bottom:16px}
 .page-alerts .alert-panels>.panel{margin-bottom:0}
 .page-alerts .alert-map-panel{grid-area:map}
 .page-alerts .alert-map-selection{grid-area:selection}

@@ -36,7 +36,7 @@ ui <- fluidPage(
     tags$title(paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),
     tags$meta(name = 'viewport', content = 'width=device-width, initial-scale=1'),
     tags$link(rel = 'stylesheet', type = 'text/css', href = paste0('styles.css?v=', as.numeric(file.info('www/styles.css')$mtime))),
-    tags$script(src = 'tables.js', defer = 'defer')
+    tags$script(src = paste0('tables.js?v=', unname(tools::md5sum('www/tables.js'))), defer = 'defer')
   ),
   div(
     class = 'app-header',

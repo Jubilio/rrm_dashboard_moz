@@ -54,19 +54,23 @@ latest_alert_rows <- function(x) {
   x[fields]
 }
 
+alert_detail_button <- function(id, detail_input) {
+  htmltools::tags$button(type='button', class='btn btn-default btn-sm rrm-alert-detail-button',
+    `data-input`=detail_input, `data-alert`=id,
+    `aria-label`=paste('View details for', id), 'View details')
+}
+
 latest_alert_table <- function(x, detail_input=NULL) {
   rows <- latest_alert_rows(x)
   escape <- TRUE
   if (!is.null(detail_input)) {
-    buttons <- vapply(rows$alert_id, function(id) as.character(htmltools::tags$button(
-      type='button',class='btn btn-default btn-sm rrm-alert-detail-button',
-      `data-input`=detail_input,`data-alert`=id,'View details')),character(1))
+    buttons <- vapply(rows$alert_id, function(id)
+      as.character(alert_detail_button(id, detail_input)), character(1))
     rows <- data.frame(Details=buttons,rows,check.names=FALSE)
     escape <- seq_len(ncol(rows))[-1L]
   }
   rrm_datatable(rows, width='100%', rownames=FALSE, escape=escape,
     selection='none',
-    callback=DT::JS("table.on('click.rrmAlertDetail', '.rrm-alert-detail-button', function(event) { event.preventDefault(); event.stopPropagation(); Shiny.setInputValue(this.getAttribute('data-input'), this.getAttribute('data-alert'), {priority: 'event'}); });"),
     options=list(pageLength=5, scrollX=TRUE, ordering=FALSE, dom='tp',
                  language=list(emptyTable='No alerts available for this selection.')))
 }

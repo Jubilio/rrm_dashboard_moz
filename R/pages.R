@@ -256,6 +256,8 @@ page_ui <- function(id, key, d) {
           'missing fields or evidence checks. Unreported values remain unavailable.'
         )
       ),
+    if (key == 'alerts')
+      h2(class = 'rrm-page-title', page_titles[[key]]),
     if (!key %in% c('coverage', 'alerts', 'vulnerability', 'activity'))
       div(
         class = 'page-heading',

@@ -42,4 +42,36 @@ testServer(page_server,args=list(key='alerts',d=d),{
   session$setInputs(community='Arrival C')
   stopifnot(length(output$alert_map$markers$features)==2L,length(output$alert_map$connections$features)==1L,filtered()$rna_people==4700)
 })
+shared <- d
+shared$routes$origin[shared$routes$route_id == 'R03'] <- 'Origin A'
+shared$route_locations <- read_alert_locations('demo')
+origin_r03 <- with(shared$route_locations, route_id == 'R03' & endpoint == 'origin')
+origin_r01 <- with(shared$route_locations, route_id == 'R01' & endpoint == 'origin')
+cols <- c('location_name', 'longitude', 'latitude')
+shared$route_locations[origin_r03, cols] <- shared$route_locations[origin_r01, cols]
+testServer(page_server,args=list(key='alerts',d=shared),{
+  details <- function() output$details$html
+  stopifnot(grepl('Select a point or a route', details(), fixed=TRUE))
+  map <- output$alert_map
+  origin <- Filter(function(f) f$properties$name == 'Origin A', map$markers$features)[[1]]
+  stopifnot(setequal(origin$properties$alert_ids, c('DEMO-001', 'DEMO-002')))
+  session$setInputs(alert_map_selection=origin$properties$selection_id)
+  stopifnot(grepl('View details for DEMO-001', details(), fixed=TRUE),
+            grepl('View details for DEMO-002', details(), fixed=TRUE),
+            !grepl('View details for DEMO-003', details(), fixed=TRUE),
+            identical(output$alert_map, map))
+  session$setInputs(alert_map_selection='route:R01')
+  stopifnot(grepl('View details for DEMO-001', details(), fixed=TRUE),
+            !grepl('View details for DEMO-002', details(), fixed=TRUE))
+  session$setInputs(alert_map_selection='route:unknown')
+  stopifnot(identical(selected_feature(), 'route:R01'))
+  session$setInputs(community='Arrival C')
+  stopifnot(is.null(selected_feature()), grepl('Select a point or a route', details(), fixed=TRUE))
+  session$setInputs(community='All')
+  stopifnot(is.null(selected_feature()))
+  session$setInputs(alert_map_selection='route:R01')
+  session$setInputs(clear_alert_map_selection=1)
+  stopifnot(is.null(selected_feature()))
+})
 message('PASS: alert endpoint map, shared origins, route-specific counts, confirmed coordinate gate, missing/name/provenance handling, demo isolation, coordinate bounds and arrival filters.')
+message('PASS: route and shared-point selection, clear, filter invalidation, and stable map output.')

@@ -447,7 +447,7 @@ page_ui <- function(id, key, d) {
         div(
           class = 'two-col alert-panels',
           div(
-            class = 'panel',
+            class = 'panel alert-map-panel',
             h3('Origin to arrival and targeted locations'),
             rrm_map_output(ns('alert_map')),
             div(class = 'map-legend', span(
@@ -460,9 +460,9 @@ page_ui <- function(id, key, d) {
             uiOutput(ns('alert_map_note'))
           ),
           div(
-            class = 'panel',
+            class = 'panel alert-map-selection',
             h3('Alert summary and severity evidence'),
-            uiOutput(ns('details'))
+            uiOutput(ns('details'), `aria-live` = 'polite')
           )
         ),
         uiOutput(ns('alert_summary')),
@@ -1205,17 +1205,36 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
                              location_source$data,
                              d$metadata$mode)
       })
-      if (!is.null(alert_layers))
-        output$alert_map <- render_rrm_map({
-          req(is.null(location_source$error), cancelOutput = TRUE)
-          payload <- alert_map_payload(selected_routes(),
-                                       location_source$data,
-                                       d$metadata$mode,
-                                       alert_layers)
-          # The District filter highlights and frames that district on the map.
-          payload$selected_district <- if (is.null(input$district)) 'All' else input$district
-          payload
-        })
+      map_data <- reactive({
+        if (is.null(alert_layers) || !is.null(location_source$error))
+          return(NULL)
+        payload <- alert_map_payload(selected_routes(), location_source$data,
+                                     d$metadata$mode, alert_layers)
+        # The District filter highlights and frames that district on the map.
+        payload$selected_district <- if (is.null(input$district)) 'All' else input$district
+        payload$selection_input <- session$ns('alert_map_selection')
+        payload
+      })
+      output$alert_map <- render_rrm_map(req(map_data(), cancelOutput = TRUE))
+      map_features <- reactive({
+        payload <- map_data()
+        features <- lapply(c(payload$markers$features, payload$connections$features),
+                           function(feature) feature$properties)
+        names(features) <- vapply(features, function(feature) feature$selection_id, character(1))
+        features
+      })
+      selected_feature <- reactiveVal(NULL)
+      observeEvent(input$alert_map_selection, {
+        id <- input$alert_map_selection
+        if (is.character(id) && length(id) == 1L && id %in% names(map_features()))
+          selected_feature(id)
+      })
+      observeEvent(input$clear_alert_map_selection, selected_feature(NULL))
+      observeEvent(map_features(), {
+        id <- selected_feature()
+        if (!is.null(id) && !id %in% names(map_features()))
+          selected_feature(NULL)
+      }, ignoreNULL = FALSE)
       output$alert_map_note <- renderUI({
         if (!is.null(location_source$error))
           return(p(
@@ -1329,9 +1348,27 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       x <- filtered()
       if (!nrow(x))
         return(empty_ui())
+      if (key == 'alerts') {
+        features <- map_features()
+        if (!length(features))
+          return(p('No routes or locations are mapped for the current filters. Open an alert from Latest alerts to view its details.'))
+        id <- selected_feature()
+        if (is.null(id) || !id %in% names(features))
+          return(p('Select a point or a route on the map to see its alert summary.'))
+        feature <- features[[id]]
+        alert_ids <- if (startsWith(id, 'point:')) feature$alert_ids else feature$alert_id
+        x <- x[x$alert_id %in% alert_ids, , drop = FALSE]
+      }
       switch(
         key,
-        alerts = tagList(lapply(seq_len(nrow(x)), function(i)
+        alerts = tagList(
+          div(class = 'alert-map-selection-header',
+              h4(if (startsWith(id, 'point:'))
+                paste(if (feature$endpoint == 'origin') 'Origin' else 'Arrival', feature$name, sep = ' · ')
+              else
+                paste(feature$origin, '→', feature$arrival)),
+              actionButton(session$ns('clear_alert_map_selection'), 'Clear selection', class = 'btn-sm')),
+          lapply(seq_len(nrow(x)), function(i)
           div(
             class = 'evidence alert-evidence',
             h4(paste(x$alert_id[i], text_or(
@@ -1378,7 +1415,8 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
               class = 'alert-related',
               field('Related alert', x$related_alert[i]),
               field('Overlap', x$overlap_status[i])
-            )
+            ),
+            alert_detail_button(x$alert_id[i], session$ns('open_alert_detail'))
           ))),
         rna = tagList(lapply(seq_len(nrow(x)), function(i)
           tagList(

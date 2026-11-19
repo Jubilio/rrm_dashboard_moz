@@ -226,7 +226,31 @@
       }
     }
     if (alertMode) {
+      // Keep alert targets above the district and other geographic overlays.
+      var alertPane = 'alertFeatures';
+      if (!m.getPane(alertPane)) m.createPane(alertPane).style.zIndex = '450';
+      var bindAlertSelection = function (layer, feature, label) {
+        if (!data.selection_input) return;
+        var select = function () {
+          Shiny.setInputValue(data.selection_input, feature.selection_id, {priority: 'event'});
+        };
+        layer.on('click', select);
+        layer.on('add', function () {
+          var path = layer.getElement();
+          if (!path) return;
+          path.setAttribute('tabindex', '0');
+          path.setAttribute('role', 'button');
+          path.setAttribute('aria-label', label);
+          L.DomEvent.on(path, 'keydown', function (event) {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            L.DomEvent.stop(event);
+            select();
+            layer.openPopup();
+          });
+        });
+      };
       state.alertConnections = L.geoJSON(data.connections, {
+        pane: alertPane,
         style: {color: INK, weight: 1.8, opacity: 0.75, dashArray: '5 4'},
         onEachFeature: function (f, layer) {
           var p = f.properties;
@@ -236,16 +260,22 @@
             '\nRoute HH: ' + (p.households == null ? 'Unavailable' : p.households) +
             '\nCaseload stage: ' + p.stage + '\nRRM targeted at arrival: ' + p.targeted +
             '\nOrigin–arrival connection only; not a travelled path.' + (data.mode === 'demo' ? '\nDEMO · fictional movement.' : '')));
+          bindAlertSelection(layer, p, 'Route: ' + p.origin + ' to ' + p.arrival + ', ' + p.alert_id);
         }
       }).addTo(m);
       state.alertPoints = L.geoJSON(data.markers, {
-        pointToLayer: function (f, latlng) { return L.circleMarker(latlng, point(f.properties.endpoint === 'origin' ? INK : RED, 6)); },
+        pointToLayer: function (f, latlng) {
+          var style = point(f.properties.endpoint === 'origin' ? INK : RED, 6);
+          style.pane = alertPane;
+          return L.circleMarker(latlng, style);
+        },
         onEachFeature: function (f, layer) {
           var p = f.properties;
           layer.bindTooltip(text((p.endpoint === 'origin' ? 'Origin: ' : 'Arrival: ') + p.name));
           layer.bindPopup(text(p.name + ' | ' + p.endpoint + '\n' + p.details +
             '\nCoordinate source: ' + p.coordinate_source + '\nCoordinate status: ' + p.coordinate_status +
             (data.mode === 'demo' ? '\nDEMO · fictional coordinates and movement.' : '')));
+          bindAlertSelection(layer, p, (p.endpoint === 'origin' ? 'Origin: ' : 'Arrival: ') + p.name);
         }
       }).addTo(m);
       overlays['Origin and arrival points'] = state.alertPoints;

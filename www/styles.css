@@ -134,8 +134,14 @@ h1{font-size:32px}
 .page-alerts .filter-panel .shiny-input-container{width:100%;min-width:0;margin:0}
 .page-alerts .filter-panel label{display:block;font-size:13px;line-height:1.35;color:var(--ink);margin:0 0 4px}
 .page-alerts .filter-panel .form-control{height:auto;min-height:36px;padding:6px 8px;font-size:13px;background:var(--bg)}
-.page-alerts .alert-panels{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start;gap:16px;margin-bottom:16px}
+.page-alerts .alert-panels{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-template-areas:"selection map";align-items:start;gap:16px;margin-bottom:16px}
 .page-alerts .alert-panels>.panel{margin-bottom:0}
+.page-alerts .alert-map-panel{grid-area:map}
+.page-alerts .alert-map-selection{grid-area:selection}
+.page-alerts .alert-map-selection-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.page-alerts .alert-map-selection-header h4{margin:0}
+.page-alerts .alert-map-selection .rrm-alert-detail-button{margin-top:12px}
+.page-alerts .leaflet-interactive[role="button"]:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .page-alerts .map-legend{gap:8px 16px;margin:12px 0 8px}
 .page-alerts .alert-map-status{font-size:12px;line-height:1.5;margin:0;color:var(--ink)}
 .page-alerts .alert-summary .kpi-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
@@ -151,7 +157,7 @@ h1{font-size:32px}
   .page-alerts .filter-group-alert .filter-group-inputs{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 @media(max-width:1050px){
-  .page-alerts .alert-panels{grid-template-columns:1fr}
+  .page-alerts .alert-panels{grid-template-columns:1fr;grid-template-areas:"map" "selection"}
   .page-alerts .filter-group-alert .filter-group-inputs{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:680px){
@@ -159,6 +165,7 @@ h1{font-size:32px}
   .page-alerts .filter-groups,.page-alerts .filter-groups .filter-group-inputs{grid-template-columns:1fr}
   .page-alerts .filter-groups .filter-group+.filter-group{border:0;border-top:1px solid var(--line);padding:12px 0 0}
   .page-alerts .filter-panel .form-control,.page-alerts .filter-panel .btn-reset,.page-alerts .alert-evidence-details .btn-export{min-height:44px}
+  .page-alerts .alert-map-selection .btn{min-height:44px}
   .page-alerts .alert-summary .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media print{.page-alerts .filter-panel{display:none}}

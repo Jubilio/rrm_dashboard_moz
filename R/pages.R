@@ -445,6 +445,7 @@ page_ui <- function(id, key, d) {
       )
     else if (key == 'alerts')
       tagList(
+        uiOutput(ns('alert_summary')),
         div(
           class = 'two-col alert-panels',
           div(
@@ -466,7 +467,6 @@ page_ui <- function(id, key, d) {
             uiOutput(ns('details'), `aria-live` = 'polite')
           )
         ),
-        uiOutput(ns('alert_summary')),
         div(class = 'panel', h3('Latest alerts'), DT::DTOutput(ns('latest_alerts'))),
         p(class = 'muted',
           'RRM response is not limited to displacement. Population status describes the affected people; Trigger identifies the crisis event.'),

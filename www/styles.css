@@ -152,6 +152,7 @@ h1{font-size:32px}
 .page-alerts .alert-summary .kpi-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
 .page-alerts .alert-summary .kpi{min-height:88px;padding:12px}
 .page-alerts .alert-summary .kpi-value{margin:4px 0 0;font-size:clamp(20px,2.2vw,32px);color:var(--ink)}
+.page-alerts .alert-summary-note{margin:8px 0 0;font-size:12px}
 .page-alerts :is(select,button,a,input,summary):focus-visible{
   outline:2px solid var(--ink);
   outline-offset:2px;

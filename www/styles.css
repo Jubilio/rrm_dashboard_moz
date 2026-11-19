@@ -576,6 +576,6 @@ h1{font-size:32px}
 .page-coverage .coverage-panels h3,.page-coverage .coverage-map-panel h3,.page-coverage .coverage-intro-text h3{font-size:20px;font-weight:700;color:var(--card-ink);line-height:1.3;margin:0 0 14px}
 .page-coverage .coverage-panels .muted{font-size:14px;line-height:1.5;color:var(--card-muted);margin-top:12px}
 .page-coverage .coverage-intro-text .muted{margin-top:0;font-size:15px}
-.page-coverage .rrm-map-output{border-radius:8px;overflow:hidden;border:1px solid var(--card-line);height:clamp(320px,calc(100dvh - 440px),760px)!important}
+.page-coverage .rrm-map-output{border-radius:8px;overflow:hidden;border:1px solid var(--card-line);height:clamp(320px,calc(100dvh - 370px),760px)!important}
 .page-coverage .rrm-partner-icons{border-radius:8px;overflow:hidden}
 @media(max-width:680px){.page-coverage .coverage-panels>.panel{padding:16px}}

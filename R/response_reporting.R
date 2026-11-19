@@ -35,7 +35,6 @@ activity_workbook_ui <- function(id) {
   ns <- NS(id)
   show <- function(field,value) sprintf("input['%s'] == '%s'",ns(field),value)
   div(class='dashboard-page rrm-workspace rrm-activity',
-    h2('Activity reporting'),
     conditionalPanel(sprintf("input['%s'] != 'review'",ns('workspace')),
       p(class='rrm-page-lede','See what partners reported delivering, where and when.')),
     conditionalPanel(show('workspace','review'),

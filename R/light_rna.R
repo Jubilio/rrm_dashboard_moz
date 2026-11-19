@@ -64,7 +64,6 @@ light_rna_ui <- function(id, d) {
     paste(parts[!is.na(parts)],collapse=' · ')
   }, character(1))
   div(class='dashboard-page rrm-workspace rrm-rna',
-    h2('Light RNA'),
     div(class='panel rrm-rna-filters',
       div(class='rrm-workspace-toolbar', h3('Filter assessments'),
         actionButton(ns('reset'),'Clear filters',class='rrm-link-button')),

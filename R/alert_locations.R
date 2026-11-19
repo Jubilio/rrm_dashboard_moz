@@ -58,8 +58,10 @@ alert_map_payload <- function(routes,locations,mode,layers=read_map_layers()) {
       p <- good[ix[1],];z <- good[ix,,drop=FALSE]
       details <- vapply(seq_len(nrow(z)),function(i) paste(z$alert_id[i],z$route_id[i],paste0('Route people: ',fmt(z$people[i])),
         paste0('Route HH: ',fmt(z$households[i])),paste0('Stage: ',z$caseload_stage[i]),paste0('RRM targeted at arrival: ',z$targeted[i]),sep=' | '),character(1))
-      list(type='Feature',properties=list(location_id=paste(p$endpoint,p$location_name,p$longitude,p$latitude),name=p$location_name,
+      location_id <- paste(p$endpoint,p$location_name,p$longitude,p$latitude)
+      list(type='Feature',properties=list(location_id=location_id,name=p$location_name,
         endpoint=p$endpoint,coordinate_source=paste(unique(z$coordinate_source),collapse='; '),coordinate_status=p$coordinate_status,
+        selection_id=paste0('point:',location_id),alert_ids=unname(unique(z$alert_id)),
         details=paste(details,collapse='\n')),
         geometry=list(type='Point',coordinates=unname(c(p$longitude,p$latitude))))
     })
@@ -68,7 +70,8 @@ alert_map_payload <- function(routes,locations,mode,layers=read_map_layers()) {
   for(id in unique(links$route_id)) {
     z <- links[links$route_id==id,,drop=FALSE]
     if(nrow(z)==2L && all(z$mapped)) payload$connections$features[[length(payload$connections$features)+1L]] <- list(type='Feature',
-      properties=list(route_id=id,alert_id=z$alert_id[1],origin=z$location_name[1],arrival=z$location_name[2],
+      properties=list(route_id=id,alert_id=z$alert_id[1],selection_id=paste0('route:',id),
+        origin=z$location_name[1],arrival=z$location_name[2],
         people=z$people[1],households=z$households[1],stage=z$caseload_stage[1],targeted=z$targeted[1]),
       geometry=list(type='LineString',coordinates=lapply(seq_len(2),function(i)unname(c(z$longitude[i],z$latitude[i])))))
   }

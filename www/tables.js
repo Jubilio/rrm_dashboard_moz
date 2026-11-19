@@ -70,6 +70,9 @@
   }
   function start() {
     if (!window.jQuery) return;
+    $(document).on('click.rrmAlertDetail', '.rrm-alert-detail-button', function () {
+      Shiny.setInputValue(this.dataset.input, this.dataset.alert, {priority: 'event'});
+    });
     $(document).on('init.dt.rrmWidth', function (event, settings) { watch(settings.nTable); });
     $(document).on('draw.dt.rrmWidth column-sizing.dt.rrmWidth', function (event, settings) {
       updateTopScroll(settings.nTable);

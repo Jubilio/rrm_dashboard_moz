@@ -54,13 +54,13 @@ Household analysis is a separate tab. Draft synthetic scenarios are available on
 
 The response workspace uses the configured standardised reporting workbook or the supplied snapshot. District, administrative post and community come from Activity Entry. Related records use the exact alert ID. A combined location stays on one record, and its reported quantity is shown for the combined locations.
 
-Use **Alert**, **Response district**, **Community** and **Activity period** to narrow the results. The period uses the reported start month. Open **More filters** for partner, tier, sector, modality and delivery status. **All activities** includes assessment and supporting records. **List**, **Map** and **Export filtered activities** share the same selection. Unmatched locations remain in List.
+Use **Alert**, **Response district**, **Community** and **Activity period** to narrow the results. The period uses the reported start month. Open **More filters** for partner, tier, sector, modality and delivery status. Select **All activities →** under **Reported activities** to include assessment and supporting records. **List**, **Map** and **Export filtered activities** share the same selection. Unmatched locations remain in List.
 
-Delivery and review statuses are independent. An explicit Delivery Status in Activity Entry takes precedence. If absent, an exact unique core event match can supply the recorded status. Expand a row for provenance. A blank review status remains Pending review. Headline totals use validated, reconciled records with confirmed links and retain separate metrics and units. Expand **Timing and handovers** for records and, for a selected alert, the earliest validated reported delivery start with documented status.
+Delivery and review statuses are independent. An explicit Delivery Status in Activity Entry takes precedence. If absent, an exact unique core event match can supply the recorded status. Use the arrow at the end of a row to see its provenance. A blank review status remains Pending review. Headline totals use validated, reconciled records with confirmed links and retain separate metrics and units. Expand **Timing and handovers** for records and, for a selected alert, the earliest validated reported delivery start with documented status.
 
 ### Data review
 
-Use **Refresh source** or **Manage workbook** to select a session source. The reporting month filter, review queue, geographic matching, and counting definitions are in **Data review**. Duplicate record IDs require review and are excluded from response counts. Geographic matching does not validate delivery or allocate an output to individual communities. See the [workbook reference](reference/ACTIVITY_WORKBOOK.md) for source and validation rules.
+Use **Refresh source** or **Manage workbook** to select a session source. The reporting month filter, review queue, geographic matching, and counting definitions are in **Data review**. Use the arrow at the end of a row to see its source row, alert link and geographic match. Duplicate record IDs require review and are excluded from response counts. Geographic matching does not validate delivery or allocate an output to individual communities. See the [workbook reference](reference/ACTIVITY_WORKBOOK.md) for source and validation rules.
 
 ## 8. Maps, tables and exports
 

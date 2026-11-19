@@ -158,9 +158,9 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   names(x)<-vapply(names(x),function(n) if(n %in% names(titles)) titles[[n]] else tools::toTitleCase(gsub('_',' ',n,fixed=TRUE)),character(1))
   rrm_datatable(width='100%',x,rownames=FALSE,escape=TRUE,options=list(scrollX=TRUE,pageLength=8,language=list(emptyTable='No records available for this selection.')))
  }
- output$source_status<-shiny::renderUI({d<-current();shiny::tagList(shiny::p(shiny::strong(source_label())),
-  shiny::p(class='muted',paste('Last successful refresh:',if(is.null(loaded_at())) 'Not loaded' else loaded_at())),
-  if(!is.null(d)) shiny::p(class='muted',paste('Source updated:',d$metadata$source_updated[1])))})
+ output$source_status<-shiny::renderUI({d<-current();shiny::div(shiny::h3(source_label()),
+  shiny::p(class='rrm-footnote',paste('Last successful refresh \u00b7',if(is.null(loaded_at())) 'Not loaded' else loaded_at(),
+    if(!is.null(d) && !is.na(d$metadata$source_updated[1])) paste('\u00b7 Source updated',d$metadata$source_updated[1]) else '')))})
  output$load_error<-shiny::renderUI({e<-last_error();if(is.null(e))return(NULL)
   shiny::div(class='empty',shiny::h4('Source refresh failed'),shiny::p(e),shiny::p(if(is.null(current())) 'No dataset is available.' else 'The last successfully loaded dataset remains visible; its refresh timestamp is unchanged.'))})
  location_source<-shiny::reactive(response_records())
@@ -191,8 +191,9 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   a<-location_links();mapped<-sum(a$match_status=='Matched');places<-length(unique(a$point_id[!is.na(a$point_id)]))
   shiny::tagList(
     if(!is.null(settlement_error))shiny::p(class='map-notice',paste('Settlement source unavailable:',settlement_error)),
-    shiny::p(paste(mapped,'of',nrow(a),'records geographically matched to',places,'distinct points;',nrow(a)-mapped,'records require geographic review.')),
-    shiny::p(class='muted',if(identical(input$map_scope,'validated'))'Only records included in validated results are mapped.' else 'Includes pending and excluded records. Geographic matching does not change source review status.'))
+    shiny::div(class='rrm-map-status',
+      shiny::p(paste(mapped,'of',nrow(a),'records mapped to',places,if(places==1)'location.' else 'locations.')),
+      shiny::p(class='rrm-footnote',if(identical(input$map_scope,'validated'))'Scope: validated records' else 'Scope: all reported records, including pending review')))
  })
  output$location_review<-DT::renderDT(result_table(review_links()))
  output$linked_alert <- shiny::renderUI({
@@ -200,12 +201,12 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   if (!length(id) || id == 'All') return(NULL)
   date <- core$alerts$alert_date[match(id,core$alerts$alert_id)]
   if (!length(date) || is.na(date)) date <- data()$alerts$alert_date[match(id,data()$alerts$alert_id)]
-  shiny::div(class='panel rrm-linked-alert',
-    shiny::div(shiny::strong('Linked alert'),shiny::p(id),
-      if(length(date) && !is.na(date)) shiny::p(format(date,'%d %b %Y'))),
-    if (id %in% core$alerts$alert_id) shiny::div(class='rrm-workspace-actions',
-      alert_navigation_button('open_alert_record',id,'View alert details'),
-      alert_navigation_button('open_light_rna',id,'View Light RNA')))
+  shiny::div(class='panel rrm-linked-alert rrm-activity-alert',
+    shiny::div(shiny::strong(paste(c('Linked alert',if(length(date) && !is.na(date)) rrm_day(date)),collapse=' \u00b7 ')),
+      shiny::p(id)),
+    if (id %in% core$alerts$alert_id) shiny::div(class='rrm-section-actions',
+      shiny::tagAppendAttributes(alert_navigation_button('open_alert_record',id,'View alert details'),class='rrm-btn-outline'),
+      shiny::tagAppendAttributes(alert_navigation_button('open_light_rna',id,'View Light RNA'),class='rrm-btn-outline')))
  })
  response_available <- shiny::reactive({
   if (is.null(current())) return(NULL)
@@ -213,8 +214,18 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  })
  output$responses <- shiny::renderUI({
   a <- response_records()
-  if (nrow(a)) response_list(a)
+  if (nrow(a)) response_list(a,session$ns('response-'))
  })
+ output$scope_line <- shiny::renderUI({
+  all <- identical(input$scope,'all')
+  n <- nrow(response_records())
+  shiny::div(class='rrm-scope-line',
+   shiny::p(class='rrm-footnote',paste(if(all)'All reported activities' else 'Delivery activities','\u00b7',n,if(n==1)'record' else 'records')),
+   shiny::actionLink(session$ns('scope_toggle'),
+     shiny::tagList(if(all)'Delivery activities only' else 'All activities',shiny::span(class='rrm-arrow',`aria-hidden`='true','\u2192'))))
+ })
+ shiny::observeEvent(input$scope_toggle,
+  shiny::updateRadioButtons(session,'scope',selected=if(identical(input$scope,'all'))'delivery' else 'all'))
  output$response_empty <- shiny::renderUI({
   if (nrow(response_records())) return(NULL)
   alert <- input$alert
@@ -235,7 +246,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   a <- response_records()
   x <- data()$outputs
   x <- x[x$eligible & x$record_id %in% a$record_id & !is.na(x$quantity),,drop=FALSE]
-  if (!nrow(x)) return(shiny::p(class='muted','No validated totals available.'))
+  if (!nrow(x)) return(shiny::p(class='rrm-footnote','No validated totals available.'))
   totals <- aggregate(quantity~metric+unit,x,sum)
   shiny::tags$ul(class='rrm-validated-totals',lapply(seq_len(nrow(totals)),function(i) {
    row <- totals[i,]
@@ -262,17 +273,18 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  })
  review_links <- shiny::reactive(match_intervention_locations(review_records(),settlements))
  output$review_queue <- shiny::renderUI(response_review_table(
-  review_records(),review_links(),which(review_records()$review_required)))
+  review_records(),review_links(),which(review_records()$review_required),session$ns('pending-')))
  output$geographic_queue <- shiny::renderUI(response_review_table(
-  review_records(),review_links(),seq_len(nrow(review_records()))))
+  review_records(),review_links(),seq_len(nrow(review_records())),session$ns('geo-')))
  output$location_export<-shiny::downloadHandler(filename=function()paste0('rrm_community_matching_',Sys.Date(),'.csv'),
    content=function(file)write.csv(review_links(),file,row.names=FALSE,na='',fileEncoding='UTF-8'))
  output$metrics<-shiny::renderUI({
   x<-review_records()
-  kpi_row(kpi('Imported records',nrow(x),'Reporting month selection'),
-    kpi('Awaiting review or correction',sum(x$review_required),''),
-    kpi('Validated and reconciled',sum(x$eligible),'Confirmed alert links only'),
-    kpi('Confirmed alert links',sum(x$link_status %in% 'Confirmed'),''))
+  card<-function(label,value,title=NULL) shiny::div(class='rrm-kpi',title=title,shiny::p(class='rrm-kpi-label',label),shiny::p(class='rrm-kpi-value',fmt(value)))
+  shiny::div(class='rrm-kpi-row',card('Imported records',nrow(x),'Reporting month selection'),
+    card('Awaiting review or correction',sum(x$review_required)),
+    card('Validated and reconciled',sum(x$eligible),'Confirmed alert links only'),
+    card('Confirmed alert links',sum(x$link_status %in% 'Confirmed')))
  })
  output$outputs<-DT::renderDT(result_table(activity_group_sum(outputs(),c('tier','funding','metric','unit'),'quantity')))
  output$households<-DT::renderDT(result_table(activity_group_sum(eligible(),c('tier','funding','hh_basis'),'households')))

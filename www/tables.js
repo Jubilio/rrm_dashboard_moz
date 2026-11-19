@@ -100,3 +100,14 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
   else start();
 }());
+/* Show/hide panels and record detail rows (More filters, Manage workbook, row chevrons). */
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('button[data-toggle-target]');
+  if (!button) return;
+  var target = document.getElementById(button.getAttribute('data-toggle-target'));
+  if (!target) return;
+  var open = button.getAttribute('aria-expanded') !== 'true';
+  button.setAttribute('aria-expanded', String(open));
+  target.hidden = !open;
+  if (open && window.jQuery) window.jQuery(target).trigger('shown');
+});

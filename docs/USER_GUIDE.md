@@ -24,9 +24,9 @@ The cards show distinct primary partners, secondary partners, assigned areas and
 
 ## 4. Alerts
 
-Alerts shows core alert data. Filter by arrival geography, alert-issued date, trigger, reporting source, population status or consortium response status.
+Alerts shows core alert data. Filter by arrival geography, alert-issued date, trigger, reporting source, population status or delivery status. **Delivery status** selects alerts with at least one linked activity in the chosen status.
 
-**Alert summary** sits below the filters and counts distinct alert IDs. **Tier 1** and **Tier 2** count alerts with a linked activity in the corresponding tier. An alert can appear in both. **Completed** requires at least one linked activity and a Completed status on every linked activity.
+**Alert summary** sits below the filters and counts distinct alert IDs. **Tier 1** and **Tier 2** count alerts with a linked activity in the corresponding tier. An alert can appear in both. **All recorded activities completed** requires at least one linked activity and a Completed status on every linked activity.
 
 **Latest alerts** lists records newest first. Click **View details** to open that alert's detail, including dates, caseloads, linked assessments, needs and assistance. Missing values remain blank. Historical caseload narratives retain their original wording; latest recorded severity is separate from RNA severity. Proposed or unresolved historical ID matches are excluded from the detail. Validated reporting assistance comes from the supplied activity snapshot and requires an exact, confirmed alert link and passed validation; it is separate from core dashboard activity records and is not combined into a reach total. Session uploads in Activity reporting do not update this detail.
 

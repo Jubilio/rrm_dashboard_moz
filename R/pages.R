@@ -64,15 +64,14 @@ routes_in_community <- function(routes, tbl, community) {
 # Alerts matching the filter selections in `sel` (a list of input values).
 # Filters named in `skip` are ignored: this gives the alerts available to that
 # filter under all the others, so every Alerts filter can follow the rest.
-filter_alerts <- function(x, sel, links, ctbl, skip = character()) {
+filter_alerts <- function(x, sel, links, ctbl, skip = character(), activities = NULL) {
   on <- function(id) !(id %in% skip) && length(sel[[id]]) == 1L && !identical(sel[[id]], 'All')
   for (id in c('alert_id', 'trigger', 'gla', 'movement'))
     if (on(id) && id %in% names(x)) x <- filter_equal(x, id, sel[[id]])
-  if (on('consortium_response_status'))
-    x <- if (identical(sel$consortium_response_status, 'Not reported'))
-      x[is.na(x$consortium_response_status), , drop = FALSE]
-    else
-      filter_equal(x, 'consortium_response_status', sel$consortium_response_status)
+  if (on('delivery_status')) {
+    matching_ids <- activities$alert_id[activities$delivery_status %in% sel$delivery_status]
+    x <- x[x$alert_id %in% matching_ids, , drop = FALSE]
+  }
   if (on('community'))
     x <- x[x$alert_id %in% ctbl$alert_id[ctbl$community == sel$community], , drop = FALSE]
   if (on('date_period') && length(sel$date_unit) == 1L &&
@@ -89,8 +88,8 @@ filter_alerts <- function(x, sel, links, ctbl, skip = character()) {
 }
 # Choices for each linked Alerts filter: only values found in the alerts that
 # match every other filter (e.g. Source = ACF limits District, Trigger, etc. to ACF alerts).
-linked_alert_choices <- function(alerts, sel, links, ctbl) {
-  avail <- function(id) filter_alerts(alerts, sel, links, ctbl, skip = id)
+linked_alert_choices <- function(alerts, sel, links, ctbl, activities = NULL) {
+  avail <- function(id) filter_alerts(alerts, sel, links, ctbl, skip = id, activities = activities)
   labelled <- function(v, all) {
     ch <- all_choices(v)
     names(ch) <- ch
@@ -99,9 +98,7 @@ linked_alert_choices <- function(alerts, sel, links, ctbl) {
   }
   district_ids <- avail('district')$alert_id
   community_ids <- avail('community')$alert_id
-  status <- avail('consortium_response_status')$consortium_response_status
-  status_values <- c(intersect(c('Yes', 'No', 'Pending go/no-go'), status),
-                     if (any(is.na(status))) 'Not reported')
+  status <- activities$delivery_status[activities$alert_id %in% avail('delivery_status')$alert_id]
   unit <- if (length(sel$date_unit) == 1L) sel$date_unit else 'All'
   list(
     district = alert_district_choices(links[links$alert_id %in% district_ids, , drop = FALSE],
@@ -112,7 +109,7 @@ linked_alert_choices <- function(alerts, sel, links, ctbl) {
     trigger = labelled(avail('trigger')$trigger, 'All triggers'),
     gla = labelled(avail('gla')$gla, 'All sources'),
     movement = labelled(avail('movement')$movement, 'All population statuses'),
-    consortium_response_status = labelled(status_values, 'All response statuses')
+    delivery_status = labelled(status, 'All delivery statuses')
   )
 }
 
@@ -132,8 +129,7 @@ filter_spec <- function(key, d) {
       list('trigger', 'Trigger', d$alerts$trigger),
       list('gla', 'Source', d$alerts$gla),
       list('movement', 'Population status', d$alerts$movement),
-      list('consortium_response_status', 'Consortium response status',
-           c('Yes', 'No', 'Pending go/no-go', 'Not reported'))
+      list('delivery_status', 'Delivery status', d$activities$delivery_status)
     ),
     rna = list(
       list('area', 'Assessed geography', d$assessments$area),
@@ -192,7 +188,7 @@ group_alert_filters <- function(filters) {
       class = 'filter-groups',
       group('Location', c('district', 'community'), 'filter-group-location'),
       group('Period', c('date_unit', 'date_period'), 'filter-group-period'),
-      group('Alert', c('trigger', 'gla', 'movement', 'consortium_response_status'),
+      group('Alert', c('trigger', 'gla', 'movement', 'delivery_status'),
             'filter-group-alert')
     )
   )
@@ -394,7 +390,7 @@ page_ui <- function(id, key, d) {
             trigger = 'All triggers',
             gla = 'All sources',
             movement = 'All population statuses',
-            consortium_response_status = 'All response statuses',
+            delivery_status = 'All delivery statuses',
             alert_id = 'All alerts',
             population = 'IDPs / hosts',
             decision = 'All decisions',
@@ -613,14 +609,14 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       alert_id = input$alert_id, district = input$district, community = input$community,
       date_unit = input$date_unit, date_period = input$date_period,
       trigger = input$trigger, gla = input$gla, movement = input$movement,
-      consortium_response_status = input$consortium_response_status
+      delivery_status = input$delivery_status
     ))
     if (key == 'alerts') {
       # Linked filters: each menu lists only values present under the other filters.
       sent <- new.env()
       observe({
         sel <- alert_selection()
-        choices <- linked_alert_choices(d$alerts, sel, alert_links, community_tbl)
+        choices <- linked_alert_choices(d$alerts, sel, alert_links, community_tbl, d$activities)
         for (id in names(choices)) {
           ch <- choices[[id]]
           current <- sel[[id]]
@@ -680,7 +676,8 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
           nrow(d$assessments))
         req(input$assessment_id, cancelOutput = TRUE)
       if (key == 'alerts')
-        return(filter_alerts(d$alerts, alert_selection(), alert_links, community_tbl))
+        return(filter_alerts(d$alerts, alert_selection(), alert_links, community_tbl,
+                             activities = d$activities))
       x <- switch(
         key,
         coverage = d$coverage,
@@ -692,9 +689,6 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       for (s in specs)
         if (key == 'coverage' && s[[1]] == 'area')
           x <- filter_coverage_area(x, input$area, d$metadata$mode)
-        else if (key == 'alerts' && s[[1]] == 'consortium_response_status' &&
-                 identical(input$consortium_response_status, 'Not reported'))
-          x <- x[is.na(x$consortium_response_status), , drop = FALSE]
         else if (s[[1]] %in% names(x))
           x <- filter_equal(x, s[[1]], input[[s[[1]]]])
       if (key == 'coverage') {

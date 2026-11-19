@@ -62,7 +62,7 @@ stopifnot(identical(date_period_key(pd,'week'),c('2026-W37','2026-W37','2026-W38
   identical(names(date_period_choices(pd,'month'))[2],'Sep 2026'))
 testServer(page_server,args=list(key='alerts',d=d),{
   session$setInputs(alert_id='All',community='All',trigger='All',gla='All',movement='All',
-                    consortium_response_status='All',district='All',date_unit='All',date_period='All')
+                    delivery_status='All',district='All',date_unit='All',date_period='All')
   n_all <- nrow(filtered())
   k <- date_period_key(d$alerts$alert_date,'month')[1]
   session$setInputs(date_unit='month',date_period=k)
@@ -81,6 +81,23 @@ local({
             nrow(filter_alerts(d$alerts, list(trigger = t1), dl, ct)) == nrow(keep))
 })
 message('PASS: linked Alerts filters.')
+stopifnot(grepl('id="alerts-delivery_status"',html,fixed=TRUE),
+          !grepl('id="alerts-consortium_response_status"',html,fixed=TRUE))
+delivery <- d
+delivery$activities$delivery_status[delivery$activities$event_id == 'A01'] <- 'Ongoing'
+testServer(page_server,args=list(key='alerts',d=delivery),{
+  session$setInputs(delivery_status='Ongoing')
+  stopifnot(identical(filtered()$alert_id,'DEMO-001'))
+  session$setInputs(delivery_status='Completed')
+  stopifnot(setequal(filtered()$alert_id,c('DEMO-001','DEMO-003')))
+  session$setInputs(delivery_status='Planned')
+  stopifnot(nrow(filtered())==0L)
+  session$setInputs(delivery_status='All')
+  stopifnot(nrow(filtered())==3L)
+})
+choices <- linked_alert_choices(delivery$alerts, list(trigger=delivery$alerts$trigger[3]),
+                                NULL, route_community_table(delivery$routes), delivery$activities)
+stopifnot(setequal(unname(choices$delivery_status),c('All','Completed')))
 local({
   links <- data.frame(alert_id='DEMO-001', pcode='mz0101')
   sel <- list(district='mz0104')

@@ -27,7 +27,8 @@ stopifnot(alert_summary_values(a,reporting,TRUE)$households==0)
 empty <- alert_summary_values(a[FALSE,],d$activities)
 stopifnot(all(unlist(empty)==0L))
 html <- as.character(alert_summary_ui(values))
-stopifnot(grepl('Tier 1.*Tier 2.*Completed',html),
+stopifnot(grepl('Tier 1.*Tier 2.*All recorded activities completed',html),
+          grepl('Tier counts can overlap.',html,fixed=TRUE),
           !grepl('Activated alerts|Gross.*reach',html))
 page <- as.character(page_ui('alerts','alerts',d))
 stopifnot(regexpr('id="alerts-alert_summary"',page,fixed=TRUE) > regexpr('id="alerts-reset"',page,fixed=TRUE),

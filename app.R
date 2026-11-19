@@ -164,7 +164,7 @@ server <- function(input, output, session) {
     updateRadioButtons(session, 'page', selected = 'alerts')
     updateSelectInput(session, 'alerts-district', choices = choices, selected = code)
     for (filter in c('community', 'date_unit', 'date_period', 'trigger', 'gla',
-                     'movement', 'consortium_response_status'))
+                     'movement', 'delivery_status'))
       updateSelectInput(session, paste0('alerts-', filter), selected = 'All')
   })
   observeEvent(input$methods, showModal(

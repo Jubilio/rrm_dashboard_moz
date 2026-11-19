@@ -74,9 +74,11 @@ latest_alert_table <- function(x, detail_input=NULL) {
     options=list(pageLength=5, scrollX=TRUE, ordering=FALSE, dom='tp',
                  language=list(emptyTable='No alerts available for this selection.')))
   if ('alert_severity' %in% names(rows)) {
-    fills <- c(Low='#E5F4EA', Moderate='#FFF3CC', High='#FFE5CB', Critical='#F8DADB')
+    fills <- c(Low='#E6F2E0', Moderate='#E6DDCA', High='#F49695', Critical='#C0474A')
+    ink <- c('#232323', '#232323', '#232323', '#FFFFFF')
     table <- DT::formatStyle(table, 'alert_severity',
-      backgroundColor=DT::styleEqual(names(fills), unname(fills)))
+      backgroundColor=DT::styleEqual(names(fills), unname(fills)),
+      color=DT::styleEqual(names(fills), ink))
   }
   table
 }

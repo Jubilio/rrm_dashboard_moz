@@ -69,8 +69,14 @@ latest_alert_table <- function(x, detail_input=NULL) {
     rows <- data.frame(Details=buttons,rows,check.names=FALSE)
     escape <- seq_len(ncol(rows))[-1L]
   }
-  rrm_datatable(rows, width='100%', rownames=FALSE, escape=escape,
+  table <- rrm_datatable(rows, width='100%', rownames=FALSE, escape=escape,
     selection='none',
     options=list(pageLength=5, scrollX=TRUE, ordering=FALSE, dom='tp',
                  language=list(emptyTable='No alerts available for this selection.')))
+  if ('alert_severity' %in% names(rows)) {
+    fills <- c(Low='#E5F4EA', Moderate='#FFF3CC', High='#FFE5CB', Critical='#F8DADB')
+    table <- DT::formatStyle(table, 'alert_severity',
+      backgroundColor=DT::styleEqual(names(fills), unname(fills)))
+  }
+  table
 }

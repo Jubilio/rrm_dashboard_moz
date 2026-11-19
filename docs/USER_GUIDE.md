@@ -10,7 +10,7 @@ If figures are unexpected, confirm the selected subtab, date range, geography an
 
 ## 2. Navigate and filter
 
-Use the left navigation to choose a page. The dashboard always starts on Geographic coverage. Additional tabs within Alerts, Vulnerability screening and Activity reporting provide distinct source views.
+Use the left navigation to choose a page. The dashboard always starts on RNA Intro. Additional tabs within Alerts, Vulnerability screening and Activity reporting provide distinct source views.
 
 Select filters from the top of each view. **All** includes available records for that field. Dates refer to different events on different pages; the label identifies the event being filtered. **Reset filters** restores all-value selections and the source's date bounds, not necessarily the initial demonstration selection.
 
@@ -20,7 +20,7 @@ When a selection has no records, change or reset the filters. An empty result do
 
 Use Coverage as of to select the effective assignment date and Partner, GLA role and Area to select responsibilities. The Geography selector changes the province view of the map; it does not filter the assignment table or KPIs by province.
 
-The cards show distinct primary partners, secondary partners, assigned areas and source version. The table lists responsibilities. A known responsibility is not evidence that assistance occurred. Fictional demo areas are never assigned to real district polygons. Click a district to inspect its contextual information or selected responsibility.
+The cards show distinct primary partners, secondary partners, assigned areas and source version. The table lists responsibilities. A known responsibility is not evidence that assistance occurred. Fictional demo areas are never assigned to real district polygons. Select a district on the RNA Intro map to open Alerts → Dashboard records with that arrival district selected. The other alert filters reset, and a district with no linked records shows an empty result.
 
 ## 4. Alerts
 

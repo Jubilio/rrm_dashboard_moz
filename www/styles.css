@@ -141,7 +141,7 @@ h1{font-size:32px}
 .page-alerts .alert-map-selection-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .page-alerts .alert-map-selection-header h4{margin:0}
 .page-alerts .alert-map-selection .rrm-alert-detail-button{margin-top:12px}
-.page-alerts .leaflet-interactive[role="button"]:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.rrm-map-output .leaflet-interactive[role="button"]:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .page-alerts .map-legend{gap:8px 16px;margin:12px 0 8px}
 .page-alerts .alert-map-status{font-size:12px;line-height:1.5;margin:0;color:var(--ink)}
 .page-alerts .alert-summary .kpi-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}

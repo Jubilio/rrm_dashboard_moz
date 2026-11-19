@@ -81,3 +81,11 @@ local({
             nrow(filter_alerts(d$alerts, list(trigger = t1), dl, ct)) == nrow(keep))
 })
 message('PASS: linked Alerts filters.')
+local({
+  links <- data.frame(alert_id='DEMO-001', pcode='mz0101')
+  sel <- list(district='mz0104')
+  choices <- linked_alert_choices(d$alerts, sel, links, route_community_table(d$routes))
+  stopifnot('mz0104' %in% choices$district, 'mz0101' %in% choices$district,
+            !'mz01' %in% alert_district_choices(links, 'mz01'),
+            nrow(filter_alerts(d$alerts, sel, links, route_community_table(d$routes))) == 0L)
+})

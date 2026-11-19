@@ -174,13 +174,18 @@ server <- function(input, output, session) {
   household_server('household', history, allow_synthetic = DATA_MODE == 'demo')
   activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH)
   # Clicking a district on the RNA Intro map opens the Alerts page filtered to that district.
+  district_alert_links <- reactive(alert_links_for(d))
   observeEvent(input$map_district_alerts, {
     code <- input$map_district_alerts
-    req(is.character(code), length(code) == 1L)
+    req(is.character(code), length(code) == 1L, !is.na(code), code != 'All')
+    choices <- alert_district_choices(district_alert_links(), code)
+    req(code %in% choices)
     updateRadioButtons(session, 'page', selected = 'alerts')
     updateTabsetPanel(session, 'alerts_view', selected = 'dashboard')
-    updateSelectInput(session, 'alerts-district', selected = code)
-    updateSelectInput(session, 'alerts-community', selected = 'All')
+    updateSelectInput(session, 'alerts-district', choices = choices, selected = code)
+    for (filter in c('community', 'date_unit', 'date_period', 'trigger', 'gla',
+                     'movement', 'consortium_response_status'))
+      updateSelectInput(session, paste0('alerts-', filter), selected = 'All')
   })
   observeEvent(input$methods, showModal(
     modalDialog(

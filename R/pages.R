@@ -15,10 +15,10 @@ alert_links_for <- function(d) {
   if (d$metadata$mode == 'demo') return(NULL)
   tryCatch(alert_district_links(d$alerts, d$routes), error = function(e) NULL)
 }
-alert_district_choices <- function(links) {
-  if (is.null(links) || !nrow(links)) return(c('All districts' = 'All'))
+alert_district_choices <- function(links, selected = NULL) {
   r <- map_reference()
-  codes <- unique(links$pcode)
+  codes <- intersect(c(links$pcode, selected), r$pcode[r$level == 'admin2'])
+  if (!length(codes)) return(c('All districts' = 'All'))
   labels <- r$label[match(codes, r$pcode)]
   o <- order(labels)
   c('All districts' = 'All', setNames(codes[o], labels[o]))
@@ -104,7 +104,8 @@ linked_alert_choices <- function(alerts, sel, links, ctbl) {
                      if (any(is.na(status))) 'Not reported')
   unit <- if (length(sel$date_unit) == 1L) sel$date_unit else 'All'
   list(
-    district = alert_district_choices(links[links$alert_id %in% district_ids, , drop = FALSE]),
+    district = alert_district_choices(links[links$alert_id %in% district_ids, , drop = FALSE],
+                                      selected = sel$district),
     community = community_choices(ctbl[ctbl$alert_id %in% community_ids, , drop = FALSE],
                                   if (length(sel$district) == 1L) sel$district else 'All'),
     date_period = date_period_choices(avail('date_period')$alert_date, unit),
@@ -431,7 +432,7 @@ page_ui <- function(id, key, d) {
           h3('Assigned GLA coverage'),
           rrm_map_output(ns('coverage_map')),
           p(class = 'muted coverage-map-caption',
-            'Hover over an area to see the district GLA and role. Click for details. Click a partner icon to show its primary and secondary districts.'),
+            'Hover over a district to see its GLA. Select a district to open its alerts. Click a partner icon to show its primary and secondary districts.'),
           uiOutput(ns('map_slot')),
           uiOutput(ns('map_note'))
         ),

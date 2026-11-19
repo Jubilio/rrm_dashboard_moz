@@ -35,7 +35,7 @@ alert_summary_ui <- function(values, reporting=FALSE) {
         card('Gross validated household reach',values$households))
       else shiny::tagList(
         card('Tier 1',values$tier_1), card('Tier 2',values$tier_2),
-        card('Completed',values$completed))),
+        card('All recorded activities completed',values$completed))),
     if (!reporting) shiny::p(class='alert-summary-note',
-      'Tier counts can overlap. Completed includes alerts with at least one recorded activity and all recorded activities marked Completed.'))
+      'Tier counts can overlap. Completion requires at least one recorded activity, with every recorded activity marked Completed.'))
 }

@@ -96,5 +96,13 @@ show_alert_detail <- function(id, d=NULL, h=NULL, activity=NULL) {
   shiny::showModal(shiny::modalDialog(
     title=id, size='l', easyClose=TRUE,
     alert_detail_ui(id,alert_detail_data(id,d,h,activity)),
-    footer=shiny::modalButton('Close')))
+    footer=shiny::tagList(alert_navigation_button('open_light_rna', id, 'Open Light RNA'),
+      alert_navigation_button('open_reported_response', id, 'Open reported response'),
+      shiny::modalButton('Close'))))
+}
+
+alert_navigation_button <- function(input, id, label, selected=NULL) {
+  shiny::tags$button(type='button', class='btn btn-default rrm-alert-link',
+    `data-input`=input, `data-alert`=id,
+    `aria-pressed`=if (!is.null(selected)) tolower(as.character(selected)), label)
 }

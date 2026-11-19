@@ -4,7 +4,7 @@ For colleagues viewing and checking dashboard results. No R knowledge is require
 
 ## 1. Check the source before using results
 
-Read the source label at the top of the page. **DRAFT LAYOUT - DEMO DATA ONLY** identifies fictional core records. The Reporting workbook view identifies its separate reporting source and retains original review statuses. Opening a demo dashboard does not make its real workbook source fictional, or its pending records validated.
+Read the source label at the top of the page. **DRAFT LAYOUT - DEMO DATA ONLY** identifies fictional core records. **Activity reporting** uses the separate standardised reporting source and retains the workbook review statuses in every dashboard mode.
 
 If figures are unexpected, confirm the selected subtab, date range, geography and alert before reporting a problem. The consolidated workbook loads at startup; refreshing the browser alone does not import a changed file into an existing R process.
 
@@ -36,9 +36,9 @@ Arrival filtering narrows the map to matching routes but selects whole alerts fo
 
 ## 5. Light RNA
 
-Select one assessment round. Review the assessment dates, method and samples before reading priorities. KII summaries and HESPER household counts describe separate evidence streams. The HESPER denominator is the valid sample for that need, not the affected population.
+Start with **Find an alert** or apply an assessment filter. Filters list matching rounds newest first. Select a round to read its findings. Choosing an alert opens its latest dated round and leaves earlier and undated rounds in the list. **Clear filters** clears the results and findings.
 
-The table displays Rank, Need, KII summary and HESPER households. The source ranking note is retained in the input contract but hidden from this view. Purposive samples must not be interpreted as population prevalence or pooled across rounds. Review the companion panel for coverage, limitations, source and use in response.
+The period filter matches any day in the reported assessment window. Undated rounds appear when filtering without a period. Sites and administrative posts come from the reported assessment coverage. Review **What we learned** for the separate key informant and HESPER findings. Each available denominator belongs to its own finding. Expand **Coverage, limitations and sources** for interpretation. Open the linked alert or the reported response using the alert ID.
 
 ## 6. Vulnerability screening
 
@@ -50,27 +50,17 @@ Household analysis is a separate tab. Draft synthetic scenarios are available on
 
 ## 7. Activity reporting
 
-### Dashboard overview
+### Response by community
 
-This view uses the core input mode. Filter response geography, intervention start date, alert, tier, modality and delivery partner. The cards keep gross HH assistance, kits and clinic consultations separate. KPIs use completed interventions only; the table and CSV retain other reported statuses when present.
+The response workspace uses the configured standardised reporting workbook or the supplied snapshot. District, administrative post and community come from Activity Entry. Related records use the exact alert ID. A combined location stays on one record, and its reported quantity is shown for the combined locations.
 
-First response is the earliest completed intervention in the current selection. Changing the intervention filters can change that value. It is different from the Reporting workbook timing definition. Gross HH assistance can include repeat recipients. Do not add household counts to kits or consultations.
+Use **Alert**, **Response district**, **Community** and **Activity period** to narrow the results. The period uses the reported start month. Open **More filters** for partner, tier, sector, modality and delivery status. **All activities** includes assessment and supporting records. **List**, **Map** and **Export filtered activities** share the same selection. Unmatched locations remain in List.
 
-**Days from alert** is intervention start minus the linked alert issue date, in calendar days including weekends and holidays. An alert on 1 September and start on 5 September gives 4 days; a same-day start gives 0. The First response card takes the minimum of these delays among completed, filtered interventions, each measured against its own alert; across alerts it does not describe one common timeline. Missing dates leave the delay unavailable. Start date is the reported first day of the intervention; the core activity input does not collect an end date.
+Delivery and review statuses are independent. An explicit Delivery Status in Activity Entry takes precedence. If absent, an exact unique core event match can supply the recorded status. Expand a row for provenance. A blank review status remains Pending review. Headline totals use validated, reconciled records with confirmed links and retain separate metrics and units. Expand **Timing and handovers** for records and, for a selected alert, the earliest validated reported delivery start with documented status.
 
-The lower panels show timing/delay reasons and responsibility transfers. Transfers follow selected alerts and geography independently of intervention dates, tiers, modalities or delivery partners. A transfer adds no reach. Expand **Export intervention records** for the audit CSV, including units, measure types, status and donor.
+### Data review
 
-Delay reasons appear beside each activity in the overview table and alert detail. In **Reporting workbook → Timing, handovers and evidence → Reported delay reasons**, review the original reason alongside activity dates, partner, review status and alert-link status. This table includes pending/excluded records under the current filters; it does not validate their contents. Blank reasons stay blank. Enter or amend reasons in the source workbook using the [data entry guide](DATA_ENTRY.md#delay-reasons).
-
-### Reporting workbook
-
-This is the separate real reporting source. Its Intervention map, validated outputs, reach/demographics, timing, Records and review and definitions retain their own filters and review rules.
-
-Here **Days from alert** is Activity Start minus the workbook Alert Shared Date, also in calendar days with same-day start equal to 0. Activity Start and Activity End delimit the activity period covered by the record; end date does not establish closure of the whole response and does not enter the delay calculation. Continuing activities must be reported in separate monthly periods, with actual dates rather than “Ongoing”. Missing/invalid required dates, an end before start or a start before the linked alert shared date prevent inclusion in validated results. The timing summary finds the earliest validated start by alert and tier across all months: other filters select alert IDs, then all validated activities for those alerts are considered, including assessment and coordination. It does not necessarily measure first assistance delivery.
-
-Validated results require Review Status=Validated, Alert Link Status=Confirmed, a unique known alert and reconciled inputs. A blank review status remains Pending review. Missing validated results are not a reason to mark source records Validated without review. Use **Records and review** to inspect reported records and issues.
-
-Map matching uses the reported community and administrative context. Unresolved or combined locations stay in review; matching a place does not validate delivery or allocate reach. A session-uploaded workbook affects only that session and does not persist to the server. See the [workbook reference](reference/ACTIVITY_WORKBOOK.md) for detailed counting and refresh rules.
+Use **Refresh source** or **Manage workbook** to select a session source. The reporting month filter, review queue, geographic matching, and counting definitions are in **Data review**. Duplicate record IDs require review and are excluded from response counts. Geographic matching does not validate delivery or allocate an output to individual communities. See the [workbook reference](reference/ACTIVITY_WORKBOOK.md) for source and validation rules.
 
 ## 8. Maps, tables and exports
 

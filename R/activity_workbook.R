@@ -9,6 +9,8 @@ activity_select <- function(x,mapping,sheet) {
   if(!'Response Status' %in% names(x)) x[['Response Status']]<-NA_character_
   mapping<-c(mapping,response_status='Response Status')
  }
+ if(identical(sheet,'Activity Entry') && 'Delivery Status' %in% names(x))
+  mapping<-c(mapping,delivery_status='Delivery Status')
  missing<-setdiff(unname(mapping),names(x));if(length(missing)) stop(sheet,': missing columns: ',paste(missing,collapse=', '))
  x<-as.data.frame(x[,unname(mapping),drop=FALSE],stringsAsFactors=FALSE);names(x)<-names(mapping)
  for(n in names(x)) x[[n]]<-activity_trim(x[[n]])
@@ -66,6 +68,26 @@ read_activity_snapshot <- function(directory='data/activity_snapshot') {
 }
 # Add display context only when the supplied source uniquely corroborates the
 # core event. Never merge rows, infer a community from a district, or alter reach.
+activity_core_matches <- function(a, source) {
+ pairs <- c(alert_id='alert_id', area='district', modality='activity',
+            delivery_partner='implementing_agency', tier='tier')
+ required <- c('record_id','start_date','quantity',unname(pairs))
+ if (!all(required %in% names(source))) stop('Activity reporting source is missing fields required for an exact event match.')
+ duplicate <- duplicated(source$record_id) | duplicated(source$record_id,fromLast=TRUE)
+ ix <- match(a$event_id,source$record_id)
+ valid <- !is.na(ix) & !is.na(a$event_id) &
+   !a$event_id %in% a$event_id[duplicated(a$event_id) | duplicated(a$event_id,fromLast=TRUE)]
+ valid[!is.na(ix)] <- valid[!is.na(ix)] & !duplicate[ix[!is.na(ix)]]
+ for (field in names(pairs)) {
+  same <- activity_trim(a[[field]]) == activity_trim(source[[pairs[[field]]]][ix])
+  valid <- valid & !is.na(same) & same
+ }
+ same_date <- as.Date(a$start_date) == activity_date(source$start_date[ix])
+ same_quantity <- a$quantity == suppressWarnings(as.numeric(source$quantity[ix]))
+ valid <- valid & !is.na(same_date) & same_date & !is.na(same_quantity) & same_quantity
+ ix[!valid] <- NA_integer_
+ ix
+}
 add_activity_communities <- function(d, source = NULL) {
  a <- d$activities
  if ('community' %in% names(a)) return(d)
@@ -75,23 +97,10 @@ add_activity_communities <- function(d, source = NULL) {
   d$activities <- a
   return(d)
  }
- pairs <- c(alert_id='alert_id', area='district', modality='activity',
-            delivery_partner='implementing_agency', tier='tier')
- required <- c('record_id','community','start_date','quantity',unname(pairs))
- if (!all(required %in% names(source))) stop('Activity community source is missing required fields.')
- duplicate <- duplicated(source$record_id) | duplicated(source$record_id,fromLast=TRUE)
- ix <- match(a$event_id,source$record_id)
- valid <- !is.na(ix) & !is.na(a$event_id)
- valid[!is.na(ix)] <- valid[!is.na(ix)] & !duplicate[ix[!is.na(ix)]]
- for (field in names(pairs)) {
-  same <- activity_trim(a[[field]]) == activity_trim(source[[pairs[[field]]]][ix])
-  valid <- valid & !is.na(same) & same
- }
- same_date <- as.Date(a$start_date) == activity_date(source$start_date[ix])
- same_quantity <- a$quantity == suppressWarnings(as.numeric(source$quantity[ix]))
- valid <- valid & !is.na(same_date) & same_date & !is.na(same_quantity) & same_quantity
+ if (!'community' %in% names(source)) stop('Activity community source is missing required fields.')
+ ix <- activity_core_matches(a, source)
  community <- activity_trim(source$community[ix])
- valid <- valid & !is.na(community)
+ valid <- !is.na(community)
  a$community[valid] <- community[valid]
  a$community_source[valid] <- 'Supplied activity reporting snapshot; matched Record ID and event details'
  d$activities <- a
@@ -110,7 +119,8 @@ prepare_activity_data <- function(raw) {
  l$response_status<-ifelse(!is.na(status)&status=='ongoing','Ongoing',ifelse(!is.na(status)&status=='closed','Closed','Not reported'))
  a$response_status<-l$response_status[match(a$alert_id,l$alert_id)]
  a$response_status[is.na(a$response_status)|a$alert_id %in% l$alert_id[duplicated(l$alert_id)|duplicated(l$alert_id,fromLast=TRUE)]|is.na(a$link_status)|a$link_status!='Confirmed']<-'Not reported'
- a<-a[,c(required,'source_row','response_status'),drop=FALSE];e<-e[,c(names(extra_fields),'source_row'),drop=FALSE];l<-l[,c(names(alert_fields),'response_status','source_row'),drop=FALSE];m<-m[,c(names(metric_fields),'source_row'),drop=FALSE]
+ if(!'delivery_status' %in% names(a)) a$delivery_status<-rep(NA_character_,nrow(a))
+ a<-a[,c(required,'source_row','response_status','delivery_status'),drop=FALSE];e<-e[,c(names(extra_fields),'source_row'),drop=FALSE];l<-l[,c(names(alert_fields),'response_status','source_row'),drop=FALSE];m<-m[,c(names(metric_fields),'source_row'),drop=FALSE]
  a<-a[!is.na(a$record_id),,drop=FALSE];e<-e[!is.na(e$record_id),,drop=FALSE]
  issues<-list()
  add<-function(id,row,issue,blocking=TRUE,sheet='Activity Entry') {

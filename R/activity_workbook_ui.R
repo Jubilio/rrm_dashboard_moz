@@ -1,66 +1,5 @@
 source('R/table_labels.R', local=TRUE)
-activity_workbook_ui <- function(id) {
- ns<-shiny::NS(id)
- shiny::tagList(
-  shiny::div(class='page-heading',shiny::div(shiny::span(class='eyebrow','STANDARDISED WORKBOOK'),shiny::h2('Activity reporting')),
-    shiny::downloadButton(ns('export'),'Export displayed records')),
-  shiny::div(class='panel',shiny::h3('Data source'),shiny::uiOutput(ns('source_status')),
-    shiny::div(class='filters',shiny::fileInput(ns('upload'),'Load a standardised workbook (.xlsx)',accept='.xlsx'),
-      shiny::actionButton(ns('clear_upload'),'Use configured source'),shiny::actionButton(ns('refresh'),'Refresh now')),
-    shiny::p(class='muted','Data updates automatically. Uploads apply to this session only.')),
-  shiny::uiOutput(ns('load_error')),
-  shiny::div(class='filters',
-    shiny::selectInput(ns('month'),'Reporting month','All'),shiny::selectInput(ns('alert'),'Alert ID','All'),
-    shiny::selectInput(ns('district'),'Response district','All'),shiny::selectInput(ns('community'),'Reported community','All'),shiny::selectInput(ns('partner'),'Implementing agency','All'),
-    shiny::selectInput(ns('tier'),'Tier','All'),shiny::selectInput(ns('sector'),'Sector','All'),
-    shiny::selectInput(ns('modality'),'Modality','All'),shiny::selectInput(ns('funding'),'Funding scope','All'),
-    shiny::actionButton(ns('reset'),'Reset filters',class='btn-reset')),
-  shiny::uiOutput(ns('metrics')),
-  shiny::div(class='method-strip','Results include validated, reconciled records with confirmed alert links. Reach may include repeat recipients. Missing values are not zero.'),
-  shiny::tabsetPanel(
-    shiny::tabPanel('Intervention map',
-      shiny::div(class='panel',shiny::h3('Reported intervention locations'),
-        shiny::radioButtons(ns('map_view'),'Map view',choices=c('Reported locations'='locations','People reached by district'='reach'),selected='locations',inline=TRUE),
-        shiny::conditionalPanel(sprintf("input['%s'] == 'reach'",ns('map_view')),
-          shiny::selectInput(ns('reach_measure'),'Reach measure','Direct service users / Unique within record'),
-          shiny::p(class='muted','Circle area represents gross reach from validated records. Repeat recipients may be counted across activities.')),
-        shiny::conditionalPanel(sprintf("input['%s'] != 'reach'",ns('map_view')),
-        shiny::radioButtons(ns('map_scope'),'Map record scope',choices=c('All reported records'='all','Validated results only'='validated'),selected='all',inline=TRUE)),
-        shiny::uiOutput(ns('location_status')),rrm_map_output(ns('location_map')),
-        shiny::conditionalPanel(sprintf("input['%s'] != 'reach'",ns('map_view')),
-        shiny::div(class='map-legend',
-          shiny::span(shiny::span(class='map-swatch map-swatch-point',style='background:#E69F00;'),'Response ongoing'),
-          shiny::span(shiny::span(class='map-swatch map-swatch-point',style='background:#0072B2;'),'Response closed'),
-          shiny::span(shiny::span(class='map-swatch map-swatch-point',style='background:#8B5CF6;'),'Mixed response statuses'),
-          shiny::span(shiny::span(class='map-swatch map-swatch-point',style='background:#58585A;'),'Response status not reported')),
-        shiny::p(class='muted','Mixed points contain different or unreported response statuses. Activity end dates do not confirm response closure.'),
-        shiny::p(class='muted','Points show matched locations; counts refer to activity records, not people reached. Unresolved locations remain in the review table.'))),
-      shiny::div(class='panel',shiny::h3('Community matching and unresolved locations'),
-        shiny::downloadButton(ns('location_export'),'Export geographic matching CSV'),DT::DTOutput(ns('location_review')),
-        shiny::p(class='muted','Suggested locations require review.'))),
-    shiny::tabPanel('Validated outputs',shiny::div(class='panel',shiny::h3('Outputs by tier, funding, metric and unit'),DT::DTOutput(ns('outputs')))),
-    shiny::tabPanel('Reach and demographics',
-      shiny::div(class='panel',shiny::h3('Household reach by counting basis'),DT::DTOutput(ns('households'))),
-      shiny::div(class='panel',shiny::h3('Reported people by scope and counting basis'),DT::DTOutput(ns('people'))),
-      shiny::div(class='panel',shiny::h3('Complete reported age/sex breakdowns — gross counts'),DT::DTOutput(ns('demographics')),
-        shiny::p(class='muted','Age bands retain the source 0–59 months, 5–17 years, 18–49 years and 50+ years. Disability and population-status figures are subsets, not additional reach.')),
-      shiny::div(class='panel',shiny::h3('Population and disability subsets · do not add to total reach'),DT::DTOutput(ns('subsets')))),
-    shiny::tabPanel('Timing, handovers and evidence',
-      shiny::tags$details(class='panel',shiny::tags$summary('How timing is calculated'),
-        shiny::p('Days from alert = Activity Start minus Alert Shared Date, in calendar days, including weekends and holidays. Example: alert shared on 1 September and activity started on 5 September = 4 days. A same-day start = 0 days. Activity End is not used to calculate this delay.'),
-        shiny::p('Activity Start and Activity End are the first and last days of the activity covered by this reporting record. They may be the same day. Activity End does not confirm closure of the overall response. For activities continuing across months, report a separate period in each month; keep dates as dates rather than entering "Ongoing".'),
-        shiny::p('Missing or invalid required dates exclude a record from validated timing results; they are never estimated. An end before the start or an activity starting before its linked alert shared date requires correction.'),
-        shiny::p(class='muted','The timing summary takes the earliest validated activity start for each selected alert and tier across all reported months. The month filter does not restrict this summary; other filters select the alert IDs, then all validated activities for those alerts are considered. Assessment and coordination can be included, so this is not necessarily time to first assistance delivery.')),
-      shiny::div(class='panel',shiny::h3('First validated activity by selected alert and tier · all reported months'),DT::DTOutput(ns('timing')),
-        shiny::p(class='muted','Measured from the alert shared date. May include assessment or coordination before assistance.')),
-      shiny::div(class='panel',shiny::h3('Reported delay reasons'),DT::DTOutput(ns('delays'))),
-      shiny::div(class='panel',shiny::h3('Transfers and evidence use'),DT::DTOutput(ns('handovers')))),
-    shiny::tabPanel('Records and review',shiny::div(class='panel',shiny::h3('Imported activity records'),
-      shiny::checkboxInput(ns('show_all'),'Include pending and excluded records for review',TRUE),DT::DTOutput(ns('records')),
-      shiny::p(class='muted','Records without a review status remain pending.')),
-      shiny::div(class='panel',shiny::h3('Recomputed data-quality checks'),DT::DTOutput(ns('issues')))),
-    shiny::tabPanel('Counting definitions',shiny::div(class='panel',DT::DTOutput(ns('definitions'))))))
-}
+source('R/response_reporting.R', local=TRUE)
 # Process-wide caches so each new browser session does not re-read and re-parse
 # the activity sources (several seconds that delayed every page's first render).
 activity_parse_cache <- new.env()
@@ -87,7 +26,8 @@ cached_settlement_points <- local({
     value
   }
 })
-activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/activity_snapshot') shiny::moduleServer(id,function(input,output,session) {
+activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/activity_snapshot',
+                                     core=NULL,open_alert=function() NULL) shiny::moduleServer(id,function(input,output,session) {
  settlement_error<-NULL
  settlements<-tryCatch(cached_settlement_points(),error=function(e){settlement_error<<-conditionMessage(e);NULL})
  location_layers<-read_map_layers()
@@ -117,19 +57,82 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   },error=function(e){last_error(conditionMessage(e))})
  })
  data<-shiny::reactive({shiny::req(current(),cancelOutput=TRUE);current()})
+ reported <- shiny::reactive({
+  a <- data()$activities
+  response_status_records(a, if (!is.null(core) && core$metadata$mode != 'demo') core$activities else NULL)
+ })
  filter_fields<-c(month='reporting_month',alert='alert_id',district='district',community='community',partner='implementing_agency',tier='tier',sector='sector',modality='modality',funding='funding')
+ response_fields <- c(alert='alert_id',district='district',community='community',period='start_date',
+   partner='implementing_agency',tier='tier',sector='sector',modality='modality',delivery_status='delivery_status')
+ alert_choices <- shiny::reactive({
+   ids <- sort(unique(c(reported()$alert_id,core$alerts$alert_id)))
+   c('All alerts'='All',setNames(ids,ids))
+ })
  shiny::observeEvent(current(),{
-  a<-data()$activities
-  for(id in names(filter_fields)) {
-   values<-a[[filter_fields[[id]]]]
-   values<-if(id=='month') format(values,'%Y-%m') else as.character(values)
-   choices<-c('All',sort(unique(values[!is.na(values)])))
+  a<-reported()
+  for(id in setdiff(c(names(response_fields),'month'),'community')) {
+   if (id=='alert') {
+    selected <- shiny::isolate(input$alert)
+    choices <- alert_choices()
+    shiny::updateSelectizeInput(session,id,choices=choices,server=TRUE,
+      selected=if (length(selected) && selected %in% choices) selected else 'All')
+    next
+   }
+   values<-a[[if(id=='month') 'reporting_month' else response_fields[[id]]]]
+   values<-if(id %in% c('month','period')) format(values,'%Y-%m') else as.character(values)
+   reported_values <- sort(unique(values[!is.na(values)]))
+   labels <- if (id %in% c('month','period') && length(reported_values))
+     format(as.Date(paste0(reported_values,'-01')),'%b %Y') else reported_values
+   all_label <- switch(id,district='All districts',period='All dates',month='All reporting months','All')
+   choices<-c(setNames('All',all_label),setNames(reported_values,labels))
    selected<-shiny::isolate(input[[id]])
    if(is.null(selected)||!selected %in% choices)selected<-'All'
    shiny::updateSelectInput(session,id,choices=choices,selected=selected)
   }
  },ignoreNULL=TRUE)
- shiny::observeEvent(input$reset,{for(id in names(filter_fields))shiny::updateSelectInput(session,id,selected='All')})
+ shiny::observe({
+  a <- reported()
+  if (length(input$district) && input$district!='All') a <- a[a$district %in% input$district,,drop=FALSE]
+  values <- sort(unique(unlist(lapply(a$community,response_communities))))
+  choices <- c('All communities'='All',setNames(values,values))
+  selected <- shiny::isolate(input$community)
+  shiny::updateSelectInput(session,'community',choices=choices,
+    selected=if (length(selected) && selected %in% choices) selected else 'All')
+ })
+ reset_response <- function() for(id in setdiff(names(response_fields),'alert'))
+  shiny::updateSelectInput(session,id,selected='All')
+ shiny::observeEvent(input$reset,{
+  reset_response()
+  shiny::updateSelectizeInput(session,'alert',selected='All')
+ })
+ shiny::observeEvent(open_alert(),{
+  id <- open_alert()
+  shiny::req(is.character(id),length(id)==1L,id %in% alert_choices(),id!='All')
+  reset_response()
+  shiny::updateSelectizeInput(session,'alert',choices=alert_choices(),selected=id,server=TRUE)
+  shiny::updateTabsetPanel(session,'workspace',selected='response')
+  shiny::updateRadioButtons(session,'response_view',selected='list')
+  shiny::updateRadioButtons(session,'scope',selected='delivery')
+ })
+ unique_reported <- shiny::reactive({
+  a <- reported()
+  a[!duplicated(a$record_id) & !duplicated(a$record_id,fromLast=TRUE),,drop=FALSE]
+ })
+ response_records <- shiny::reactive({
+  x <- unique_reported()
+  if (!identical(input$scope,'all')) x <- response_delivery_records(x)
+  for (id in names(response_fields)) {
+   value <- input[[id]]
+   if (!length(value) || value == 'All') next
+   column <- x[[response_fields[[id]]]]
+   matches <- if (id=='community')
+     vapply(column,function(place) value %in% response_communities(place),logical(1))
+   else if (id=='period') format(column,'%Y-%m') %in% value
+   else column %in% value
+   x <- x[matches,,drop=FALSE]
+  }
+  x[order(-as.numeric(x$start_date),x$record_id,na.last=TRUE),,drop=FALSE]
+ })
  apply_filters<-function(x,exclude_month=FALSE) {
   for(id in names(filter_fields)) {
    if(exclude_month&&id=='month')next
@@ -160,7 +163,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   if(!is.null(d)) shiny::p(class='muted',paste('Source updated:',d$metadata$source_updated[1])))})
  output$load_error<-shiny::renderUI({e<-last_error();if(is.null(e))return(NULL)
   shiny::div(class='empty',shiny::h4('Source refresh failed'),shiny::p(e),shiny::p(if(is.null(current())) 'No dataset is available.' else 'The last successfully loaded dataset remains visible; its refresh timestamp is unchanged.'))})
- location_source<-shiny::reactive({a<-records();if(identical(input$map_scope,'validated'))a<-a[a$eligible,,drop=FALSE];a})
+ location_source<-shiny::reactive(response_records())
  location_links<-shiny::reactive(match_intervention_locations(location_source(),settlements))
  shiny::observeEvent(current(),{
   a<-data()$activities
@@ -191,17 +194,85 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
     shiny::p(paste(mapped,'of',nrow(a),'records geographically matched to',places,'distinct points;',nrow(a)-mapped,'records require geographic review.')),
     shiny::p(class='muted',if(identical(input$map_scope,'validated'))'Only records included in validated results are mapped.' else 'Includes pending and excluded records. Geographic matching does not change source review status.'))
  })
- output$location_review<-DT::renderDT(result_table(location_links()))
+ output$location_review<-DT::renderDT(result_table(review_links()))
+ output$linked_alert <- shiny::renderUI({
+  id <- input$alert
+  if (!length(id) || id == 'All') return(NULL)
+  date <- core$alerts$alert_date[match(id,core$alerts$alert_id)]
+  if (!length(date) || is.na(date)) date <- data()$alerts$alert_date[match(id,data()$alerts$alert_id)]
+  shiny::div(class='panel rrm-linked-alert',
+    shiny::div(shiny::strong('Linked alert'),shiny::p(id),
+      if(length(date) && !is.na(date)) shiny::p(format(date,'%d %b %Y'))),
+    if (id %in% core$alerts$alert_id) shiny::div(class='rrm-workspace-actions',
+      alert_navigation_button('open_alert_record',id,'View alert details'),
+      alert_navigation_button('open_light_rna',id,'View Light RNA')))
+ })
+ response_available <- shiny::reactive({
+  if (is.null(current())) return(NULL)
+  unique(response_delivery_records(unique_reported())$alert_id)
+ })
+ output$responses <- shiny::renderUI({
+  a <- response_records()
+  if (nrow(a)) response_list(a)
+ })
+ output$response_empty <- shiny::renderUI({
+  if (nrow(response_records())) return(NULL)
+  alert <- input$alert
+  has_records <- if (identical(input$scope,'all')) unique_reported()$alert_id else response_available()
+  shiny::div(class='panel',shiny::p(if (length(alert) && alert!='All' && !alert %in% has_records)
+    'No response activities recorded for this alert.' else 'No activities match these filters.'))
+ })
+ output$response_export <- shiny::downloadHandler(
+  filename=function() paste0('rrm_filtered_activities_',Sys.Date(),'.csv'),
+  content=function(file) {
+   a <- response_records()
+   write.csv(a[c('record_id','alert_id','district','admin_post','community','location_coverage',
+     'activity','tier','implementing_agency','start_date','metric','quantity','unit','delivery_status',
+     'review_status','funding','delay_reason','link_status','delivery_status_source','source_sheet','source_row')],
+     file,row.names=FALSE,na='',fileEncoding='UTF-8')
+  })
+ output$response_totals <- shiny::renderUI({
+  a <- response_records()
+  x <- data()$outputs
+  x <- x[x$eligible & x$record_id %in% a$record_id & !is.na(x$quantity),,drop=FALSE]
+  if (!nrow(x)) return(shiny::p(class='muted','No validated totals available.'))
+  totals <- aggregate(quantity~metric+unit,x,sum)
+  shiny::tags$ul(class='rrm-validated-totals',lapply(seq_len(nrow(totals)),function(i) {
+   row <- totals[i,]
+   shiny::tags$li(paste0(row$metric,': ',fmt(row$quantity),' ',row$unit,
+     if (row$unit=='households' && row$metric=='Households assisted') ' (gross; may include repeat households)' else ''))
+  }))
+ })
+ output$first_delivery <- shiny::renderUI({
+  id <- input$alert
+  if (!length(id) || id=='All') return(NULL)
+  issue <- core$alerts$alert_date[match(id,core$alerts$alert_id)]
+  if (!length(issue) || is.na(issue)) return(NULL)
+  a <- response_delivery_records(response_records())
+  dates <- a$start_date[a$eligible & a$delivery_status %in% c('Completed','Ongoing') & !is.na(a$start_date)]
+  dates <- dates[dates>=issue]
+  if (length(dates)) shiny::p(paste('First confirmed delivery:',as.integer(min(dates)-issue),'calendar days from alert issue.'))
+ })
+ output$response_timeline <- DT::renderDT(result_table(
+  response_records()[,c('record_id','activity','start_date','end_date','delivery_status','review_status','delay_reason'),drop=FALSE]))
+ review_records <- shiny::reactive({
+  a <- reported()
+  if (length(input$month) && input$month!='All') a <- a[format(a$reporting_month,'%Y-%m') %in% input$month,,drop=FALSE]
+  a
+ })
+ review_links <- shiny::reactive(match_intervention_locations(review_records(),settlements))
+ output$review_queue <- shiny::renderUI(response_review_table(
+  review_records(),review_links(),which(review_records()$review_required)))
+ output$geographic_queue <- shiny::renderUI(response_review_table(
+  review_records(),review_links(),seq_len(nrow(review_records()))))
  output$location_export<-shiny::downloadHandler(filename=function()paste0('rrm_community_matching_',Sys.Date(),'.csv'),
-   content=function(file)write.csv(location_links(),file,row.names=FALSE,na='',fileEncoding='UTF-8'))
+   content=function(file)write.csv(review_links(),file,row.names=FALSE,na='',fileEncoding='UTF-8'))
  output$metrics<-shiny::renderUI({
-  x<-records();a<-eligible();o<-outputs();hh<-if(!nrow(a)) NA_real_ else known_sum(a$households)
-  assisted<-o[o$metric=='Households assisted'&o$unit=='households',,drop=FALSE]
-  q<-if(nrow(assisted)) known_sum(assisted$quantity) else NA_real_
-  shiny::tagList(kpi_row(kpi('Imported records',nrow(x),'Current filter selection'),kpi('Validated and reconciled',nrow(a),'Confirmed alert links only'),
-    kpi('Awaiting review / correction',sum(x$review_required),'Blank review status remains pending'),kpi('Confirmed alert links',sum(!is.na(x$link_status)&x$link_status=='Confirmed'),'Before review and reconciliation')),
-    kpi_row(kpi('Gross reported HH reach',fmt(hh),'All reported bases; see basis breakdown'),kpi('HH assistance outputs',fmt(q),'Households assisted metric; separate from reach'),
-      kpi('Known output quantities',sum(!is.na(o$quantity)),'Across separate metrics; quantities are not summed'),kpi('Unknown HH reach records',sum(is.na(a$households)),'Among validated selected records')))
+  x<-review_records()
+  kpi_row(kpi('Imported records',nrow(x),'Reporting month selection'),
+    kpi('Awaiting review or correction',sum(x$review_required),''),
+    kpi('Validated and reconciled',sum(x$eligible),'Confirmed alert links only'),
+    kpi('Confirmed alert links',sum(x$link_status %in% 'Confirmed'),''))
  })
  output$outputs<-DT::renderDT(result_table(activity_group_sum(outputs(),c('tier','funding','metric','unit'),'quantity')))
  output$households<-DT::renderDT(result_table(activity_group_sum(eligible(),c('tier','funding','hh_basis'),'households')))
@@ -227,13 +298,20 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  output$timing<-DT::renderDT(result_table(timing_data()))
  output$delays<-DT::renderDT(result_table(delay_records()))
  output$handovers<-DT::renderDT({
-  a<-eligible();cols<-c('record_id','alert_id','implementing_agency','previous_agency','handover_date','handover_reason','delay_reason','evidence_source','evidence_use')
+  a<-response_records();a<-a[a$eligible,,drop=FALSE]
+  cols<-c('record_id','alert_id','implementing_agency','previous_agency','handover_date','handover_reason','delay_reason','evidence_source','evidence_use')
   result_table(a[,cols,drop=FALSE])
  })
  displayed_records<-shiny::reactive({a<-records();if(!isTRUE(input$show_all)) a<-a[a$eligible,,drop=FALSE]
   a[,c('record_id','alert_id','link_status','reporting_month','start_date','end_date','delay_reason','district','community','location_coverage','tier','sector','activity','modality','implementing_agency','funding','metric','quantity','unit','households','hh_basis','people_total','age_people','status_people','people_scope','people_basis','review_status','eligible','eligibility_note'),drop=FALSE]})
  output$records<-DT::renderDT(result_table(displayed_records()))
- output$issues<-DT::renderDT({q<-data()$issues;q<-q[q$record_id %in% records()$record_id,,drop=FALSE];result_table(q)})
+ output$issues<-DT::renderDT({q<-data()$issues;q<-q[q$record_id %in% review_records()$record_id,,drop=FALSE];result_table(q)})
  output$definitions<-DT::renderDT(result_table(data()$metrics[,c('metric','unit','definition'),drop=FALSE]))
- output$export<-shiny::downloadHandler(filename=function() paste0('rrm_activity_',if(isTRUE(input$show_all)) 'review' else 'validated','_',Sys.Date(),'.csv'),content=function(file)write.csv(displayed_records(),file,row.names=FALSE,na=''))
+ output$export<-shiny::downloadHandler(filename=function() paste0('rrm_activity_review_',Sys.Date(),'.csv'),
+   content=function(file) {
+    a <- review_records()
+    write.csv(a[a$review_required,c('record_id','alert_id','community','link_status','review_status','eligibility_note','source_sheet','source_row')],
+              file,row.names=FALSE,na='',fileEncoding='UTF-8')
+   })
+ response_available
 })

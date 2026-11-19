@@ -60,8 +60,16 @@ alert_detail_button <- function(id, detail_input) {
     `aria-label`=paste('View details for', id), 'View details')
 }
 
-latest_alert_table <- function(x, detail_input=NULL) {
+latest_alert_table <- function(x, detail_input=NULL, activities=NULL) {
   rows <- latest_alert_rows(x)
+  if (!is.null(activities)) {
+    statuses <- split(activities$delivery_status, activities$alert_id)
+    rows$consortium_response_status <- NULL
+    rows$delivery_status <- vapply(rows$alert_id, function(id) {
+      values <- sort(unique(statuses[[id]]))
+      if (length(values)) paste(values, collapse=', ') else 'Not reported'
+    }, character(1), USE.NAMES=FALSE)
+  }
   escape <- TRUE
   if (!is.null(detail_input)) {
     buttons <- vapply(rows$alert_id, function(id)

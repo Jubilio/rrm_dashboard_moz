@@ -753,7 +753,7 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
     })
     output$latest_alerts <- DT::renderDT({
       req(key == 'alerts')
-      latest_alert_table(filtered(), session$ns('open_alert_detail'))
+      latest_alert_table(filtered(), session$ns('open_alert_detail'), d$activities)
     })
     observeEvent(input$open_alert_detail, {
       req(key == 'alerts', length(input$open_alert_detail)==1L,

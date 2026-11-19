@@ -2,8 +2,9 @@ library(shiny)
 source('R/data.R');source('R/pages.R');source('R/severity.R')
 d <- apply_alert_severity(read_rrm_data('demo'))
 html <- as.character(page_ui('alerts','alerts',d))
-stopifnot(grepl('id="alerts-alert_id"',html,fixed=TRUE),
-  lengths(regmatches(html,gregexpr('id="alerts-alert_id"',html,fixed=TRUE)))==1L,
+# No KPI cards or Selected alert selector on the Alerts page.
+stopifnot(!grepl('id="alerts-alert_id"',html,fixed=TRUE),!grepl('id="alerts-metrics"',html,fixed=TRUE),
+  !grepl('Verified people',html,fixed=TRUE),
   grepl('Origin to arrival and targeted locations',html,fixed=TRUE),grepl('<details',html,fixed=TRUE))
 stopifnot(grepl('Latest alerts',html,fixed=TRUE),
           grepl('id="alerts-latest_alerts"',html,fixed=TRUE))
@@ -28,7 +29,7 @@ testServer(page_server,args=list(key='alerts',d=d),{
   stopifnot(is.na(filtered()$rna_people),grepl('Pending',paste(unlist(output$metrics),collapse=' '),fixed=TRUE))
   session$setInputs(alert_id='All',trigger='Flood')
   stopifnot(nrow(filtered())==1L,filtered()$alert_id=='DEMO-003')
-  session$setInputs(trigger='All',dates=as.Date(c('2025-01-01','2025-01-30')))
+  session$setInputs(trigger='All',date_unit='year',date_period='2025')
   stopifnot(nrow(filtered())==0L,!is.null(output$routes),!is.null(output$details))
 })
 # Community filter: route arrival text is split into communities linked to districts.
@@ -68,4 +69,15 @@ testServer(page_server,args=list(key='alerts',d=d),{
   stopifnot(nrow(filtered())>0L,nrow(filtered())<=n_all,
     all(format(filtered()$alert_date,'%Y-%m')==k))
 })
-message('PASS: alert selector, route-specific counts/branches, community filtering with alert-wide caseloads, district-linked communities, pending verification, trigger/date filters, week/month/year periods, harmonised triggers and empty state.')
+message('PASS: no alert KPI cards, route-specific counts/branches, community filtering with alert-wide caseloads, district-linked communities, pending verification, trigger/date filters, week/month/year periods, harmonised triggers and empty state.')
+# Linked filters: each filter's choices follow the other filters.
+local({
+  dl <- alert_links_for(d); ct <- route_community_table(d$routes)
+  t1 <- d$alerts$trigger[!is.na(d$alerts$trigger)][1]
+  ch <- linked_alert_choices(d$alerts, list(trigger = t1, date_unit = 'All'), dl, ct)
+  keep <- d$alerts[which(d$alerts$trigger == t1), ]
+  stopifnot(setequal(ch$gla[-1], unique(na.omit(keep$gla))),
+            setequal(ch$trigger[-1], unique(na.omit(d$alerts$trigger))),
+            nrow(filter_alerts(d$alerts, list(trigger = t1), dl, ct)) == nrow(keep))
+})
+message('PASS: linked Alerts filters.')

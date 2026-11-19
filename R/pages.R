@@ -61,6 +61,60 @@ routes_in_community <- function(routes, tbl, community) {
   if (is.null(community) || identical(community, 'All')) return(routes)
   routes[routes$route_id %in% tbl$route_id[tbl$community == community], , drop = FALSE]
 }
+# Alerts matching the filter selections in `sel` (a list of input values).
+# Filters named in `skip` are ignored: this gives the alerts available to that
+# filter under all the others, so every Alerts filter can follow the rest.
+filter_alerts <- function(x, sel, links, ctbl, skip = character()) {
+  on <- function(id) !(id %in% skip) && length(sel[[id]]) == 1L && !identical(sel[[id]], 'All')
+  for (id in c('alert_id', 'trigger', 'gla', 'movement'))
+    if (on(id) && id %in% names(x)) x <- filter_equal(x, id, sel[[id]])
+  if (on('consortium_response_status'))
+    x <- if (identical(sel$consortium_response_status, 'Not reported'))
+      x[is.na(x$consortium_response_status), , drop = FALSE]
+    else
+      filter_equal(x, 'consortium_response_status', sel$consortium_response_status)
+  if (on('community'))
+    x <- x[x$alert_id %in% ctbl$alert_id[ctbl$community == sel$community], , drop = FALSE]
+  if (on('date_period') && length(sel$date_unit) == 1L &&
+      sel$date_unit %in% c('week', 'month', 'year')) {
+    # A chosen period excludes undated alerts; 'All periods' keeps them.
+    k <- date_period_key(x$alert_date, sel$date_unit)
+    x <- x[!is.na(k) & k == sel$date_period, , drop = FALSE]
+  }
+  if (on('district')) {
+    ids <- if (is.null(links)) character() else links$alert_id[links$pcode == sel$district]
+    x <- x[x$alert_id %in% ids, , drop = FALSE]
+  }
+  x
+}
+# Choices for each linked Alerts filter: only values found in the alerts that
+# match every other filter (e.g. Source = ACF limits District, Trigger, etc. to ACF alerts).
+linked_alert_choices <- function(alerts, sel, links, ctbl) {
+  avail <- function(id) filter_alerts(alerts, sel, links, ctbl, skip = id)
+  labelled <- function(v, all) {
+    ch <- all_choices(v)
+    names(ch) <- ch
+    names(ch)[1] <- all
+    ch
+  }
+  district_ids <- avail('district')$alert_id
+  community_ids <- avail('community')$alert_id
+  status <- avail('consortium_response_status')$consortium_response_status
+  status_values <- c(intersect(c('Yes', 'No', 'Pending go/no-go'), status),
+                     if (any(is.na(status))) 'Not reported')
+  unit <- if (length(sel$date_unit) == 1L) sel$date_unit else 'All'
+  list(
+    district = alert_district_choices(links[links$alert_id %in% district_ids, , drop = FALSE]),
+    community = community_choices(ctbl[ctbl$alert_id %in% community_ids, , drop = FALSE],
+                                  if (length(sel$district) == 1L) sel$district else 'All'),
+    date_period = date_period_choices(avail('date_period')$alert_date, unit),
+    trigger = labelled(avail('trigger')$trigger, 'All triggers'),
+    gla = labelled(avail('gla')$gla, 'All sources'),
+    movement = labelled(avail('movement')$movement, 'All population statuses'),
+    consortium_response_status = labelled(status_values, 'All response statuses')
+  )
+}
+
 all_choices <- function(x)
   c('All', sort(unique(x[!is.na(x)])))
 filter_spec <- function(key, d) {
@@ -109,6 +163,40 @@ filter_spec <- function(key, d) {
     )
   )
 }
+# Alerts filters are shown as one panel with three labelled groups
+# (Location, Period, Alert) and the reset button in the panel header.
+group_alert_filters <- function(filters) {
+  items <- list()
+  collect <- function(x) {
+    if (inherits(x, 'shiny.tag')) {
+      items[[length(items) + 1L]] <<- x
+    } else if (is.list(x)) {
+      for (y in x) collect(y)
+    }
+  }
+  collect(filters$children)
+  html <- vapply(items, function(x) as.character(x), character(1))
+  pick <- function(id) {
+    hit <- grepl(paste0('id="alerts-', id, '"'), html, fixed = TRUE)
+    if (any(hit)) items[[which(hit)[1]]]
+  }
+  group <- function(title, ids, cls)
+    div(class = paste('filter-group', cls),
+        div(class = 'filter-group-title', title),
+        div(class = 'filter-group-inputs', lapply(ids, pick)))
+  div(
+    class = 'filters filter-panel',
+    div(class = 'filter-panel-head', span(class = 'filter-panel-title', 'Filters'), pick('reset')),
+    div(
+      class = 'filter-groups',
+      group('Location', c('district', 'community'), 'filter-group-location'),
+      group('Period', c('date_unit', 'date_period'), 'filter-group-period'),
+      group('Alert', c('trigger', 'gla', 'movement', 'consortium_response_status'),
+            'filter-group-alert')
+    )
+  )
+}
+
 page_ui <- function(id, key, d) {
   ns <- NS(id)
   specs <- filter_spec(key, d)
@@ -193,7 +281,7 @@ page_ui <- function(id, key, d) {
           activity = 'core activity records'
         ), 'have been supplied for this page.')
       ),
-    if (key != 'coverage') div(
+    if (key != 'coverage') (if (key == 'alerts') group_alert_filters else identity)(div(
       class = 'filters',
       if (key == 'activity')
         selectInput(
@@ -331,27 +419,9 @@ page_ui <- function(id, key, d) {
         )
       }),
       actionButton(ns('reset'), 'Reset filters', class = 'btn-reset')
-    ),
-    if (key == 'alerts')
-      div(
-        class = 'kpi-row alert-kpis',
-        div(
-          class = 'kpi alert-selection',
-          selectInput(
-            ns('alert_id'),
-            'Selected alert',
-            choices = all_choices(d$alerts$alert_id),
-            selected = if ('DEMO-001' %in% d$alerts$alert_id)
-              'DEMO-001'
-            else
-              'All',
-            selectize = FALSE
-          ),
-          span(class = 'muted', 'Choose Alert ID')
-        ),
-        uiOutput(ns('metrics'), class = 'alert-metrics')
-      )
-    else if (key != 'coverage')
+    )),
+    # Alerts has no KPI cards or alert selector; the Alert summary covers the filtered alerts.
+    if (!key %in% c('alerts', 'coverage'))
       uiOutput(ns('metrics')),
     if (key == 'coverage')
       div(
@@ -374,10 +444,6 @@ page_ui <- function(id, key, d) {
       )
     else if (key == 'alerts')
       tagList(
-        uiOutput(ns('alert_summary')),
-        div(class = 'panel', h3('Latest alerts'), DT::DTOutput(ns('latest_alerts'))),
-        p(class = 'muted',
-          'RRM response is not limited to displacement. Population status describes the affected people; Trigger identifies the crisis event.'),
         div(
           class = 'two-col alert-panels',
           div(
@@ -399,6 +465,10 @@ page_ui <- function(id, key, d) {
             uiOutput(ns('details'))
           )
         ),
+        uiOutput(ns('alert_summary')),
+        div(class = 'panel', h3('Latest alerts'), DT::DTOutput(ns('latest_alerts'))),
+        p(class = 'muted',
+          'RRM response is not limited to displacement. Population status describes the affected people; Trigger identifies the crisis event.'),
         tags$details(
           class = 'alert-evidence-details',
           tags$summary('Alert records and calculation evidence'),
@@ -538,12 +608,28 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
     specs <- filter_spec(key, d)
     alert_links <- if (key %in% c('alerts', 'coverage')) alert_links_for(d) else NULL
     community_tbl <- if (key == 'alerts') route_community_table(d$routes) else NULL
-    if (key == 'alerts')
-      observeEvent(input$district, {
-        choices <- community_choices(community_tbl, input$district)
-        keep <- if (!is.null(input$community) && input$community %in% choices) input$community else 'All'
-        updateSelectInput(session, 'community', choices = choices, selected = keep)
-      }, ignoreInit = TRUE)
+    alert_selection <- reactive(list(
+      alert_id = input$alert_id, district = input$district, community = input$community,
+      date_unit = input$date_unit, date_period = input$date_period,
+      trigger = input$trigger, gla = input$gla, movement = input$movement,
+      consortium_response_status = input$consortium_response_status
+    ))
+    if (key == 'alerts') {
+      # Linked filters: each menu lists only values present under the other filters.
+      sent <- new.env()
+      observe({
+        sel <- alert_selection()
+        choices <- linked_alert_choices(d$alerts, sel, alert_links, community_tbl)
+        for (id in names(choices)) {
+          ch <- choices[[id]]
+          current <- sel[[id]]
+          keep <- if (length(current) == 1L && current %in% ch) current else 'All'
+          if (identical(sent[[id]], ch) && identical(keep, current)) next
+          sent[[id]] <- ch
+          updateSelectInput(session, id, choices = ch, selected = keep)
+        }
+      })
+    }
     observeEvent(input$reset, {
       for (s in specs) {
         choices <- all_choices(s[[3]])
@@ -586,13 +672,14 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
         updateSelectInput(session, 'date_period',
                           label = switch(input$date_unit, week = 'Week', month = 'Month',
                                          year = 'Year', 'Period'),
-                          choices = date_period_choices(d$alerts$alert_date, input$date_unit),
                           selected = 'All')
       })
     filtered <- reactive({
       if (key == 'rna' &&
           nrow(d$assessments))
         req(input$assessment_id, cancelOutput = TRUE)
+      if (key == 'alerts')
+        return(filter_alerts(d$alerts, alert_selection(), alert_links, community_tbl))
       x <- switch(
         key,
         coverage = d$coverage,
@@ -630,23 +717,6 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
                          col,
                          input$dates,
                          include_missing = !identical(input$include_undated, FALSE))
-      }
-      if (key == 'alerts' &&
-          !is.null(input$community) && input$community != 'All') {
-        ids <- community_tbl$alert_id[community_tbl$community == input$community]
-        x <- x[x$alert_id %in% ids, , drop = FALSE]
-      }
-      if (key == 'alerts' && !is.null(input$date_unit) && input$date_unit != 'All' &&
-          !is.null(input$date_period) && input$date_period != 'All') {
-        # A chosen period excludes undated alerts; 'All periods' keeps them.
-        k <- date_period_key(x$alert_date, input$date_unit)
-        x <- x[!is.na(k) & k == input$date_period, , drop = FALSE]
-      }
-      if (key == 'alerts' &&
-          !is.null(input$district) && input$district != 'All') {
-        links <- alert_links
-        ids <- if (is.null(links)) character() else links$alert_id[links$pcode == input$district]
-        x <- x[x$alert_id %in% ids, , drop = FALSE]
       }
       x
     })

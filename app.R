@@ -27,6 +27,10 @@ d <- add_activity_communities(d, if (file.exists('data/activity_snapshot/activit
 d <- harmonise_alert_triggers(d)
 alert_activity <- if (file.exists('data/activity_snapshot/activities.csv'))
   prepare_activity_data(read_activity_snapshot()) else NULL
+# Warm process-wide caches at start so the first visitor does not wait for them.
+invisible(tryCatch(read_map_layers(), error = function(e) NULL))
+invisible(tryCatch(cached_settlement_points(), error = function(e) NULL))
+invisible(tryCatch(warm_activity_cache(ACTIVITY_WORKBOOK_PATH), error = function(e) NULL))
 ui <- fluidPage(
   tags$head(
     tags$title(paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),
@@ -178,7 +182,6 @@ server <- function(input, output, session) {
     updateRadioButtons(session, 'page', selected = 'alerts')
     updateTabsetPanel(session, 'alerts_view', selected = 'dashboard')
     updateSelectInput(session, 'alerts-district', selected = code)
-    updateSelectInput(session, 'alerts-alert_id', selected = 'All')
     updateSelectInput(session, 'alerts-community', selected = 'All')
   })
   observeEvent(input$methods, showModal(

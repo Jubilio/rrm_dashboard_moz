@@ -61,9 +61,35 @@ activity_workbook_ui <- function(id) {
       shiny::div(class='panel',shiny::h3('Recomputed data-quality checks'),DT::DTOutput(ns('issues')))),
     shiny::tabPanel('Counting definitions',shiny::div(class='panel',DT::DTOutput(ns('definitions'))))))
 }
+# Process-wide caches so each new browser session does not re-read and re-parse
+# the activity sources (several seconds that delayed every page's first render).
+activity_parse_cache <- new.env()
+activity_source_stamp <- function(file, source, snapshot_dir, refresh = NULL) {
+  paths <- if (nzchar(file)) file else
+    file.path(snapshot_dir, paste0(c('activities', 'extra', 'alerts', 'metrics', 'metadata'), '.csv'))
+  info <- file.info(paths)
+  paste(source, paste(info$size, as.numeric(info$mtime), collapse = '|'), refresh, collapse = '|')
+}
+# Called once at app start: parse the configured activity source before the first visitor.
+warm_activity_cache <- function(workbook_path = '', snapshot_dir = 'data/activity_snapshot') {
+  source <- if (nzchar(workbook_path)) 'Configured workbook' else 'Supplied workbook snapshot'
+  stamp <- activity_source_stamp(workbook_path, source, snapshot_dir)
+  if (exists(stamp, envir = activity_parse_cache, inherits = FALSE)) return(invisible())
+  if (nzchar(workbook_path) && !file.exists(workbook_path)) return(invisible())
+  raw <- if (nzchar(workbook_path)) read_activity_workbook(workbook_path) else read_activity_snapshot(snapshot_dir)
+  assign(stamp, prepare_activity_data(raw), envir = activity_parse_cache)
+  invisible()
+}
+cached_settlement_points <- local({
+  value <- NULL
+  function() {
+    if (is.null(value)) value <<- read_settlement_points()
+    value
+  }
+})
 activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/activity_snapshot') shiny::moduleServer(id,function(input,output,session) {
  settlement_error<-NULL
- settlements<-tryCatch(read_settlement_points(),error=function(e){settlement_error<<-conditionMessage(e);NULL})
+ settlements<-tryCatch(cached_settlement_points(),error=function(e){settlement_error<<-conditionMessage(e);NULL})
  location_layers<-read_map_layers()
  current<-shiny::reactiveVal(NULL);last_error<-shiny::reactiveVal(NULL);source_label<-shiny::reactiveVal('Not loaded');loaded_at<-shiny::reactiveVal(NULL)
  use_upload<-shiny::reactiveVal(TRUE)
@@ -75,15 +101,18 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   file<-if(isTRUE(use_upload())&&!is.null(input$upload)) input$upload$datapath else workbook_path
   uploaded<-isTRUE(use_upload())&&!is.null(input$upload)
   source<-if(nzchar(file)) if(uploaded) 'Session upload' else 'Configured workbook' else 'Supplied workbook snapshot'
-  paths<-if(nzchar(file)) file else file.path(snapshot_dir,paste0(c('activities','extra','alerts','metrics','metadata'),'.csv'))
-  info<-file.info(paths)
-  stamp<-paste(source,paste(info$size,as.numeric(info$mtime),collapse='|'),input$refresh,collapse='|')
+  stamp<-activity_source_stamp(file,source,snapshot_dir,input$refresh)
   if(identical(shiny::isolate(signature()),stamp)) return()
   signature(stamp)
   tryCatch({
    if(nzchar(file)&&!file.exists(file)) stop('Configured workbook is unavailable. Correct its location or load another workbook.')
-   raw<-if(nzchar(file)) read_activity_workbook(file) else read_activity_snapshot(snapshot_dir)
-   parsed<-prepare_activity_data(raw)
+   # Parsed sources are shared across sessions until the file changes; uploads are always re-read.
+   parsed<-if(!uploaded&&exists(stamp,envir=activity_parse_cache,inherits=FALSE)) get(stamp,envir=activity_parse_cache) else {
+    raw<-if(nzchar(file)) read_activity_workbook(file) else read_activity_snapshot(snapshot_dir)
+    p<-prepare_activity_data(raw)
+    if(!uploaded) assign(stamp,p,envir=activity_parse_cache)
+    p
+   }
    current(parsed);last_error(NULL);source_label(source);loaded_at(format(Sys.time(),'%Y-%m-%d %H:%M:%S %Z'))
   },error=function(e){last_error(conditionMessage(e))})
  })

@@ -70,10 +70,8 @@ ui <- fluidPage(
               value = 'history',
               history_ui('history', history)
             ),
-            selected = if (DATA_MODE == 'demo')
-              'dashboard'
-            else
-              'history'
+            # Dashboard records opens first in every data mode.
+            selected = 'dashboard'
           )
         else if (key == 'vulnerability')
           tabsetPanel(

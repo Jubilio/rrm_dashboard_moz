@@ -17,7 +17,7 @@ testServer(light_rna_server,args=list(d=d,open_alert=function() NULL,response_av
   session$setInputs(gla=d$alerts$gla[1],community='Arrival C',period_unit='month',period='2026-10')
   stopifnot(identical(filtered()$assessment_id,'DEMO-RNA-03'),is.null(selected_round()))
   session$setInputs(select_round='DEMO-RNA-03')
-  stopifnot(grepl('30 Sep 2026 – 02 Oct 2026',html(output$findings),fixed=TRUE))
+  stopifnot(grepl('30 Sep – 2 Oct 2026',html(output$findings),fixed=TRUE))
   session$setInputs(gla='All',community='All',period='All',alert='DEMO-001')
   stopifnot(identical(selected_round(),'DEMO-RNA-03'),nrow(filtered())==2L)
   session$setInputs(alert='DEMO-003')

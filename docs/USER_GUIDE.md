@@ -36,9 +36,9 @@ Arrival filtering narrows the map to matching routes but selects whole alerts fo
 
 ## 5. Light RNA
 
-Start with **Find an alert** or apply an assessment filter. Filters list matching rounds newest first. Select a round to read its findings. Choosing an alert opens its latest dated round and leaves earlier and undated rounds in the list. **Clear filters** clears the results and findings.
+Start with the alert search in **Assessment rounds** or apply an assessment filter. Filters list matching rounds newest first. Select a round to read its findings. Choosing an alert opens its latest dated round and leaves earlier and undated rounds in the list. **Clear filters** clears the results and findings.
 
-The period filter matches any day in the reported assessment window. Undated rounds appear when filtering without a period. Sites and administrative posts come from the reported assessment coverage. Review **What we learned** for the separate key informant and HESPER findings. Each available denominator belongs to its own finding. Expand **Coverage, limitations and sources** for interpretation. Open the linked alert or the reported response using the alert ID.
+The period filter matches any day in the reported assessment window. Undated rounds appear when filtering without a period. Sites and administrative posts come from the reported assessment coverage. Review **What we learned** for the separate key informant and HESPER findings. Each available denominator belongs to its own finding. Expand **Coverage, methods and sources** for interpretation. Open the linked alert or the reported response using the alert ID.
 
 ## 6. Vulnerability screening
 

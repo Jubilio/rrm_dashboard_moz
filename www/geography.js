@@ -9,6 +9,21 @@
   /* Partner view: primary in REACH red, secondary in REACH ink, so the two roles differ in hue and lightness. */
   var PRIMARY = RED, SECONDARY = INK;
   function point(fill, radius) { return {radius: radius, color: '#FFFFFF', weight: 1.5, opacity: 1, fillColor: fill, fillOpacity: 1}; }
+  function bindMapAction(layer, label, activate) {
+    layer.on('click', function () { activate(false); });
+    layer.on('add', function () {
+      var path = layer.getElement();
+      if (!path) return;
+      path.setAttribute('tabindex', '0');
+      path.setAttribute('role', 'button');
+      path.setAttribute('aria-label', label);
+      L.DomEvent.on(path, 'keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        L.DomEvent.stop(event);
+        activate(true);
+      });
+    });
+  }
   binding.renderValue = function (el, data) {
     if (!data || !data.districts) return;
     if (!el._rrm) {
@@ -78,8 +93,8 @@
           layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + ' — District boundary (context only)'));
         } else {
           /* No popup: a click opens the Alerts page filtered to this district. */
-          layer.on('click', function () {
-            if (window.Shiny && Shiny.setInputValue) Shiny.setInputValue('map_district_alerts', p.pcode, {priority: 'event'});
+          bindMapAction(layer, 'View alerts for ' + p.district, function () {
+            Shiny.setInputValue('map_district_alerts', p.pcode, {priority: 'event'});
           });
         }
         layer.on('mouseover', function () { layer.setStyle({color: INK, weight: 2.5, opacity: 1}); });
@@ -136,7 +151,8 @@
     var districtProperties = {};
     data.districts.features.forEach(function (f) { districtProperties[f.properties.pcode] = f.properties; });
     state.posts = L.geoJSON(data.posts, {
-      style: {color: INK, weight: data.selected_post === 'All' ? 0.6 : 2.5, opacity: data.selected_post === 'All' ? 0.5 : 1, dashArray: '2 3', fill: true, fillOpacity: 0},
+      // On RNA Intro, post outlines leave the district interiors clickable.
+      style: {color: INK, weight: data.selected_post === 'All' ? 0.6 : 2.5, opacity: data.selected_post === 'All' ? 0.5 : 1, dashArray: '2 3', fill: contextMode, fillOpacity: 0},
       onEachFeature: function (f, layer) {
         var p = f.properties;
         var parent = districtProperties[p.district_pcode];
@@ -231,22 +247,9 @@
       if (!m.getPane(alertPane)) m.createPane(alertPane).style.zIndex = '450';
       var bindAlertSelection = function (layer, feature, label) {
         if (!data.selection_input) return;
-        var select = function () {
+        bindMapAction(layer, label, function (keyboard) {
           Shiny.setInputValue(data.selection_input, feature.selection_id, {priority: 'event'});
-        };
-        layer.on('click', select);
-        layer.on('add', function () {
-          var path = layer.getElement();
-          if (!path) return;
-          path.setAttribute('tabindex', '0');
-          path.setAttribute('role', 'button');
-          path.setAttribute('aria-label', label);
-          L.DomEvent.on(path, 'keydown', function (event) {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            L.DomEvent.stop(event);
-            select();
-            layer.openPopup();
-          });
+          if (keyboard) layer.openPopup();
         });
       };
       state.alertConnections = L.geoJSON(data.connections, {

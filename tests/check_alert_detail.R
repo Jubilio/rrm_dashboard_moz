@@ -6,6 +6,12 @@ widget <- latest_alert_table(d$alerts,'alerts-open_alert_detail')
 stopifnot(grepl('View details',widget$x$data$Details[1],fixed=TRUE),
           grepl('data-input="alerts-open_alert_detail"',widget$x$data$Details[1],fixed=TRUE),
           grepl(latest_alert_rows(d$alerts)$alert_id[1],widget$x$data$Details[1],fixed=TRUE))
+activities <- d$activities
+activities$delivery_status[activities$event_id == 'A01'] <- 'Ongoing'
+rows <- latest_alert_table(d$alerts, activities=activities)$x$data
+stopifnot(!'consortium_response_status' %in% names(rows),
+          identical(rows$delivery_status[match(c('DEMO-001','DEMO-002','DEMO-003'), rows$alert_id)],
+                    c('Completed, Ongoing','Not reported','Completed')))
 detail <- alert_detail_data('DEMO-001',d)
 stopifnot(nrow(detail$core)==1L,detail$core$alert_hh==610,
           all(detail$assessments$alert_id=='DEMO-001'),

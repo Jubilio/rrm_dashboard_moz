@@ -21,6 +21,8 @@ html <- as.character(e$ui)
 stopifnot(grepl('value="coverage" checked="checked"',html,fixed=TRUE),
   !grepl('id="coverage-map_province"',html,fixed=TRUE),
   grepl('id="alerts-alert_summary"',html,fixed=TRUE),
+  grepl(paste0('tables.js?v=', unname(tools::md5sum('www/tables.js'))),
+        htmltools::renderTags(e$ui)$head, fixed=TRUE),
   !grepl('id="alerts_view"|Historical severity review',html))
 coverage_html <- as.character(e$page_ui('coverage','coverage',e$d))
 stopifnot(grepl('id="coverage-coverage_map"',coverage_html,fixed=TRUE),

@@ -70,9 +70,6 @@
   }
   function start() {
     if (!window.jQuery) return;
-    $(document).on('click.rrmAlertDetail', '.rrm-alert-detail-button', function () {
-      Shiny.setInputValue(this.dataset.input, this.dataset.alert, {priority: 'event'});
-    });
     $(document).on('init.dt.rrmWidth', function (event, settings) { watch(settings.nTable); });
     $(document).on('draw.dt.rrmWidth column-sizing.dt.rrmWidth', function (event, settings) {
       updateTopScroll(settings.nTable);
@@ -94,6 +91,12 @@
     window.addEventListener('resize', function () { schedule(document); });
     document.querySelectorAll('table.dataTable').forEach(watch);
   }
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('.rrm-alert-detail-button[data-input][data-alert]');
+    if (button && window.Shiny && Shiny.setInputValue) {
+      Shiny.setInputValue(button.dataset.input, button.dataset.alert, {priority: 'event'});
+    }
+  }, true);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
   else start();
 }());

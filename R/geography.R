@@ -82,21 +82,37 @@ filter_coverage_area <- function(x, area, mode = 'operational') {
     area %in% coverage_area_names(x[i, , drop = FALSE], mode), logical(1))
   x[rows, , drop = FALSE]
 }
-read_map_layers <- function(path = file.path('data', 'geography')) {
-  read <- function(name) {
-    g <- jsonlite::fromJSON(file.path(path, paste0(name, '.geojson')), simplifyVector =
-                              FALSE)
-    if (!identical(g$type, 'FeatureCollection'))
-      stop('Expected a GeoJSON FeatureCollection: ', name)
-    g
+# Boundary layers are read once per path and cached. Each feature geometry is
+# stored as pre-encoded JSON (class "json"): Shiny sends it verbatim, so a map
+# update no longer re-encodes ~870 KB of nested coordinate lists (~11 s per send).
+# Geometry is encoded from simplified arrays, which gives identical JSON ~10x faster.
+read_map_layers <- local({
+  cache <- list()
+  function(path = file.path('data', 'geography')) {
+    key <- normalizePath(path, winslash = '/', mustWork = FALSE)
+    if (!is.null(cache[[key]])) return(cache[[key]])
+    read <- function(name) {
+      file <- file.path(path, paste0(name, '.geojson'))
+      g <- jsonlite::fromJSON(file, simplifyVector = FALSE)
+      if (!identical(g$type, 'FeatureCollection'))
+        stop('Expected a GeoJSON FeatureCollection: ', name)
+      arrays <- jsonlite::fromJSON(file, simplifyVector = TRUE,
+                                   simplifyDataFrame = FALSE, simplifyMatrix = TRUE)
+      for (i in seq_along(g$features))
+        g$features[[i]]$geometry <- jsonlite::toJSON(arrays$features[[i]]$geometry,
+                                                     auto_unbox = TRUE, digits = NA)
+      g
+    }
+    layers <- list(
+      districts = read('districts'),
+      provinces = read('provinces'),
+      towns = read('towns'),
+      posts = read('administrative_posts')
+    )
+    cache[[key]] <<- layers
+    layers
   }
-  list(
-    districts = read('districts'),
-    provinces = read('provinces'),
-    towns = read('towns'),
-    posts = read('administrative_posts')
-  )
-}
+})
 # Map icons served from www/map_icons; partners without an icon get a text button.
 map_partner_icons <- c(NRC = 'map_icons/nrc.svg', SI = 'map_icons/si.svg',
                        ACF = 'map_icons/acf.svg', SCI = 'map_icons/sci.svg')
@@ -122,12 +138,105 @@ coverage_partner_layers <- function(assignments, links) {
     )
   })
 }
+# Link alerts to districts named in their route origin/arrival text. Route text
+# starts with the district part ("Ancuabe & Chiure - Metoro: ..."); when that part
+# says "Multiple districts" the whole text is searched. Name-based, no coordinates.
+# District names (and spelling variants) found in free text, as admin2 pcodes.
+# With whole = FALSE only the district part before " - " is read, unless it says
+# "Multiple districts"; with whole = TRUE the full text is read.
+district_codes_in_text <- function(text, reference = map_reference(), whole = FALSE) {
+  if (is.na(text) || !nzchar(text)) return(character())
+  r <- reference[reference$level == 'admin2', , drop = FALSE]
+  names_tbl <- unique(rbind(
+    data.frame(pcode = r$pcode, name = r$name),
+    data.frame(pcode = r$pcode, name = r$label),
+    data.frame(pcode = c('mz0110', 'mz0104'), name = c('MDP', 'Pemba'))
+  ))
+  norm <- function(x) {
+    x <- iconv(as.character(x), from = 'UTF-8', to = 'ASCII//TRANSLIT')
+    paste0(' ', gsub('[^a-z0-9]+', ' ', tolower(x)), ' ')
+  }
+  keys <- trimws(norm(names_tbl$name))
+  ok <- nzchar(keys)
+  names_tbl <- names_tbl[ok, , drop = FALSE]; keys <- keys[ok]
+  head <- sub(' - .*$', '', text)
+  scope <- if (whole || grepl('multiple', head, ignore.case = TRUE)) text else head
+  t <- norm(scope)
+  unique(names_tbl$pcode[vapply(keys, function(k) grepl(paste0(' ', k, ' '), t, fixed = TRUE), logical(1))])
+}
+# Link alerts to districts named in their route origin/arrival text. Route text
+# starts with the district part ("Ancuabe & Chiure - Metoro: ..."); when that part
+# says "Multiple districts" the whole text is searched. Name-based, no coordinates.
+alert_district_links <- function(alerts, routes, reference = map_reference()) {
+  empty <- data.frame(alert_id = character(), pcode = character(), endpoint = character())
+  if (is.null(routes) || !nrow(routes)) return(empty)
+  rows <- lapply(seq_len(nrow(routes)), function(i) {
+    out <- list()
+    for (endpoint in c('arrival', 'origin')) {
+      codes <- district_codes_in_text(routes[[endpoint]][i], reference)
+      if (length(codes))
+        out[[endpoint]] <- data.frame(alert_id = routes$alert_id[i], pcode = codes, endpoint = endpoint)
+    }
+    do.call(rbind, out)
+  })
+  x <- do.call(rbind, c(list(empty), rows))
+  x <- x[!is.na(x$alert_id) & x$alert_id %in% alerts$alert_id, , drop = FALSE]
+  unique(x)
+}
+# Split one route arrival text into community names, e.g.
+# "Ancuabe - Mesa: Nacueja/Nacoja; Minheuene" -> c("Nacueja/Nacoja", "Minheuene").
+route_communities <- function(text) {
+  if (is.na(text) || !nzchar(trimws(text))) return(character())
+  rest <- if (grepl(' - ', text, fixed = TRUE)) sub('^.*? - ', '', text, perl = TRUE) else text
+  split_places <- function(x, extra = '') {
+    parts <- unlist(strsplit(x, paste0(';|,|\\+| and | & ', extra), perl = TRUE))
+    parts <- trimws(gsub('\\s+', ' ', parts))
+    parts <- sub('^(village of|the) ', '', parts, ignore.case = TRUE)
+    parts <- parts[nzchar(parts)]
+    # Drop narrative fragments and generic phrases that are not place names.
+    bad <- grepl('^(reported|other|others|movement|host communit|tbc$|unresolved|not stated)',
+                 parts, ignore.case = TRUE) |
+      grepl(' district$', parts, ignore.case = TRUE) | nchar(parts) > 45
+    unique(parts[!bad])
+  }
+  # "Admin post: community list" -> the list after the last colon; if that is only
+  # narrative, fall back to the text before the colon ("Meloco town / other ...").
+  if (grepl(':', rest, fixed = TRUE)) {
+    out <- split_places(sub('^.*:', '', rest))
+    if (length(out)) return(out)
+    return(split_places(sub(':.*$', '', rest), extra = '| / '))
+  }
+  split_places(rest)
+}
+# One row per route community with its district pcode (NA when the route names
+# no district). A community in a multi-district route goes to the district its
+# own name contains, otherwise to every arrival district of that route.
+route_community_table <- function(routes, reference = map_reference()) {
+  empty <- data.frame(route_id = character(), alert_id = character(),
+                      community = character(), pcode = character())
+  if (is.null(routes) || !nrow(routes)) return(empty)
+  rows <- lapply(seq_len(nrow(routes)), function(i) {
+    comm <- route_communities(routes$arrival[i])
+    if (!length(comm)) return(NULL)
+    route_codes <- district_codes_in_text(routes$arrival[i], reference)
+    do.call(rbind, lapply(comm, function(cm) {
+      own <- district_codes_in_text(cm, reference, whole = TRUE)
+      codes <- if (length(own) && (!length(route_codes) || any(own %in% route_codes)))
+        intersect(own, if (length(route_codes)) route_codes else own)
+      else if (length(route_codes)) route_codes else NA_character_
+      data.frame(route_id = routes$route_id[i], alert_id = routes$alert_id[i],
+                 community = cm, pcode = codes)
+    }))
+  })
+  unique(do.call(rbind, c(list(empty), rows)))
+}
 coverage_map_payload <- function(assignments,
                                  mode,
                                  province = 'All',
                                  district = 'All',
                                  layers = read_map_layers(),
-                                 post = 'All') {
+                                 post = 'All',
+                                 alert_links = NULL) {
   if (is.null(province))
     province <- 'All'
   if (is.null(district))
@@ -162,6 +271,13 @@ coverage_map_payload <- function(assignments,
     matched_rows <- unique(links$assignment_row[which(
       !is.na(links$pcode) & links$pcode == f$properties$pcode)])
     rows <- assignments[matched_rows, , drop = FALSE]
+    if (!is.null(alert_links)) {
+      a <- alert_links[alert_links$pcode == f$properties$pcode, , drop = FALSE]
+      ids <- unique(a$alert_id)
+      f$properties$alerts <- lapply(ids, function(id) list(
+        alert_id = id,
+        endpoint = paste(sort(unique(a$endpoint[a$alert_id == id])), collapse = ' & ')))
+    }
     f$properties$assigned <- any(!is.na(rows$role) &
                                    rows$role != 'Unknown')
     f$properties$assignment <- if (mode == 'demo')
@@ -238,7 +354,7 @@ geography_controls <- function(ns, include_province = TRUE) {
 rrm_map_output <- function(outputId) {
   dep <- htmltools::htmlDependency(
     'rrm-geography',
-    '1.6.0',
+    '1.10.0',
     src = c(file = 'www'),
     script = c('vendor/leaflet/leaflet.js', 'geography.js'),
     stylesheet = c('vendor/leaflet/leaflet.css', 'geography.css')

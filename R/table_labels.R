@@ -18,7 +18,8 @@ rrm_column_labels <- function(fields) {
     confidence='Source confidence', caseload_text='Caseload (source text)',
     source_override_asserted='Override asserted in source',
     coordinate_source='Coordinate source', coordinate_status='Coordinate status',
-    from_partner='Transferring partner', to_partner='Receiving partner'
+    from_partner='Transferring partner', to_partner='Receiving partner',
+    gla='Source'
   )
   acronyms <- c('id','rna','idp','hh','kii','hesper','pwd','fcs','hhs','jmp','gla','csv','gps')
   vapply(fields, function(field) {

@@ -10,6 +10,57 @@ page_titles <- c(
   vulnerability = 'Vulnerability screening',
   activity = 'Activity reporting'
 )
+# Alert-to-district links (route text), shared by the Alerts district filter and the RNA Intro map.
+alert_links_for <- function(d) {
+  if (d$metadata$mode == 'demo') return(NULL)
+  tryCatch(alert_district_links(d$alerts, d$routes), error = function(e) NULL)
+}
+alert_district_choices <- function(links) {
+  if (is.null(links) || !nrow(links)) return(c('All districts' = 'All'))
+  r <- map_reference()
+  codes <- unique(links$pcode)
+  labels <- r$label[match(codes, r$pcode)]
+  o <- order(labels)
+  c('All districts' = 'All', setNames(codes[o], labels[o]))
+}
+# Period keys for the Alerts date filter: ISO week (2026-W37), month (2026-09) or year (2026).
+date_period_key <- function(dates, unit) {
+  switch(unit,
+         week = ifelse(is.na(dates), NA_character_, format(dates, '%G-W%V')),
+         month = format(dates, '%Y-%m'),
+         year = format(dates, '%Y'),
+         rep(NA_character_, length(dates)))
+}
+date_period_choices <- function(dates, unit) {
+  dates <- sort(unique(dates[!is.na(dates)]), decreasing = TRUE)
+  if (!length(dates) || !unit %in% c('week', 'month', 'year'))
+    return(c('All periods' = 'All'))
+  keys <- date_period_key(dates, unit)
+  first <- !duplicated(keys)
+  labels <- vapply(which(first), function(i) {
+    d <- dates[i]
+    switch(unit,
+           week = {
+             start <- d - (as.integer(format(d, '%u')) - 1L)
+             paste0('Week ', as.integer(format(d, '%V')), ' · ',
+                    format(start, '%d %b'), ' – ', format(start + 6, '%d %b %Y'))
+           },
+           month = format(d, '%b %Y'),
+           year = format(d, '%Y'))
+  }, character(1))
+  c('All periods' = 'All', setNames(keys[first], labels))
+}
+# Community filter choices, optionally limited to one district pcode.
+community_choices <- function(tbl, district = 'All') {
+  if (!is.null(district) && district != 'All')
+    tbl <- tbl[!is.na(tbl$pcode) & tbl$pcode == district, , drop = FALSE]
+  c('All communities' = 'All', sort(unique(tbl$community)))
+}
+# Routes whose arrival text lists the chosen community.
+routes_in_community <- function(routes, tbl, community) {
+  if (is.null(community) || identical(community, 'All')) return(routes)
+  routes[routes$route_id %in% tbl$route_id[tbl$community == community], , drop = FALSE]
+}
 all_choices <- function(x)
   c('All', sort(unique(x[!is.na(x)])))
 filter_spec <- function(key, d) {
@@ -21,10 +72,10 @@ filter_spec <- function(key, d) {
       list('role', 'GLA role', d$coverage$role)
     ),
     alerts = list(
-      list('arrival', 'Arrival geography', d$routes$arrival),
+      list('community', 'Community', route_community_table(d$routes)$community),
       list('alert_id', 'Alert ID', d$alerts$alert_id),
       list('trigger', 'Trigger', d$alerts$trigger),
-      list('gla', 'GLA', d$alerts$gla),
+      list('gla', 'Source', d$alerts$gla),
       list('movement', 'Population status', d$alerts$movement),
       list('consortium_response_status', 'Consortium response status',
            c('Yes', 'No', 'Pending go/no-go', 'Not reported'))
@@ -71,7 +122,7 @@ page_ui <- function(id, key, d) {
       s[[1]] != 'community', specs)
   if (key == 'alerts')
     specs <- Filter(function(s)
-      ! s[[1]] %in% c('arrival', 'alert_id'), specs)
+      ! s[[1]] %in% c('community', 'alert_id'), specs)
   date_col <- switch(
     key,
     alerts = 'alert_date',
@@ -173,13 +224,17 @@ page_ui <- function(id, key, d) {
         ),
       if (key == 'alerts')
         selectInput(
-          ns('arrival'),
-          'Arrival geography',
-          choices = c('All verified areas' = 'All', setNames(sort(
-            unique(d$routes$arrival)
-          ), sort(
-            unique(d$routes$arrival)
-          ))),
+          ns('district'),
+          'District',
+          choices = alert_district_choices(alert_links_for(d)),
+          selectize = FALSE
+        ),
+      if (key == 'alerts')
+        # Communities come from route arrival text and follow the District filter.
+        selectInput(
+          ns('community'),
+          'Community',
+          choices = community_choices(route_community_table(d$routes)),
           selectize = FALSE
         ),
       if (key == 'coverage')
@@ -204,6 +259,19 @@ page_ui <- function(id, key, d) {
             format = 'dd M yyyy'
           )
         )
+      else if (key == 'alerts')
+        # Alert issued date is picked as a week, month or year rather than a date range.
+        tagList(
+          selectInput(
+            ns('date_unit'),
+            'Alert issued date',
+            choices = c('All dates' = 'All', 'By week' = 'week',
+                        'By month' = 'month', 'By year' = 'year'),
+            selectize = FALSE
+          ),
+          selectInput(ns('date_period'), 'Period', choices = c('All periods' = 'All'),
+                      selectize = FALSE)
+        )
       else
         dateRangeInput(
           ns('dates'),
@@ -218,7 +286,8 @@ page_ui <- function(id, key, d) {
           end = bounds[2],
           format = 'dd M yyyy'
         ),
-      if (key != 'coverage')
+      # Alerts always include undated records (no checkbox; the server defaults to TRUE).
+      if (!key %in% c('coverage', 'alerts'))
         checkboxInput(
           ns('include_undated'),
           'Include records without a date',
@@ -234,7 +303,7 @@ page_ui <- function(id, key, d) {
             role = 'Primary / secondary',
             area = 'All areas',
             trigger = 'All triggers',
-            gla = 'All GLAs',
+            gla = 'All sources',
             movement = 'All population statuses',
             consortium_response_status = 'All response statuses',
             alert_id = 'All alerts',
@@ -467,10 +536,22 @@ profile_review_status <- function(x, population) {
 page_server <- function(id, key, d, h=NULL, activity=NULL)
   moduleServer(id, function(input, output, session) {
     specs <- filter_spec(key, d)
+    alert_links <- if (key %in% c('alerts', 'coverage')) alert_links_for(d) else NULL
+    community_tbl <- if (key == 'alerts') route_community_table(d$routes) else NULL
+    if (key == 'alerts')
+      observeEvent(input$district, {
+        choices <- community_choices(community_tbl, input$district)
+        keep <- if (!is.null(input$community) && input$community %in% choices) input$community else 'All'
+        updateSelectInput(session, 'community', choices = choices, selected = keep)
+      }, ignoreInit = TRUE)
     observeEvent(input$reset, {
       for (s in specs) {
         choices <- all_choices(s[[3]])
         updateSelectInput(session, s[[1]], selected = choices[1])
+      }
+      if (key == 'alerts') {
+        updateSelectInput(session, 'district', selected = 'All')
+        updateSelectInput(session, 'date_unit', selected = 'All')
       }
       if (key == 'coverage') {
         updateDateInput(session,
@@ -500,6 +581,14 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
         updateCheckboxInput(session, 'include_undated', value = TRUE)
       }
     })
+    if (key == 'alerts')
+      observeEvent(input$date_unit, {
+        updateSelectInput(session, 'date_period',
+                          label = switch(input$date_unit, week = 'Week', month = 'Month',
+                                         year = 'Year', 'Period'),
+                          choices = date_period_choices(d$alerts$alert_date, input$date_unit),
+                          selected = 'All')
+      })
     filtered <- reactive({
       if (key == 'rna' &&
           nrow(d$assessments))
@@ -543,8 +632,20 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
                          include_missing = !identical(input$include_undated, FALSE))
       }
       if (key == 'alerts' &&
-          !is.null(input$arrival) && input$arrival != 'All') {
-        ids <- d$routes$alert_id[d$routes$arrival == input$arrival]
+          !is.null(input$community) && input$community != 'All') {
+        ids <- community_tbl$alert_id[community_tbl$community == input$community]
+        x <- x[x$alert_id %in% ids, , drop = FALSE]
+      }
+      if (key == 'alerts' && !is.null(input$date_unit) && input$date_unit != 'All' &&
+          !is.null(input$date_period) && input$date_period != 'All') {
+        # A chosen period excludes undated alerts; 'All periods' keeps them.
+        k <- date_period_key(x$alert_date, input$date_unit)
+        x <- x[!is.na(k) & k == input$date_period, , drop = FALSE]
+      }
+      if (key == 'alerts' &&
+          !is.null(input$district) && input$district != 'All') {
+        links <- alert_links
+        ids <- if (is.null(links)) character() else links$alert_id[links$pcode == input$district]
         x <- x[x$alert_id %in% ids, , drop = FALSE]
       }
       x
@@ -1026,7 +1127,7 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       )
       selected_routes <- reactive({
         x <- d$routes[d$routes$alert_id %in% filtered()$alert_id, , drop = FALSE]
-        filter_equal(x, 'arrival', input$arrival)
+        routes_in_community(x, community_tbl, input$community)
       })
       endpoint_links <- reactive({
         req(is.null(location_source$error), cancelOutput = TRUE)
@@ -1037,10 +1138,13 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       if (!is.null(alert_layers))
         output$alert_map <- render_rrm_map({
           req(is.null(location_source$error), cancelOutput = TRUE)
-          alert_map_payload(selected_routes(),
-                            location_source$data,
-                            d$metadata$mode,
-                            alert_layers)
+          payload <- alert_map_payload(selected_routes(),
+                                       location_source$data,
+                                       d$metadata$mode,
+                                       alert_layers)
+          # The District filter highlights and frames that district on the map.
+          payload$selected_district <- if (is.null(input$district)) 'All' else input$district
+          payload
         })
       output$alert_map_note <- renderUI({
         if (!is.null(location_source$error))
@@ -1096,7 +1200,7 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
       if (!nrow(x))
         return(empty_ui())
       y <- d$routes[d$routes$alert_id %in% x$alert_id, , drop = FALSE]
-      y <- filter_equal(y, 'arrival', input$arrival)
+      y <- routes_in_community(y, community_tbl, input$community)
       if (!nrow(y))
         return(empty_ui())
       groups <- split(y,
@@ -1380,7 +1484,8 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
             input$map_province,
             district,
             layers,
-            input$map_post
+            input$map_post,
+            alert_links = alert_links
           )
         })
         output$coverage_map <- render_rrm_map({

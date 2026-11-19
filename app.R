@@ -24,6 +24,7 @@ if (is.null(attr(d, 'input_workbook')))
   d <- apply_alert_severity(d)
 d <- add_activity_communities(d, if (file.exists('data/activity_snapshot/activities.csv'))
   read_activity_snapshot()$activities else NULL)
+d <- harmonise_alert_triggers(d)
 alert_activity <- if (file.exists('data/activity_snapshot/activities.csv'))
   prepare_activity_data(read_activity_snapshot()) else NULL
 ui <- fluidPage(
@@ -170,6 +171,16 @@ server <- function(input, output, session) {
   history_server('history', history, d=d, activity=alert_activity)
   household_server('household', history, allow_synthetic = DATA_MODE == 'demo')
   activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH)
+  # Clicking a district on the RNA Intro map opens the Alerts page filtered to that district.
+  observeEvent(input$map_district_alerts, {
+    code <- input$map_district_alerts
+    req(is.character(code), length(code) == 1L)
+    updateRadioButtons(session, 'page', selected = 'alerts')
+    updateTabsetPanel(session, 'alerts_view', selected = 'dashboard')
+    updateSelectInput(session, 'alerts-district', selected = code)
+    updateSelectInput(session, 'alerts-alert_id', selected = 'All')
+    updateSelectInput(session, 'alerts-community', selected = 'All')
+  })
   observeEvent(input$methods, showModal(
     modalDialog(
       title = 'Methods and data sources',

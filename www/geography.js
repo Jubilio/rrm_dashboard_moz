@@ -21,7 +21,11 @@
       el._rrm = {map: map, osm: osm, blank: blank};
       if (window.ResizeObserver) {
         el._rrm.observer = new ResizeObserver(function () {
-          if (el.clientWidth && el.clientHeight) map.invalidateSize({pan: false});
+          if (!el.clientWidth || !el.clientHeight) return;
+          map.invalidateSize({pan: false});
+          /* A map rendered while hidden (size 0) is framed once it becomes visible. */
+          var pending = el._rrm.pendingFit;
+          if (pending) { el._rrm.pendingFit = null; map.fitBounds(pending.bounds, pending.options); }
         });
         el._rrm.observer.observe(el);
       }
@@ -54,7 +58,9 @@
     });
     state.districts = L.geoJSON(data.districts, {
       style: function (f) {
-        if (contextMode) return {color: INK, weight: 1, opacity: 0.55, fillColor: SAND, fillOpacity: 0.06};
+        if (contextMode) return (data.selected_district && data.selected_district !== 'All' && f.properties.pcode === data.selected_district) ?
+          {color: RED, weight: 2.5, opacity: 1, fillColor: RED, fillOpacity: 0.15} :
+          {color: INK, weight: 1, opacity: 0.55, fillColor: SAND, fillOpacity: 0.06};
         var role = state.partner ? partnerRole(f.properties.pcode) : null;
         if (role === 'Primary') return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: PRIMARY, fillOpacity: 0.8};
         if (role === 'Secondary') return {color: '#FFFFFF', weight: 1.2, opacity: 1, fillColor: SECONDARY, fillOpacity: 0.8};
@@ -63,10 +69,19 @@
       },
       onEachFeature: function (f, layer) {
         var p = f.properties;
+        var nAlerts = p.alerts ? p.alerts.length : 0;
         layer.bindTooltip(text(p.district + ' · ' + p.pcode +
-          (contextMode ? '' : '\nGLA: ' + p.assignment)),
+          (contextMode ? '' : '\nGLA: ' + p.assignment +
+            '\n' + (nAlerts ? 'Click to view ' + nAlerts + ' related alert' + (nAlerts > 1 ? 's' : '') : 'No related alerts — click to open Alerts'))),
           {className: contextMode ? '' : 'rrm-coverage-tooltip'});
-        layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + (contextMode ? ' — District boundary (context only)' : ' — ' + p.assignment)));
+        if (contextMode) {
+          layer.bindPopup(text(p.district + ' | ' + p.province + ' | ' + p.pcode + ' — District boundary (context only)'));
+        } else {
+          /* No popup: a click opens the Alerts page filtered to this district. */
+          layer.on('click', function () {
+            if (window.Shiny && Shiny.setInputValue) Shiny.setInputValue('map_district_alerts', p.pcode, {priority: 'event'});
+          });
+        }
         layer.on('mouseover', function () { layer.setStyle({color: INK, weight: 2.5, opacity: 1}); });
         layer.on('mouseout', function () { state.districts.resetStyle(layer); });
       }
@@ -82,17 +97,14 @@
       state.partnerLegend = L.control({position: 'bottomright'});
       state.partnerLegend.onAdd = function () {
         var box = L.DomUtil.create('div', 'rrm-partner-legend');
-        var title = document.createElement('strong'); title.textContent = p.name + ' (' + p.partner + ')';
+        var title = document.createElement('strong'); title.textContent = p.partner; title.title = p.name;
         box.appendChild(title);
-        [[PRIMARY, 'Primary districts', p.primary.length], [SECONDARY, 'Secondary districts', p.secondary.length]].forEach(function (r) {
+        [[PRIMARY, 'Primary', p.primary.length], [SECONDARY, 'Secondary', p.secondary.length]].forEach(function (r) {
           var row = document.createElement('div'), sw = document.createElement('span');
           sw.className = 'map-swatch'; sw.style.background = r[0];
           row.appendChild(sw); row.appendChild(document.createTextNode(r[1] + ' (' + r[2] + ')'));
           box.appendChild(row);
         });
-        var hint = document.createElement('div'); hint.className = 'rrm-partner-hint';
-        hint.textContent = 'Click the icon again to show all partners.';
-        box.appendChild(hint);
         return box;
       };
       state.partnerLegend.addTo(m);
@@ -246,9 +258,21 @@
     state.control = L.control.layers({'OpenStreetMap': state.osm, 'No basemap': state.blank}, overlays).addTo(m);
     var key = data.districts.features.map(function (f) { return f.properties.pcode; }).join(',') + ':' + data.selected_post + ':' + data.kind;
     if (interventionMode) key += ':' + data.markers.features.map(function (f) { return f.properties.point_id + ':' + f.geometry.coordinates.join(','); }).join(';');
-    if (alertMode) key += ':' + data.markers.features.map(function (f) { return f.properties.location_id; }).join(';');
+    if (alertMode) key += ':' + data.markers.features.map(function (f) { return f.properties.location_id; }).join(';') + ':' + (data.selected_district || 'All');
     var extent = alertMode && data.markers.features.length ? state.alertPoints : interventionMode && data.markers.features.length ? state.interventions : data.selected_post !== 'All' ? state.posts : state.districts;
-    if (state.key !== key && extent.getBounds().isValid()) m.fitBounds(extent.getBounds(), {padding: [10, 10], maxZoom: contextMode ? 13 : 18, animate: false});
+    var bounds = extent.getBounds();
+    if (alertMode && data.selected_district && data.selected_district !== 'All') {
+      state.districts.eachLayer(function (layer) {
+        if (layer.feature.properties.pcode !== data.selected_district) return;
+        bounds = data.markers.features.length ? L.latLngBounds(bounds).extend(layer.getBounds()) : layer.getBounds();
+      });
+    }
+    if (state.key !== key && bounds.isValid()) {
+      var fit = {bounds: bounds, options: {padding: [10, 10], maxZoom: contextMode ? 13 : 18, animate: false}};
+      /* Hidden map (another page is open): defer framing until it has a size. */
+      if (el.clientWidth && el.clientHeight) { state.pendingFit = null; m.fitBounds(fit.bounds, fit.options); }
+      else state.pendingFit = fit;
+    }
     state.key = key;
     requestAnimationFrame(function () { m.invalidateSize({pan: false}); });
   };

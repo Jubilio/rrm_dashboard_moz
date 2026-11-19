@@ -21,6 +21,11 @@
 .rrm-map-output .rrm-partner-btn:hover { background:#F3F4F4; }
 .rrm-map-output .rrm-partner-btn:focus-visible { outline:2px solid #58585A; outline-offset:-2px; }
 .rrm-map-output .rrm-partner-btn[aria-pressed="true"] { box-shadow:inset 0 0 0 3px #EE5859; }
-.rrm-map-output .rrm-partner-legend { background:#FFFFFF; padding:8px 12px; color:#58585A; font:12px/1.6 Arial,sans-serif; border:1px solid #C7C8CA; }
+.rrm-map-output .rrm-partner-legend { display:flex; gap:10px; align-items:center; white-space:nowrap; background:rgba(255,255,255,.92); padding:3px 8px; color:#58585A; font:11px/1.4 Arial,sans-serif; border:1px solid #C7C8CA; margin-bottom:2px !important; }
+.rrm-map-output .rrm-partner-legend .map-swatch { width:10px; height:10px; margin-right:5px; }
+/* Coverage districts open the Alerts page on click. */
+.rrm-map-output path.leaflet-interactive { cursor:pointer; }
 .rrm-map-output .rrm-partner-legend .map-swatch { vertical-align:middle; }
-.rrm-map-output .rrm-partner-hint { color:#79797B; font-size:11px; margin-top:2px; }
+/* Larger popup and tooltip text on every RRM map. */
+.rrm-map-output .leaflet-popup-content { font:14px/1.5 Arial,sans-serif; color:#58585A; }
+.rrm-map-output .leaflet-tooltip { font:13px/1.45 Arial,sans-serif; }

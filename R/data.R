@@ -155,3 +155,21 @@ activity_totals <- function(x) {
   list(hh=total('HH','Assistance'), kits=total('kits','Service output'), consultations=total('consultations','Service output'),
     days=if(any(!is.na(x$days_from_alert))) min(x$days_from_alert,na.rm=TRUE) else NA_real_)
 }
+# Harmonise free-text alert triggers into a short category list. The original text
+# is kept in trigger_detail; matching is keyword-based and case-insensitive.
+trigger_category <- function(x) {
+  t <- tolower(iconv(as.character(x), from = 'UTF-8', to = 'ASCII//TRANSLIT'))
+  out <- ifelse(is.na(t) | !nzchar(trimws(t)), NA_character_, 'Other')
+  hit <- function(p) !is.na(t) & grepl(p, t)
+  out[hit('attack|armed|conflict|nsag|insecur|violen|abduct|loot|burn|kill|fear|clash|insurg|militar')] <- 'Conflict/Violence'
+  out[hit('outbreak|cholera|epidem|measles|mpox|disease|malaria|diarr')] <- 'Outbreak'
+  out[hit('flood|inunda|cheia|heavy rain')] <- 'Flood'
+  out[hit('cyclone|ciclone|tropical storm|storm')] <- 'Cyclone'
+  out
+}
+harmonise_alert_triggers <- function(d) {
+  if (is.null(d$alerts) || !'trigger' %in% names(d$alerts)) return(d)
+  if (!'trigger_detail' %in% names(d$alerts)) d$alerts$trigger_detail <- d$alerts$trigger
+  d$alerts$trigger <- trigger_category(d$alerts$trigger_detail)
+  d
+}

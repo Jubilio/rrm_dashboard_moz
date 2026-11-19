@@ -51,14 +51,14 @@ alert_detail_ui <- function(id, detail) {
     v
   }
   summary <- data.frame(
-    field=c('Alert ID','Alert date','RNA date','RNA evidence date','Tier 2 date','Reporting organisation / GLA',
-            'Arrival district','Trigger','Population status','Consortium response status',
+    field=c('Alert ID','Alert date','RNA date','RNA evidence date','Tier 2 date','Source',
+            'Arrival district','Trigger','Trigger (source text)','Population status','Consortium response status',
             'Alert households','Alert people','RNA households','RNA people',
             'Alert caseload (source text)','Latest caseload (source text)',
             'Alert severity','RNA severity','Latest recorded severity'),
     value=c(id,value('alert_date','alert_date'),value('rna_date','rna_date'),value('rna_evidence_date'),
       value('tier2_date','tier2_date'),value('gla','organisation'),
-      value('arrival_district','arrival_district'),value('trigger'),value('movement','movement'),
+      value('arrival_district','arrival_district'),value('trigger'),value('trigger_detail'),value('movement','movement'),
       value('consortium_response_status','consortium_response_status'),
       value('alert_hh'),value('alert_people'),value('rna_hh'),value('rna_people'),
       value('alert_caseload_text','alert_caseload_text'),value('latest_caseload_text','latest_caseload_text'),

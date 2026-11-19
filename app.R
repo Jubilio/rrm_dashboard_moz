@@ -10,6 +10,7 @@ source('config.R', local = TRUE)
 source('R/footer_branding.R', local = TRUE)
 source('R/data.R', local = TRUE)
 source('R/pages.R', local = TRUE)
+source('R/light_rna.R', local = TRUE)
 source('R/input_workbook.R', local = TRUE)
 source('R/severity.R', local = TRUE)
 source('R/household.R', local = TRUE)
@@ -76,19 +77,9 @@ ui <- fluidPage(
             selected = 'summaries'
           )
         else if (key == 'activity')
-          tabsetPanel(
-            id = 'activity_view',
-            tabPanel('Dashboard overview', value = 'overview', page_ui(key, key, d)),
-            tabPanel(
-              'Reporting workbook',
-              value = 'workbook',
-              activity_workbook_ui('activity_excel')
-            ),
-            selected = if (DATA_MODE == 'demo')
-              'overview'
-            else
-              'workbook'
-          )
+          activity_workbook_ui('activity_excel')
+        else if (key == 'rna')
+          light_rna_ui('rna', d)
         else
           page_ui(key, key, d)
       )))
@@ -129,11 +120,7 @@ server <- function(input, output, session) {
     'coverage'
     else
       input$page]], APP_SUBTITLE, sep = ' | '))
-  workbook_view <- reactive(identical(input$page, 'activity') &&
-                              (
-                                identical(input$activity_view, 'workbook') ||
-                                  (is.null(input$activity_view) && DATA_MODE != 'demo')
-                              ))
+  workbook_view <- reactive(identical(input$page, 'activity'))
   output$source_label <- renderText({
     if (workbook_view())
       'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
@@ -150,10 +137,28 @@ server <- function(input, output, session) {
     else
       'Operational core data. Coverage responsibilities are not evidence of an intervention.'
   })
-  for (key in names(page_titles))
+  for (key in setdiff(names(page_titles),c('rna','activity')))
     page_server(key, key, d, h=history, activity=alert_activity)
   household_server('household', history, allow_synthetic = DATA_MODE == 'demo')
-  activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH)
+  response_available <- activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH,
+    core=d, open_alert=reactive(input$open_reported_response))
+  light_rna_server('rna', d, reactive(input$open_light_rna), response_available)
+  known_alert <- function(id) is.character(id) && length(id)==1L && id %in% d$alerts$alert_id
+  observeEvent(input$open_light_rna, {
+    req(known_alert(input$open_light_rna))
+    removeModal()
+    updateRadioButtons(session,'page',selected='rna')
+  })
+  observeEvent(input$open_reported_response, {
+    req(known_alert(input$open_reported_response))
+    removeModal()
+    updateRadioButtons(session,'page',selected='activity')
+  })
+  observeEvent(input$open_alert_record, {
+    req(known_alert(input$open_alert_record))
+    updateRadioButtons(session,'page',selected='alerts')
+    show_alert_detail(input$open_alert_record,d,history,alert_activity)
+  })
   # Clicking a district on the RNA Intro map opens the Alerts page filtered to that district.
   district_alert_links <- reactive(alert_links_for(d))
   observeEvent(input$map_district_alerts, {
@@ -177,7 +182,7 @@ server <- function(input, output, session) {
           'Alert and RNA stages are retained separately. Verified caseloads come from the RNA stage. Related alerts may overlap.'
         ),
         tags$li(
-          'RNA can select one round or All assessments. Multi-round mode lists findings without pooling samples; HESPER counts use the valid household denominator for each need. Purposive samples do not estimate prevalence.'
+          'Light RNA shows findings for one selected assessment round. HESPER counts use the valid household denominator for each need. Purposive samples do not estimate prevalence.'
         ),
         tags$li(
           'Vulnerability profiles are reviewed aggregate narratives, never household records. Household sector mappings remain draft; native indicators and draft scenario outputs are distinguished.'

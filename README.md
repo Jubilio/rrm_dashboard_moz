@@ -38,12 +38,12 @@ With no default workbook or explicit `RRM_INPUT_WORKBOOK`, the application uses 
 
 | Source | Feeds | Update method |
 | --- | --- | --- |
-| Consolidated Excel, or core CSVs | Five core pages and Activity reporting > Dashboard overview | Restart locally; republish the hosted app |
-| Standardised activity workbook, or supplied aggregate snapshot | Activity reporting > Reporting workbook | Configured file checks every 10 seconds, Refresh now, or session upload |
+| Consolidated Excel, or core CSVs | RNA Intro, Alerts, Light RNA and reviewed vulnerability profiles | Restart locally; republish the hosted app |
+| Standardised activity workbook, or supplied aggregate snapshot | Activity reporting | Configured file checks every 10 seconds, Refresh source, or session upload |
 | Supplied historical severity evidence | Linked records in Alerts > View details | Maintainer-controlled source update |
 | Reviewed household aggregates | Vulnerability screening > Reviewed household aggregates | Separate approved aggregate workflow |
 
-The consolidated and standardised activity workbooks are different formats. They do not synchronise automatically. Demo mode opens Activity reporting on Dashboard overview; operational mode opens its Reporting workbook view. Source labels distinguish fictional core records from the real reporting source. CSV exports are deliberate projections of the selected records and may retain audit fields beyond the visible columns.
+The consolidated and standardised activity workbooks are different formats and update independently. Activity reporting opens on Response by community. Source labels distinguish fictional core records from real reporting records. CSV exports follow the active selection and may retain audit fields beyond the visible columns.
 
 ## Repository layout
 

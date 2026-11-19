@@ -92,7 +92,7 @@
     document.querySelectorAll('table.dataTable').forEach(watch);
   }
   document.addEventListener('click', function (event) {
-    var button = event.target.closest('.rrm-alert-detail-button[data-input][data-alert]');
+    var button = event.target.closest('button:is(.rrm-alert-detail-button,.rrm-alert-link)[data-input][data-alert]');
     if (button && window.Shiny && Shiny.setInputValue) {
       Shiny.setInputValue(button.dataset.input, button.dataset.alert, {priority: 'event'});
     }

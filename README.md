@@ -40,7 +40,7 @@ With no default workbook or explicit `RRM_INPUT_WORKBOOK`, the application uses 
 | --- | --- | --- |
 | Consolidated Excel, or core CSVs | Five core pages and Activity reporting > Dashboard overview | Restart locally; republish the hosted app |
 | Standardised activity workbook, or supplied aggregate snapshot | Activity reporting > Reporting workbook | Configured file checks every 10 seconds, Refresh now, or session upload |
-| Supplied historical severity evidence | Alerts > Historical severity review | Maintainer-controlled source update |
+| Supplied historical severity evidence | Linked records in Alerts > View details | Maintainer-controlled source update |
 | Reviewed household aggregates | Vulnerability screening > Reviewed household aggregates | Separate approved aggregate workflow |
 
 The consolidated and standardised activity workbooks are different formats. They do not synchronise automatically. Demo mode opens Activity reporting on Dashboard overview; operational mode opens its Reporting workbook view. Source labels distinguish fictional core records from the real reporting source. CSV exports are deliberate projections of the selected records and may retain audit fields beyond the visible columns.

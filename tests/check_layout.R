@@ -19,7 +19,9 @@ local({
 stopifnot(e$DATA_MODE=='demo',e$d$metadata$mode=='demo')
 html <- as.character(e$ui)
 stopifnot(grepl('value="coverage" checked="checked"',html,fixed=TRUE),
-  !grepl('id="coverage-map_province"',html,fixed=TRUE))
+  !grepl('id="coverage-map_province"',html,fixed=TRUE),
+  grepl('id="alerts-alert_summary"',html,fixed=TRUE),
+  !grepl('id="alerts_view"|Historical severity review',html))
 coverage_html <- as.character(e$page_ui('coverage','coverage',e$d))
 stopifnot(grepl('id="coverage-coverage_map"',coverage_html,fixed=TRUE),
   !grepl('Partner and area responsibilities',coverage_html,fixed=TRUE),

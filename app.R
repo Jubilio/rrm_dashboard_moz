@@ -61,19 +61,7 @@ ui <- fluidPage(
     tags$main(class = 'app-main', lapply(names(page_titles), function(key)
       conditionalPanel(
         sprintf("input.page == '%s'", key),
-        if (key == 'alerts')
-          tabsetPanel(
-            id = 'alerts_view',
-            tabPanel('Dashboard records', value = 'dashboard', page_ui(key, key, d)),
-            tabPanel(
-              'Historical severity review',
-              value = 'history',
-              history_ui('history', history)
-            ),
-            # Dashboard records opens first in every data mode.
-            selected = 'dashboard'
-          )
-        else if (key == 'vulnerability')
+        if (key == 'vulnerability')
           tabsetPanel(
             id = 'vulnerability_view',
             tabPanel('Reviewed profile summaries', value = 'summaries', page_ui(key, key, d)),
@@ -149,9 +137,6 @@ server <- function(input, output, session) {
   output$source_label <- renderText({
     if (workbook_view())
       'REPORTED INTERVENTIONS · WORKBOOK SOURCE'
-    else if (identical(input$page, 'alerts') &&
-             identical(input$alerts_view, 'history'))
-      'HISTORICAL SEVERITY EVIDENCE · SOURCE CLASSIFICATIONS'
     else if (DATA_MODE == 'demo')
       'DRAFT LAYOUT - DEMO DATA ONLY'
     else
@@ -160,9 +145,6 @@ server <- function(input, output, session) {
   output$source_footer <- renderText({
     if (workbook_view())
       'Activity reporting uses the supplied workbook. Original review statuses are retained.'
-    else if (identical(input$page, 'alerts') &&
-             identical(input$alerts_view, 'history'))
-      'Historical severity evidence is a separate source. Source classifications and evidence dates are retained.'
     else if (DATA_MODE == 'demo')
       'Demonstration data: fictional records and illustrative results only.'
     else
@@ -170,7 +152,6 @@ server <- function(input, output, session) {
   })
   for (key in names(page_titles))
     page_server(key, key, d, h=history, activity=alert_activity)
-  history_server('history', history, d=d, activity=alert_activity)
   household_server('household', history, allow_synthetic = DATA_MODE == 'demo')
   activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH)
   # Clicking a district on the RNA Intro map opens the Alerts page filtered to that district.
@@ -181,7 +162,6 @@ server <- function(input, output, session) {
     choices <- alert_district_choices(district_alert_links(), code)
     req(code %in% choices)
     updateRadioButtons(session, 'page', selected = 'alerts')
-    updateTabsetPanel(session, 'alerts_view', selected = 'dashboard')
     updateSelectInput(session, 'alerts-district', choices = choices, selected = code)
     for (filter in c('community', 'date_unit', 'date_period', 'trigger', 'gla',
                      'movement', 'consortium_response_status'))

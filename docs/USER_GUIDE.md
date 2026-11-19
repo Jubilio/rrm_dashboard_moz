@@ -10,7 +10,7 @@ If figures are unexpected, confirm the selected subtab, date range, geography an
 
 ## 2. Navigate and filter
 
-Use the left navigation to choose a page. The dashboard always starts on RNA Intro. Additional tabs within Alerts, Vulnerability screening and Activity reporting provide distinct source views.
+Use the left navigation to choose a page. The dashboard always starts on RNA Intro. Additional tabs within Vulnerability screening and Activity reporting provide distinct source views.
 
 Select filters from the top of each view. **All** includes available records for that field. Dates refer to different events on different pages; the label identifies the event being filtered. **Reset filters** restores all-value selections and the source's date bounds, not necessarily the initial demonstration selection.
 
@@ -20,17 +20,15 @@ When a selection has no records, change or reset the filters. An empty result do
 
 Use Coverage as of to select the effective assignment date and Partner, GLA role and Area to select responsibilities. The Geography selector changes the province view of the map; it does not filter the assignment table or KPIs by province.
 
-The cards show distinct primary partners, secondary partners, assigned areas and source version. The table lists responsibilities. A known responsibility is not evidence that assistance occurred. Fictional demo areas are never assigned to real district polygons. Select a district on the RNA Intro map to open Alerts → Dashboard records with that arrival district selected. The other alert filters reset, and a district with no linked records shows an empty result.
+The cards show distinct primary partners, secondary partners, assigned areas and source version. The table lists responsibilities. A known responsibility is not evidence that assistance occurred. Fictional demo areas are never assigned to real district polygons. Select a district on the RNA Intro map to open Alerts with that arrival district selected. The other alert filters reset, and a district with no linked records shows an empty result.
 
 ## 4. Alerts
 
-Dashboard records shows core alert data. Filter by arrival geography, alert-issued date, trigger, reporting source, population status or consortium response status. Historical severity review is a separate source view; it opens by default inside Alerts in operational mode.
+Alerts shows core alert data. Filter by arrival geography, alert-issued date, trigger, reporting source, population status or consortium response status.
 
-In **Dashboard records**, **Alert summary** sits below the filters and counts distinct alert IDs. **Tier 1** and **Tier 2** count alerts with a linked activity in the corresponding tier. An alert can appear in both. **Completed** requires at least one linked activity and a Completed status on every linked activity.
+**Alert summary** sits below the filters and counts distinct alert IDs. **Tier 1** and **Tier 2** count alerts with a linked activity in the corresponding tier. An alert can appear in both. **Completed** requires at least one linked activity and a Completed status on every linked activity.
 
-The **Historical severity review** summary uses the supplied activity snapshot for gross validated household reach. It requires confirmed exact alert links, validated records, the Households assisted metric and a Unique within record household basis. Reach is gross across activity records, so families can be counted across interventions. No eligible reported values or missing eligible quantities leave reach blank. A reported zero remains zero. Activation indicators remain blank until an agreed source field is supplied. Session uploads do not replace the historical snapshot.
-
-Both views include **Latest alerts**, newest first. Click **View details** to open that alert's detail, including dates, caseloads, linked assessments, needs and assistance. Missing values remain blank. Historical caseload narratives retain their original wording; latest recorded severity is separate from RNA severity. Proposed or unresolved historical ID matches are excluded from the detail. Validated reporting assistance comes from the supplied activity snapshot and requires an exact, confirmed alert link and passed validation; it is separate from core dashboard activity records and is not combined into a reach total. Session uploads in Activity reporting do not update this detail.
+**Latest alerts** lists records newest first. Click **View details** to open that alert's detail, including dates, caseloads, linked assessments, needs and assistance. Missing values remain blank. Historical caseload narratives retain their original wording; latest recorded severity is separate from RNA severity. Proposed or unresolved historical ID matches are excluded from the detail. Validated reporting assistance comes from the supplied activity snapshot and requires an exact, confirmed alert link and passed validation; it is separate from core dashboard activity records and is not combined into a reach total. Session uploads in Activity reporting do not update this detail.
 
 The map uses charcoal origin markers and coral arrival markers. Select a point or dashed connection to show the linked alert summaries in the panel next to the map. A shared point can list several alerts. Use **View details** to open a full alert record or **Clear selection** to restore the panel prompt. The map pop-up shows route counts, stage, targeting and coordinate provenance. Dashed lines connect endpoints; they are not travelled paths. Demo coordinates are fictional. In operational mode, only confirmed coordinates with matching names and provenance are shown.
 

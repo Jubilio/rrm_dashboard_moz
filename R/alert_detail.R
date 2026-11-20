@@ -21,12 +21,15 @@ alert_detail_data <- function(id, d=NULL, h=NULL, activity=NULL) {
   reported <- alert_detail_rows(activity$activities, id)
   if (nrow(reported)) reported <- reported[which(reported$link_status == 'Confirmed' &
     reported$eligible %in% TRUE), , drop=FALSE]
+  # A shared HTTPS link takes precedence; otherwise the document kept in data/alert.
   alert_pdf <- if (nrow(registry)) source_document_url(registry$alert_source,
     if ('alert_source_url' %in% names(registry)) registry$alert_source_url else NA, h$source_links) else NA_character_
+  alert_doc <- if (!is.na(alert_pdf)) list(url=alert_pdf, label='View original alert (PDF)') else
+    alert_document(id, if (!is.null(h$alert_documents)) h$alert_documents else read_alert_documents())
   # Every element is a table; the shared alert PDF travels as an attribute.
   structure(list(core=core, registry=registry, assessments=assessments, needs=needs,
        evidence=evidence, assistance=alert_detail_rows(d$activities, id),
-       reported_assistance=reported), alert_pdf=alert_pdf)
+       reported_assistance=reported), alert_doc=alert_doc)
 }
 
 alert_detail_cell <- function(x) {
@@ -78,7 +81,7 @@ alert_detail_ui <- function(id, detail) {
     paste(c(place, when), collapse=' \u00b7 ')
   }
   links <- shiny::div(class='alert-detail-links',
-    document_link(attr(detail, 'alert_pdf'), 'View original alert (PDF)'),
+    if (!is.null(attr(detail, 'alert_doc'))) document_link(attr(detail, 'alert_doc')$url, attr(detail, 'alert_doc')$label),
     if (nrow(rounds)) shiny::div(class='alert-detail-rounds',
       shiny::span(class='alert-detail-links-label',
         if (nrow(rounds) == 1) 'Linked Light RNA' else sprintf('Linked Light RNA rounds (%s)', nrow(rounds))),

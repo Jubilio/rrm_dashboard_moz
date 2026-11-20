@@ -24,3 +24,6 @@ Thumbs.db
 # Local deployment script (holds account credentials) and raw partner reporting workbooks
 run.R
 data/activity_report/
+
+# Original alert documents: served by the app, not published on GitHub
+data/alert/

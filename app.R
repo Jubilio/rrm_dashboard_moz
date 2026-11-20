@@ -32,6 +32,8 @@ alert_activity <- if (file.exists('data/activity_snapshot/activities.csv'))
 invisible(tryCatch(read_map_layers(), error = function(e) NULL))
 invisible(tryCatch(cached_settlement_points(), error = function(e) NULL))
 invisible(tryCatch(warm_activity_cache(ACTIVITY_WORKBOOK_PATH), error = function(e) NULL))
+# Original alert documents (data/alert) are served at alert-docs/ for the alert detail links.
+if (dir.exists(ALERT_DOCUMENT_DIR)) addResourcePath('alert-docs', normalizePath(ALERT_DOCUMENT_DIR))
 ui <- fluidPage(
   tags$head(
     tags$title(paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),

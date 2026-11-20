@@ -47,6 +47,24 @@ stopifnot(!grepl('View original alert', as.character(alert_detail_ui('DEMO-001',
 h$source_links <- NULL
 stopifnot(!grepl('View original alert', as.character(alert_detail_ui('DEMO-001', alert_detail_data('DEMO-001', d, h))), fixed=TRUE))
 
+# Alert documents kept in data/alert: linked by exact filename, PDF or Word, never guessed.
+docs_dir <- tempfile(); dir.create(docs_dir)
+invisible(file.create(file.path(docs_dir, c('Alert one.pdf', 'Alert two.docx'))))
+docs <- data.frame(alert_id=c('A1','A2','A3'), filename=c('Alert one.pdf','Alert two.docx','missing.pdf'))
+one <- alert_document('A1', docs, docs_dir); two <- alert_document('A2', docs, docs_dir)
+stopifnot(identical(one$url, 'alert-docs/Alert%20one.pdf'), identical(one$label, 'View original alert (PDF)'),
+          identical(two$label, 'View original alert (Word)'),
+          is.null(alert_document('A3', docs, docs_dir)), is.null(alert_document('A4', docs, docs_dir)))
+mapping <- read_alert_documents()
+stopifnot(!anyDuplicated(mapping$alert_id), all(nzchar(mapping$filename)))
+h2 <- list(registry=data.frame(alert_id='A1', alert_source='x.pdf'), alert_documents=docs)
+local({
+  ALERT_DOCUMENT_DIR <<- docs_dir
+  on.exit(ALERT_DOCUMENT_DIR <<- 'data/alert')
+  ui2 <- as.character(alert_detail_ui('A1', alert_detail_data('A1', list(), h2)))
+  stopifnot(grepl('alert-docs/Alert%20one.pdf', ui2, fixed=TRUE))
+})
+
 # Help (i) on Alerts, Light RNA and Activity reporting; About the RRM is paged.
 stopifnot(grepl('How to use this tab', as.character(page_ui('alerts', 'alerts', d)), fixed=TRUE),
           grepl('Understand the severity rating.', as.character(page_ui('alerts', 'alerts', d)), fixed=TRUE),

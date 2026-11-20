@@ -47,7 +47,27 @@ source_document_url <- function(label, url = NA_character_, mapping = NULL) {
 
 # Link that opens a shared document in a new tab.
 document_link <- function(url, label) {
-  if (is.na(url)) return(NULL)
+  if (is.null(url) || is.na(url)) return(NULL)
   htmltools::tags$a(class='rrm-doc-link', href=url, target='_blank', rel='noopener noreferrer',
     label, htmltools::span(class='sr-only', ' (opens in a new tab)'))
+}
+
+# Original alert documents kept in data/alert and served by the app at alert-docs/.
+# data/reference/alert_documents.csv maps each alert ID to its exact filename.
+ALERT_DOCUMENT_DIR <- 'data/alert'
+read_alert_documents <- function(path = 'data/reference/alert_documents.csv') {
+  if (!file.exists(path)) return(data.frame(alert_id=character(), filename=character()))
+  x <- utils::read.csv(path, stringsAsFactors=FALSE, check.names=FALSE, encoding='UTF-8')
+  if (!all(c('alert_id','filename') %in% names(x)) || anyDuplicated(x$alert_id))
+    stop('alert_documents.csv needs alert_id,filename columns and one row per alert.')
+  x
+}
+# Link details for one alert's document, or NULL when no file is mapped or the file is missing.
+alert_document <- function(id, documents = read_alert_documents(), dir = ALERT_DOCUMENT_DIR) {
+  filename <- documents$filename[match(id, documents$alert_id)]
+  if (!length(filename) || is.na(filename) || !nzchar(filename) || !file.exists(file.path(dir, filename))) return(NULL)
+  ext <- tolower(tools::file_ext(filename))
+  kind <- if (ext == 'pdf') 'PDF' else if (ext %in% c('doc','docx')) 'Word' else toupper(ext)
+  list(url=paste0('alert-docs/', utils::URLencode(filename, reserved=TRUE)),
+       label=sprintf('View original alert (%s)', kind))
 }

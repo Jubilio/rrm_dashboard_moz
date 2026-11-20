@@ -63,6 +63,7 @@ alert_map_payload <- function(routes,locations,mode,layers=read_map_layers()) {
         endpoint=p$endpoint,coordinate_source=paste(unique(z$coordinate_source),collapse='; '),coordinate_status=p$coordinate_status,
         selection_id=paste0('point:',location_id),alert_ids=unname(unique(z$alert_id)),
         people=if(any(!is.na(z$people))) sum(z$people,na.rm=TRUE) else NULL,
+        households=if(any(!is.na(z$households))) sum(z$households,na.rm=TRUE) else NULL,
         route_count=nrow(z),
         details=paste(details,collapse='\n')),
         geometry=list(type='Point',coordinates=unname(c(p$longitude,p$latitude))))

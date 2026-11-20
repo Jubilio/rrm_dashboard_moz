@@ -16,7 +16,7 @@ help_tip <- function(id, items, title = 'How to use this tab') {
 alerts_help_items <- list(
   c('Narrow your search.', 'Filter by location, date or alert characteristics. Select Reset filters to see all alerts.'),
   c('Check the totals.', 'See how many alerts match your filters, how many are recorded under each tier and how many have all recorded activities marked complete. An alert can count under both tiers.'),
-  c('Understand the severity rating.', 'The RRM assigns a preliminary rating based on the information available at the alert stage. When a Light Rapid Needs Assessment (RNA) is conducted, its findings help confirm or update the rating. Select a point or route on the map to see the evidence behind the rating. A dashed route indicates that the number of people who moved was not reported.'),
+  c('Understand the severity rating.', 'The RRM assigns a preliminary rating based on the information available at the alert stage. When a Light Rapid Needs Assessment (RNA) is conducted, its findings help confirm or update the rating. Select a point or route on the map to see the evidence behind the rating. Arrow width and circle size show the number of households that moved. A dashed route indicates that the number of households was not reported.'),
   c('Open the alert and assessment.', 'In Latest alerts, select View details to read the alert summary and open the original alert PDF or the linked Light RNA, where available.'))
 
 rna_help_items <- list(

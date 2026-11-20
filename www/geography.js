@@ -267,7 +267,9 @@
           });
         }
       };
-      /* Flow style: curved arrows sized by route people, arrival circles sized by people arriving. */
+      /* Flow style: curved arrows sized by route households, arrival circles sized by households arriving.
+         Households are used because every route reports them; people are often missing. */
+      var size = function (p) { return p.households == null ? null : p.households; };
       var FLOW = '#A8432F', BUBBLE = '#E2B4AA', BUBBLE_EDGE = '#C47F72';
       var compact = function (n) {
         if (n == null) return 'not reported';
@@ -276,11 +278,11 @@
         if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
         return String(Math.round(n));
       };
-      var routePeople = data.connections.features.map(function (f) { return f.properties.people || 0; });
+      var routePeople = data.connections.features.map(function (f) { return size(f.properties) || 0; });
       var flowMax = Math.max.apply(null, [0].concat(routePeople));
       var flowWidth = function (n) { return n == null || !flowMax ? 1.5 : 1.5 + 9 * Math.pow(n / flowMax, 0.6); };
       var arrivals = data.markers.features.filter(function (f) { return f.properties.endpoint !== 'origin'; });
-      var bubbleMax = Math.max.apply(null, [0].concat(arrivals.map(function (f) { return f.properties.people || 0; })));
+      var bubbleMax = Math.max.apply(null, [0].concat(arrivals.map(function (f) { return size(f.properties) || 0; })));
       var bubbleRadius = function (n) { return n == null || !bubbleMax ? 5 : 5 + 23 * Math.sqrt(n / bubbleMax); };
       var proj = L.Projection.SphericalMercator;
       /* Quadratic curve bending to the right of travel, stopping short of the arrival centre. */
@@ -309,13 +311,13 @@
       };
       state.alertConnections = L.featureGroup();
       /* Widest flows first so thin ones stay visible on top. */
-      data.connections.features.slice().sort(function (a, b) { return (b.properties.people || 0) - (a.properties.people || 0); }).forEach(function (f) {
+      data.connections.features.slice().sort(function (a, b) { return (size(b.properties) || 0) - (size(a.properties) || 0); }).forEach(function (f) {
         var p = f.properties, c = f.geometry.coordinates;
         var line = L.polyline(curve(L.latLng(c[0][1], c[0][0]), L.latLng(c[1][1], c[1][0])), {
-          pane: alertPane, color: FLOW, weight: flowWidth(p.people), opacity: 0.85,
-          dashArray: p.people == null ? '4 4' : null, interactive: true});
+          pane: alertPane, color: FLOW, weight: flowWidth(size(p)), opacity: 0.85,
+          dashArray: size(p) == null ? '4 4' : null, interactive: true});
         line.on('add', function () { addArrowhead(line); });
-        line.bindTooltip(text(p.origin + ' → ' + p.arrival + ' · ' + compact(p.people) + ' people'), {sticky: true});
+        line.bindTooltip(text(p.origin + ' → ' + p.arrival + ' · ' + compact(size(p)) + ' households'), {sticky: true});
         line.bindPopup(text(p.alert_id + ' | ' + p.route_id + '\n' + p.origin + ' → ' + p.arrival +
           '\nRoute people: ' + (p.people == null ? 'Unavailable' : p.people) +
           '\nRoute HH: ' + (p.households == null ? 'Unavailable' : p.households) +
@@ -325,32 +327,39 @@
         state.alertConnections.addLayer(line);
       });
       state.alertConnections.addTo(m);
-      /* Label the largest arrivals by name and people; the rest show on hover. */
+      /* Label the largest arrivals by name and households; the rest show on hover. */
       var shortName = function (name) {
         var parts = String(name).split(' - '), label = parts[0];
         if (/^multiple/i.test(label) && parts[1]) label = parts[1].split(/[;:]/)[0];
         label = label.trim();
         return label.length > 24 ? label.slice(0, 23) + '…' : label;
       };
-      var labelled = arrivals.filter(function (f) { return f.properties.people; })
-        .sort(function (a, b) { return b.properties.people - a.properties.people; }).slice(0, 8)
+      var labelled = arrivals.filter(function (f) { return size(f.properties); })
+        .sort(function (a, b) { return size(b.properties) - size(a.properties); })
+        /* Skip a label when a larger labelled arrival is nearby, so labels do not overlap. */
+        .reduce(function (kept, f) {
+          var c = f.geometry.coordinates;
+          var near = kept.some(function (k) { var d = k.geometry.coordinates; return Math.abs(d[0] - c[0]) < 0.15 && Math.abs(d[1] - c[1]) < 0.12; });
+          if (!near && kept.length < 8) kept.push(f);
+          return kept;
+        }, [])
         .map(function (f) { return f.properties.location_id; });
       state.alertPoints = L.geoJSON(data.markers, {
         pointToLayer: function (f, latlng) {
           var origin = f.properties.endpoint === 'origin';
           return L.circleMarker(latlng, origin ?
             {pane: alertPane, radius: 3.5, color: '#FFFFFF', weight: 1.5, fillColor: FLOW, fillOpacity: 1} :
-            {pane: alertPane, radius: bubbleRadius(f.properties.people), color: BUBBLE_EDGE, weight: 1,
+            {pane: alertPane, radius: bubbleRadius(size(f.properties)), color: BUBBLE_EDGE, weight: 1,
              fillColor: BUBBLE, fillOpacity: 0.7});
         },
         onEachFeature: function (f, layer) {
           var p = f.properties, origin = p.endpoint === 'origin';
           var hasLabel = !origin && labelled.indexOf(p.location_id) >= 0;
           if (hasLabel) {
-            layer.bindTooltip(text(shortName(p.name) + '\n' + compact(p.people)), {permanent: true,
+            layer.bindTooltip(text(shortName(p.name) + '\n' + compact(size(p)) + ' HH'), {permanent: true,
               interactive: Boolean(data.selection_input), direction: 'bottom',
-              offset: [0, bubbleRadius(p.people) * 0.6], className: 'rrm-flow-label'});
-          } else layer.bindTooltip(text((origin ? 'Origin: ' : 'Arrival: ') + p.name + (origin ? '' : ' · ' + compact(p.people) + ' people')));
+              offset: [0, bubbleRadius(size(p)) * 0.6], className: 'rrm-flow-label'});
+          } else layer.bindTooltip(text((origin ? 'Origin: ' : 'Arrival: ') + p.name + (origin ? '' : ' · ' + compact(size(p)) + ' households')));
           layer.bindPopup(text(p.name + ' | ' + p.endpoint + '\n' + p.details +
             '\nCoordinate source: ' + p.coordinate_source + '\nCoordinate status: ' + p.coordinate_status +
             (data.mode === 'demo' ? '\nDEMO · fictional coordinates and movement.' : '')));
@@ -365,7 +374,7 @@
       var group = function (title) { var g = document.createElement('div'), h = document.createElement('p'); g.className = 'rrm-flow-legend-group'; h.className = 'rrm-flow-legend-title'; h.textContent = title; g.appendChild(h); var row = document.createElement('div'); row.className = 'rrm-flow-legend-row'; g.appendChild(row); legend.appendChild(g); return row; };
       var item = function (row, symbol, label) { var i = document.createElement('span'), t = document.createElement('span'); i.className = 'rrm-flow-legend-item'; t.textContent = label; i.appendChild(symbol); i.appendChild(t); row.appendChild(i); };
       if (flowMax > 0) {
-        var arrowsRow = group('People on route');
+        var arrowsRow = group('Households on route');
         [nice(flowMax / 8), nice(flowMax / 2.5), flowMax].filter(function (v, i, a) { return v > 0 && a.indexOf(v) === i; }).forEach(function (v) {
           var w = flowWidth(v), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('width', '64'); svg.setAttribute('height', String(Math.ceil(w * 3.4))); svg.setAttribute('aria-hidden', 'true');
@@ -375,7 +384,7 @@
           item(arrowsRow, svg, compact(v));
         });
       }
-      var pointsRow = group('People arriving');
+      var pointsRow = group('Households arriving');
       if (bubbleMax > 0) [nice(bubbleMax / 6), bubbleMax].filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (v) {
         var d = 2 * bubbleRadius(v), c = document.createElement('span');
         c.className = 'rrm-flow-bubble'; c.style.width = d + 'px'; c.style.height = d + 'px';
@@ -383,11 +392,11 @@
       });
       var o = document.createElement('span'); o.className = 'rrm-flow-origin';
       item(pointsRow, o, 'Origin');
-      if (data.connections.features.some(function (f) { return f.properties.people == null; })) {
+      if (data.connections.features.some(function (f) { return size(f.properties) == null; })) {
         var dash = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         dash.setAttribute('width', '48'); dash.setAttribute('height', '8'); dash.setAttribute('aria-hidden', 'true');
         dash.innerHTML = '<path d="M0 4 L48 4" stroke="' + FLOW + '" stroke-width="1.5" stroke-dasharray="4 4"/>';
-        item(pointsRow, dash, 'People not reported');
+        item(pointsRow, dash, 'Households not reported');
       }
       overlays['Origin and arrival points'] = state.alertPoints;
       overlays['Origin–arrival arrows'] = state.alertConnections;

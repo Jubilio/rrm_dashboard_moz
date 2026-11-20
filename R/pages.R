@@ -449,13 +449,6 @@ page_ui <- function(id, key, d) {
             class = 'panel alert-map-panel',
             h3('Origin to arrival and targeted locations'),
             rrm_map_output(ns('alert_map')),
-            div(class = 'map-legend', span(
-              span(class = 'map-swatch map-swatch-point', style = 'background:#58585A;'),
-              'Origin'
-            ), span(
-              span(class = 'map-swatch map-swatch-point', style = 'background:#EE5859;'),
-              'Arrival'
-            )),
             uiOutput(ns('alert_map_note'))
           ),
           div(
@@ -1254,7 +1247,7 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
           else
             '',
           paste(sum(x$mapped), 'of', nrow(x), 'route endpoints mapped.'),
-          ' Lines show origin–arrival connections, not the travelled path.',
+          ' Arrows link origin to arrival; their curve does not show the travelled path.',
           if (any(!x$mapped))
             ' Missing or unconfirmed locations remain in coordinate review.'
         )

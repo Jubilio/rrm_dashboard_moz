@@ -632,3 +632,12 @@ h1{font-size:32px}
 .page-vulnerability .dataTables_scrollBody,.page-vulnerability table.dataTable.no-footer{border-bottom:1px solid var(--card-line)!important}
 @media(max-width:1250px){.page-vulnerability .filters{grid-template-columns:repeat(3,minmax(0,1fr))}.page-vulnerability .filters .btn-reset{justify-self:start}}
 @media(max-width:680px){.page-vulnerability .filters{grid-template-columns:1fr}}
+/* Alerts flow map: curved arrows and proportional arrival circles. */
+.leaflet-tooltip.rrm-flow-label{background:none;border:0;box-shadow:none;padding:0;color:#182435;font-size:11px;font-weight:700;line-height:1.25;text-align:center;white-space:pre;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
+.leaflet-tooltip.rrm-flow-label::before{display:none}
+.rrm-flow-legend{display:flex;flex-wrap:wrap;gap:12px 32px;margin:14px 0 6px;color:#182435}
+.rrm-flow-legend-title{font-size:13px;font-weight:700;margin:0 0 6px}
+.rrm-flow-legend-row{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.rrm-flow-legend-item{display:inline-flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:#556273}
+.rrm-flow-bubble{display:block;border-radius:50%;background:rgba(226,180,170,.7);border:1px solid #C47F72;box-sizing:border-box}
+.rrm-flow-origin{display:block;width:9px;height:9px;border-radius:50%;background:#A8432F;border:1.5px solid #fff;box-shadow:0 0 0 1px #d6dee7}

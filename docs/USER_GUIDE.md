@@ -18,7 +18,7 @@ When a selection has no records, change or reset the filters. An empty result do
 
 ## 3. About the RRM
 
-The first tab explains the Rapid Response Mechanism, its two tiers and what each tab shows. Use **Next page** and **Previous** in the panel beside the map to read the text; it keeps the map's height. On a small screen the text scrolls inside the panel.
+The first tab explains the Rapid Response Mechanism, its two tiers and what each tab shows. The panel beside the map keeps the map's height and shows as much text as fits; when more remains, use **Next page** and **Previous**. On a large screen the text needs fewer pages, and on a narrow screen it appears in full below the map.
 
 On Alerts, Light RNA and Activity reporting, **How to use this tab** (the ⓘ near the top) opens short guidance. It opens on hover or keyboard focus, and click or tap opens and closes it; Escape closes it.
 

@@ -111,21 +111,71 @@ document.addEventListener('click', function (event) {
   target.hidden = !open;
   if (open && window.jQuery) window.jQuery(target).trigger('shown');
 });
-/* About the RRM: Previous / Next page. */
+/* About the RRM: fit as many blocks as the panel holds, page the rest.
+   A heading always moves with the block after it; a block taller than the panel gets a page of its own. */
+function rrmPaginate(pager, keepPage) {
+  var body = pager.querySelector('.rrm-pager-body'), nav = pager.querySelector('.rrm-pager-nav');
+  var blocks = Array.prototype.slice.call(body.querySelectorAll(':scope > .rrm-flow-block'));
+  if (!blocks.length || !pager.offsetParent) return;
+  blocks.forEach(function (b) { b.hidden = false; b.classList.remove('rrm-page-start'); });
+  /* Without a fixed panel height (narrow screens) everything is shown in one column. */
+  if (getComputedStyle(pager).contain.indexOf('size') < 0) {
+    nav.hidden = true; pager.setAttribute('data-pages', '1'); return;
+  }
+  nav.hidden = true;
+  var room = body.clientHeight;
+  var fitsAll = body.scrollHeight <= room + 1;
+  if (!fitsAll) { nav.hidden = false; room = body.clientHeight; }
+  var page = 1, used = 0;
+  var height = function (b) { var cs = getComputedStyle(b); return b.offsetHeight + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom); };
+  for (var i = 0; i < blocks.length; i++) {
+    var h = height(blocks[i]);
+    if (blocks[i].tagName === 'H3' && blocks[i + 1]) h += height(blocks[i + 1]);
+    if (used > 0 && used + h > room) { page++; used = 0; }
+    blocks[i].setAttribute('data-page-of', page);
+    blocks[i].classList.toggle('rrm-page-start', used === 0);
+    used += height(blocks[i]);
+    if (blocks[i].tagName === 'H3' && blocks[i + 1]) { i++; blocks[i].setAttribute('data-page-of', page); used += height(blocks[i]); }
+  }
+  pager.setAttribute('data-pages', String(page));
+  var current = keepPage ? Math.min(page, Number(pager.getAttribute('data-page')) || 1) : 1;
+  rrmShowPage(pager, current);
+}
+function rrmShowPage(pager, n) {
+  var pages = Number(pager.getAttribute('data-pages')) || 1;
+  pager.querySelectorAll('.rrm-pager-body > .rrm-flow-block').forEach(function (b) {
+    b.hidden = pages > 1 && Number(b.getAttribute('data-page-of')) !== n;
+  });
+  pager.setAttribute('data-page', String(n));
+  pager.querySelector('.rrm-pager-count').textContent = n + ' of ' + pages;
+  pager.querySelector('.rrm-pager-prev').disabled = n === 1;
+  pager.querySelector('.rrm-pager-next').disabled = n === pages;
+  pager.querySelector('.rrm-pager-body').scrollTop = 0;
+}
+function rrmPaginateAll(keepPage) { document.querySelectorAll('.rrm-pager').forEach(function (p) { rrmPaginate(p, keepPage); }); }
 document.addEventListener('click', function (event) {
   var button = event.target.closest('[data-pager-step]');
   if (!button) return;
   var pager = button.closest('.rrm-pager');
-  var pages = pager.querySelectorAll('.rrm-pager-page');
-  var current = Number(pager.getAttribute('data-page')) || 1;
-  var next = Math.min(pages.length, Math.max(1, current + Number(button.getAttribute('data-pager-step'))));
-  pages.forEach(function (page, i) { page.hidden = i + 1 !== next; });
-  pager.setAttribute('data-page', String(next));
-  pager.querySelector('.rrm-pager-count').textContent = next + ' of ' + pages.length;
-  pager.querySelector('.rrm-pager-prev').disabled = next === 1;
-  pager.querySelector('.rrm-pager-next').disabled = next === pages.length;
-  pager.querySelector('.rrm-pager-body').scrollTop = 0;
+  var pages = Number(pager.getAttribute('data-pages')) || 1;
+  var next = Math.min(pages, Math.max(1, (Number(pager.getAttribute('data-page')) || 1) + Number(button.getAttribute('data-pager-step'))));
+  rrmShowPage(pager, next);
+  pager.querySelector(next === pages ? '.rrm-pager-prev' : '.rrm-pager-next').focus();
 });
+(function () {
+  var timer;
+  var later = function (keep) { clearTimeout(timer); timer = setTimeout(function () { rrmPaginateAll(keep); }, 150); };
+  window.addEventListener('resize', function () { later(true); });
+  document.addEventListener('DOMContentLoaded', function () { later(false); });
+  window.addEventListener('load', function () { later(false); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { later(false); });
+  /* Recalculate when the page becomes visible again or the map finishes sizing. */
+  if (window.jQuery) window.jQuery(document).on('shiny:inputchanged', function (e) { if (e.name === 'page') later(true); });
+  if (window.ResizeObserver) document.addEventListener('DOMContentLoaded', function () {
+    var ro = new ResizeObserver(function () { later(true); });
+    document.querySelectorAll('.coverage-map-panel').forEach(function (el) { ro.observe(el); });
+  });
+})();
 /* Help (i): close on Escape or a click elsewhere. */
 /* Help (i): Escape, a second click or a click elsewhere closes it, even while hovered or focused.
    The "dismissed" mark is cleared once the pointer and focus have left. */

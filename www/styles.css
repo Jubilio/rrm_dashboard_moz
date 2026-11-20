@@ -725,3 +725,12 @@ h1{font-size:32px}
 .alert-detail-close:hover{background:#f3f5f8;color:#182435}
 .alert-detail-actions :is(button):focus-visible{outline:2px solid #A62C32;outline-offset:2px}
 @media(max-width:680px){.alert-detail-actions .rrm-alert-link{width:100%;justify-content:space-between}.alert-detail-actions-main{width:100%}}
+/* About the RRM: automatic pages; when everything fits there is no page navigation. */
+.rrm-pager-body>.rrm-flow-block[hidden]{display:none}
+.rrm-pager-nav[hidden]{display:none}
+.rrm-pager-body>h3.rrm-flow-block{margin:0 0 10px}
+.rrm-pager-body>h3.rrm-flow-block:not(:first-child){margin-top:22px}
+.rrm-pager-body>.rrm-flow-block.rrm-page-start{margin-top:0}
+.rrm-pager-body>p.rrm-flow-block{font-size:15px;line-height:1.6;color:#334155;margin:0 0 12px}
+.rrm-pager-body>.rrm-tiers{margin:4px 0 12px}
+.rrm-pager-body>.rrm-about-table{margin:4px 0 14px}

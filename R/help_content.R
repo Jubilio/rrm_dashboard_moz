@@ -37,43 +37,34 @@ counting_units_text <- paste(
 counting_definition_text <- paste('Reported output is the figure the partner reported, in the unit they used.',
   counting_units_text)
 
-# About the RRM: the text is split into pages so the panel keeps the map's height.
-about_rrm_pages <- function() list(
-  tagList(
-    h3('About the Rapid Response Mechanism'),
-    p('The Mozambique Rapid Response Mechanism (MOZ-RRM) brings together coordination, preparedness, anticipatory action and rapid, multi-sector assistance for people affected by conflict, natural hazards and disease outbreaks in northern Mozambique. A crisis modifier allows the mechanism to respond to major emergencies elsewhere in the country.'),
-    p('The response can provide up to three months of support through two tiers.'),
-    tags$dl(class = 'rrm-tiers',
-      div(tags$dt('Tier 1'), tags$dd('Provides immediate, life-saving assistance to newly affected people, guided by verified alerts and a Light Rapid Needs Assessment.')),
-      div(tags$dt('Tier 2'), tags$dd('Uses a more in-depth assessment to prioritise follow-up support based on needs and vulnerabilities among newly affected households, previously affected households and host communities.')))),
-  tagList(
-    h3('Working across both tiers'),
-    p('Across both tiers, partners work with authorities and other first-line responders to deliver safe, accessible assistance, coordinate referrals and avoid duplication. This dashboard brings together alerts, severity scores, assessment findings and reported activities to support those decisions in Cabo Delgado.'),
-    h3('How to use the dashboard'),
-    p('Start with the map. Hover over a district to see its assigned Geographical Lead Agency (GLA), or click the district to open its alerts. Click a partner icon to highlight its primary and secondary districts. To see what assistance was reported in a district, open Activity reporting.')),
-  tagList(
-    h3('What each tab shows'),
-    tags$table(class = 'rrm-about-table',
-      tags$thead(tags$tr(tags$th(scope = 'col', 'Tab'), tags$th(scope = 'col', 'What you can find'))),
-      tags$tbody(
-        tags$tr(tags$th(scope = 'row', 'Alerts'), tags$td('Where and when a shock was reported, which communities were affected and what informed the severity rating.')),
-        tags$tr(tags$th(scope = 'row', 'Light RNA'), tags$td('Where and when Light Rapid Needs Assessments took place and what they found about immediate needs.')),
-        tags$tr(tags$th(scope = 'row', 'Vulnerability screening'), tags$td('Tier 2 prioritisation decisions by alert and community, with filters for displaced and host populations.')),
-        tags$tr(tags$th(scope = 'row', 'Activity reporting'), tags$td('What partners reported delivering, where and when. Use Response by community to switch between the list and map views.')))),
-    p('To follow a specific event, find it in Alerts and use its Alert ID wherever an alert filter is available. Use the district, community or period filters to explore a wider area or timeframe. Select Clear filters or Reset filters to return to the full view.')))
+# About the RRM. The panel shows as many blocks as fit beside the map and pages the rest
+# (www/tables.js measures the space); headings stay with the block that follows them.
+about_rrm_blocks <- function() list(
+  h3('About the Rapid Response Mechanism'),
+  p('The Mozambique Rapid Response Mechanism (MOZ-RRM) brings together coordination, preparedness, anticipatory action and rapid, multi-sector assistance for people affected by conflict, natural hazards and disease outbreaks in northern Mozambique. A crisis modifier allows the mechanism to respond to major emergencies elsewhere in the country.'),
+  p('The response can provide up to three months of support through two tiers.'),
+  tags$dl(class = 'rrm-tiers',
+    div(tags$dt('Tier 1'), tags$dd('Provides immediate, life-saving assistance to newly affected people, guided by verified alerts and a Light Rapid Needs Assessment.')),
+    div(tags$dt('Tier 2'), tags$dd('Uses a more in-depth assessment to prioritise follow-up support based on needs and vulnerabilities among newly affected households, previously affected households and host communities.'))),
+  h3('How to use the dashboard'),
+  p('Start with the map. Hover over a district to see its assigned Geographical Lead Agency (GLA), or click the district to open its alerts. Click a partner icon to highlight its primary and secondary districts. To see what assistance was reported in a district, open Activity reporting.'),
+  tags$table(class = 'rrm-about-table',
+    tags$thead(tags$tr(tags$th(scope = 'col', 'Tab'), tags$th(scope = 'col', 'What you can find'))),
+    tags$tbody(
+      tags$tr(tags$th(scope = 'row', 'Alerts'), tags$td('Where and when a shock was reported, which communities were affected and what informed the severity rating.')),
+      tags$tr(tags$th(scope = 'row', 'Light RNA'), tags$td('Where and when Light Rapid Needs Assessments took place and what they found about immediate needs.')),
+      tags$tr(tags$th(scope = 'row', 'Vulnerability screening'), tags$td('Tier 2 prioritisation decisions by alert and community, with filters for displaced and host populations.')),
+      tags$tr(tags$th(scope = 'row', 'Activity reporting'), tags$td('What partners reported delivering, where and when. Use Response by community to switch between the list and map views.')))),
+  p('To follow a specific event, find it in Alerts and use its Alert ID wherever an alert filter is available. Use the district, community or period filters to explore a wider area or timeframe. Select Clear filters or Reset filters to return to the full view.'))
 
 about_rrm_panel <- function(id) {
-  pages <- about_rrm_pages()
-  n <- length(pages)
   div(class = 'panel coverage-intro-text rrm-pager', id = id, `data-page` = '1',
     div(class = 'rrm-pager-body', `aria-live` = 'polite',
-      lapply(seq_len(n), function(i)
-        div(class = 'rrm-pager-page', `data-page-index` = i, hidden = if (i > 1) NA,
-          `aria-label` = sprintf('Page %s of %s', i, n), pages[[i]]))),
-    div(class = 'rrm-pager-nav',
+      lapply(about_rrm_blocks(), function(block) tagAppendAttributes(block, class = 'rrm-flow-block'))),
+    div(class = 'rrm-pager-nav', hidden = NA,
       tags$button(type = 'button', class = 'rrm-pager-prev', `data-pager-step` = '-1', disabled = NA,
-        span(`aria-hidden` = 'true', '←'), ' Previous'),
-      span(class = 'rrm-pager-count', sprintf('1 of %s', n)),
+        span(`aria-hidden` = 'true', '\u2190'), ' Previous'),
+      span(class = 'rrm-pager-count'),
       tags$button(type = 'button', class = 'rrm-pager-next', `data-pager-step` = '1',
-        'Next page ', span(`aria-hidden` = 'true', '→'))))
+        'Next page ', span(`aria-hidden` = 'true', '\u2192'))))
 }

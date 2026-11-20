@@ -510,14 +510,13 @@ page_ui <- function(id, key, d) {
       tagList(
         uiOutput(ns('details')),
         div(
-          class = 'panel',
-          h3('Tier 2 decisions by alert and community'),
-          DT::DTOutput(ns('table')),
-          tags$details(
-            class = 'decision-export',
-            tags$summary('Export decision records'),
-            downloadButton(ns('download'), 'Export filtered CSV', class = 'btn-export')
-          )
+          class = 'panel decision-panel',
+          div(
+            class = 'panel-head',
+            h3('Tier 2 decisions by alert and community'),
+            downloadButton(ns('download'), 'Export decision records', class = 'btn-export', icon = NULL)
+          ),
+          DT::DTOutput(ns('table'))
         )
       )
     else

@@ -44,7 +44,7 @@ The period filter matches any day in the reported assessment window. Undated rou
 
 Reviewed profile summaries opens with community, decision-date, alert, population and decision filters. The cards identify the alert, Tier 2 decision and IDP/Host review states. **Partly reviewed** means some selected records still lack a reviewed narrative; **Unavailable** means no records for that group.
 
-The paired panels display reviewed aggregate narratives, analysis versions and review dates. Missing reviewed summaries remain explicit. The decision table deduplicates the same alert/community/decision/reason across population groups; its CSV export retains the filtered decision fields and review flags. Expand **Export decision records** to download it.
+The paired panels display reviewed aggregate narratives, analysis versions and review dates. Missing reviewed summaries remain explicit. The decision table deduplicates the same alert/community/decision/reason across population groups; its CSV export retains the filtered decision fields and review flags. Use **Export decision records** beside the table to download it.
 
 Household analysis is a separate tab. Draft synthetic scenarios are available only in demo mode; operational household views accept reviewed non-synthetic aggregates under approved rules. This dashboard is not a household registry or an eligibility list.
 

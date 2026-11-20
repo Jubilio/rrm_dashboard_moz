@@ -97,6 +97,8 @@ rsconnect::deployApp(
 )
 ```
 
+Alternatively, run `source("scripts/deploy.R")`. It uses the account and app from the deployment record, gives the connection to shinyapps.io more time, and, if rsconnect still reports `Timeout was reached [api.shinyapps.io]`, checks for up to 10 minutes whether shinyapps.io finished the deployment anyway. Do not redeploy straight after that timeout: the build usually completes on the server.
+
 Use your registered account/app names for a different deployment. After deployment, inspect the hosted app and its logs when investigating a startup error. Do not commit account tokens, credentials or populated private source workbooks.
 
 ## Troubleshooting

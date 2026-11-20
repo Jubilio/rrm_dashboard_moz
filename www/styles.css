@@ -713,3 +713,15 @@ h1{font-size:32px}
 .rrm-updated-dot{width:8px;height:8px;border-radius:50%;background:#2f855a;flex:0 0 auto}
 .rrm-activity .rrm-page-tools{margin-bottom:4px}
 @media(max-width:680px){.rrm-results-updated .rrm-footnote{white-space:normal}}
+/* Alert detail: navigation at the top of the window, kept in view while scrolling. */
+.alert-detail-actions{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;margin:-15px -15px 16px;padding:12px 15px;border-bottom:1px solid #d6dee7}
+.alert-detail-actions-main{display:flex;gap:10px;flex-wrap:wrap}
+.alert-detail-actions .rrm-alert-link{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 16px;border-radius:6px;background:#fff;color:#A62C32;border:1.5px solid #c7d0db;font-size:14px;font-weight:700}
+.alert-detail-actions .rrm-alert-link:hover,.alert-detail-actions .rrm-alert-link:focus{background:#fdeeed;color:#A62C32}
+.alert-detail-actions .alert-detail-back{background:#A62C32;border-color:#A62C32;color:#fff}
+.alert-detail-actions .alert-detail-back:hover,.alert-detail-actions .alert-detail-back:focus{background:#8c2329;color:#fff}
+.alert-detail-actions .rrm-arrow{margin:0}
+.alert-detail-close{min-height:40px;padding:8px 14px;border-radius:6px;background:none;border:1.5px solid transparent;color:#556273;font-size:14px;font-weight:700}
+.alert-detail-close:hover{background:#f3f5f8;color:#182435}
+.alert-detail-actions :is(button):focus-visible{outline:2px solid #A62C32;outline-offset:2px}
+@media(max-width:680px){.alert-detail-actions .rrm-alert-link{width:100%;justify-content:space-between}.alert-detail-actions-main{width:100%}}

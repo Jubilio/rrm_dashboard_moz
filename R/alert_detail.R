@@ -115,16 +115,25 @@ alert_detail_ui <- function(id, detail) {
 }
 
 # return_round: the Light RNA round the user came from, offered as a way back.
+# Navigation sits at the top of the window (and stays visible while scrolling).
 show_alert_detail <- function(id, d=NULL, h=NULL, activity=NULL, return_round=NULL) {
   back <- !is.null(return_round) && return_round %in% d$assessments$assessment_id[d$assessments$alert_id %in% id]
+  arrow <- function(label, left=FALSE) if (left)
+    shiny::tagList(shiny::span(class='rrm-arrow', `aria-hidden`='true', '\u2190'), label) else
+    shiny::tagList(label, shiny::span(class='rrm-arrow', `aria-hidden`='true', '\u2192'))
+  actions <- shiny::div(class='alert-detail-actions', role='navigation', `aria-label`='Alert detail navigation',
+    shiny::div(class='alert-detail-actions-main',
+      if (back) shiny::tagAppendAttributes(
+        alert_navigation_button('open_rna_round', return_round, arrow('Back to Light RNA round', left=TRUE)),
+        class='alert-detail-back')
+      else alert_navigation_button('open_light_rna', id, arrow('Open Light RNA')),
+      alert_navigation_button('open_reported_response', id, arrow('Open reported response'))),
+    shiny::tags$button(type='button', class='btn alert-detail-close', `data-dismiss`='modal',
+      `data-bs-dismiss`='modal', 'Close'))
   shiny::showModal(shiny::modalDialog(
-    title=id, size='l', easyClose=TRUE,
-    alert_detail_ui(id,alert_detail_data(id,d,h,activity)),
-    footer=shiny::tagList(
-      if (back) alert_navigation_button('open_rna_round', return_round, 'Back to Light RNA round')
-      else alert_navigation_button('open_light_rna', id, 'Open Light RNA'),
-      alert_navigation_button('open_reported_response', id, 'Open reported response'),
-      shiny::modalButton('Close'))))
+    title=id, size='l', easyClose=TRUE, footer=NULL,
+    actions,
+    alert_detail_ui(id,alert_detail_data(id,d,h,activity))))
 }
 
 alert_navigation_button <- function(input, id, label, selected=NULL) {

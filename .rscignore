@@ -1,1 +1,11 @@
 .r-library
+# Development and tool output not needed by the deployed app
+.codex
+.playwright-mcp
+.Rproj.user
+.Rhistory
+rrm_dashboard.Rproj
+tests
+scripts
+# Local deployment script (account settings)
+run.R

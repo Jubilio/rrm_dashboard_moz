@@ -5,6 +5,6 @@ account: jubilio
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 18453828
-bundleId: 12837439
+bundleId: 12843743
 url: https://jubilio.shinyapps.io/rrm_dashboard/
 version: 1

@@ -371,8 +371,9 @@ page_ui <- function(id, key, d) {
           end = bounds[2],
           format = 'dd M yyyy'
         ),
-      # Alerts always include undated records (no checkbox; the server defaults to TRUE).
-      if (!key %in% c('coverage', 'alerts'))
+      # Alerts and Vulnerability screening always include undated records
+      # (no checkbox; the server defaults to TRUE).
+      if (!key %in% c('coverage', 'alerts', 'vulnerability'))
         checkboxInput(
           ns('include_undated'),
           'Include records without a date',

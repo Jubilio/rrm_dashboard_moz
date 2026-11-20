@@ -56,3 +56,19 @@ testServer(e$page_server,args=list(key='coverage',d=e$d),{
   stopifnot(nrow(filtered())>0L)
 })
 message('PASS: default demo layout, coverage-first navigation, single geography input, source labels, reference KPIs and RNA Intro layout.')
+# Vulnerability screening has no "Include records without a date" checkbox; undated records stay included.
+local({
+  v <- new.env(parent = globalenv())
+  for (f in c('R/data.R', 'R/pages.R', 'R/severity.R')) sys.source(f, envir = v)
+  dv <- v$read_rrm_data('demo')
+  page_ui <- v$page_ui; page_server <- v$page_server
+  html <- as.character(page_ui('vulnerability', 'vulnerability', dv))
+  stopifnot(!grepl('id="vulnerability-include_undated"', html, fixed = TRUE),
+            !grepl('Include records without a date', html, fixed = TRUE))
+  shiny::testServer(page_server, args = list(key = 'vulnerability', d = dv), {
+    x <- dv$screening
+    session$setInputs(dates = as.Date(c('1900-01-01', '1900-01-02')))
+    stopifnot(nrow(filtered()) == sum(is.na(x$decision_date)))
+  })
+  message('PASS: Vulnerability screening keeps undated records without a checkbox.')
+})

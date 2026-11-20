@@ -1239,18 +1239,16 @@ page_server <- function(id, key, d, h=NULL, activity=NULL)
               'Map boundaries are unavailable. Check the supplied geography files.'
             )
           )
+        # No routine status note under the map; only show warnings that need attention.
         x <- endpoint_links()
-        p(
-          class = 'muted alert-map-status',
-          if (d$metadata$mode == 'demo')
-            'DEMO POINTS · Fictional coordinates and movements. '
-          else
-            '',
-          paste(sum(x$mapped), 'of', nrow(x), 'route endpoints mapped.'),
-          ' Arrows link origin to arrival; their curve does not show the travelled path.',
+        notes <- c(
+          if (d$metadata$mode == 'demo') 'DEMO POINTS · Fictional coordinates and movements.',
           if (any(!x$mapped))
-            ' Missing or unconfirmed locations remain in coordinate review.'
+            paste(sum(!x$mapped), 'route endpoint(s) not mapped: missing or unconfirmed locations remain in coordinate review.')
         )
+        if (!length(notes))
+          return(NULL)
+        p(class = 'muted alert-map-status', paste(notes, collapse = ' '))
       })
       output$endpoint_review <- DT::renderDT({
         if (!is.null(location_source$error))

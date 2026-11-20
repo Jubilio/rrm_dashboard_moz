@@ -2,6 +2,9 @@
 DATA_MODE <- Sys.getenv("RRM_DATA_MODE", "operational")
 APP_TITLE <- "RRM dashboard"
 APP_SUBTITLE <- "Cabo Delgado, Mozambique"
+# Public address, used for the link preview image (must be absolute for WhatsApp, Teams, LinkedIn).
+APP_URL <- Sys.getenv("RRM_APP_URL", "https://jubilio.shinyapps.io/rrm_dashboard/")
+APP_DESCRIPTION <- "Alerts, rapid needs assessments, vulnerability screening and reported response for the Rapid Response Mechanism in Cabo Delgado, Mozambique."
 
 # Use the updated local workbook when available; an explicit environment value
 # still takes precedence. Blank selects the supplied snapshot.

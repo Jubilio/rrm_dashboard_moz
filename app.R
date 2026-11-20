@@ -36,6 +36,23 @@ ui <- fluidPage(
   tags$head(
     tags$title(paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),
     tags$meta(name = 'viewport', content = 'width=device-width, initial-scale=1'),
+    tags$meta(name = 'description', content = APP_DESCRIPTION),
+    tags$meta(name = 'theme-color', content = '#A62C32'),
+    tags$link(rel = 'icon', href = 'favicon.svg', type = 'image/svg+xml'),
+    tags$link(rel = 'icon', href = 'favicon-32.png', type = 'image/png', sizes = '32x32'),
+    tags$link(rel = 'shortcut icon', href = 'favicon.ico'),
+    tags$link(rel = 'apple-touch-icon', href = 'apple-touch-icon.png'),
+    # Link preview (WhatsApp, Teams, Slack, LinkedIn, X).
+    tags$meta(property = 'og:type', content = 'website'),
+    tags$meta(property = 'og:site_name', content = APP_TITLE),
+    tags$meta(property = 'og:title', content = paste(APP_TITLE, APP_SUBTITLE, sep = ' | ')),
+    tags$meta(property = 'og:description', content = APP_DESCRIPTION),
+    tags$meta(property = 'og:url', content = APP_URL),
+    tags$meta(property = 'og:image', content = paste0(APP_URL, 'og-image.png')),
+    tags$meta(property = 'og:image:width', content = '1200'),
+    tags$meta(property = 'og:image:height', content = '630'),
+    tags$meta(property = 'og:image:alt', content = 'RRM dashboard, Cabo Delgado, Mozambique: curved arrows from origin to arrival with circles sized by people arriving.'),
+    tags$meta(name = 'twitter:card', content = 'summary_large_image'),
     tags$link(rel = 'stylesheet', type = 'text/css', href = paste0('styles.css?v=', as.numeric(file.info('www/styles.css')$mtime))),
     tags$script(src = paste0('tables.js?v=', unname(tools::md5sum('www/tables.js'))), defer = 'defer')
   ),

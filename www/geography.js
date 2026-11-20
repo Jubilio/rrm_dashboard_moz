@@ -246,12 +246,26 @@
       // Keep alert targets above the district and other geographic overlays.
       var alertPane = 'alertFeatures';
       if (!m.getPane(alertPane)) m.createPane(alertPane).style.zIndex = '450';
-      var bindAlertSelection = function (layer, feature, label) {
+      var bindAlertSelection = function (layer, feature, label, selectByTooltip) {
         if (!data.selection_input) return;
-        bindMapAction(layer, label, function (keyboard) {
+        var select = function () {
           Shiny.setInputValue(data.selection_input, feature.selection_id, {priority: 'event'});
+        };
+        bindMapAction(layer, label, function (keyboard) {
+          select();
           if (keyboard) layer.openPopup();
         });
+        if (selectByTooltip) {
+          var selectFromLabel = function (event) {
+            L.DomEvent.stop(event);
+            select();
+            layer.openPopup();
+          };
+          layer.on('tooltipopen', function (event) {
+            var element = event.tooltip.getElement();
+            if (element) L.DomEvent.on(element, 'click', selectFromLabel);
+          });
+        }
       };
       /* Flow style: curved arrows sized by route people, arrival circles sized by people arriving. */
       var FLOW = '#A8432F', BUBBLE = '#E2B4AA', BUBBLE_EDGE = '#C47F72';
@@ -331,14 +345,16 @@
         },
         onEachFeature: function (f, layer) {
           var p = f.properties, origin = p.endpoint === 'origin';
-          if (!origin && labelled.indexOf(p.location_id) >= 0) {
-            layer.bindTooltip(text(shortName(p.name) + '\n' + compact(p.people)), {permanent: true, direction: 'bottom',
+          var hasLabel = !origin && labelled.indexOf(p.location_id) >= 0;
+          if (hasLabel) {
+            layer.bindTooltip(text(shortName(p.name) + '\n' + compact(p.people)), {permanent: true,
+              interactive: Boolean(data.selection_input), direction: 'bottom',
               offset: [0, bubbleRadius(p.people) * 0.6], className: 'rrm-flow-label'});
           } else layer.bindTooltip(text((origin ? 'Origin: ' : 'Arrival: ') + p.name + (origin ? '' : ' · ' + compact(p.people) + ' people')));
           layer.bindPopup(text(p.name + ' | ' + p.endpoint + '\n' + p.details +
             '\nCoordinate source: ' + p.coordinate_source + '\nCoordinate status: ' + p.coordinate_status +
             (data.mode === 'demo' ? '\nDEMO · fictional coordinates and movement.' : '')));
-          bindAlertSelection(layer, p, (origin ? 'Origin: ' : 'Arrival: ') + p.name);
+          bindAlertSelection(layer, p, (origin ? 'Origin: ' : 'Arrival: ') + p.name, hasLabel);
         }
       }).addTo(m);
       /* Legend below the map, scaled to the current selection. */

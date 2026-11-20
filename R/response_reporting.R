@@ -93,7 +93,7 @@ activity_workbook_ui <- function(id) {
             tabPanel('Pending review',uiOutput(ns('review_queue')),
               tags$details(class='rrm-plain-details',tags$summary('Validation issues'),DT::DTOutput(ns('issues')))),
             tabPanel('Geographic matching',
-              div(class='rrm-tab-actions',rrm_export_button(ns('location_export'),'Export geographic matching CSV')),
+              div(class='rrm-tab-actions',rrm_export_button(ns('location_export'),'Export geographic matching')),
               uiOutput(ns('geographic_queue'))),
             tabPanel('Counting definitions',DT::DTOutput(ns('definitions')))),
           tags$details(class='rrm-plain-details',tags$summary('Validated output and reach breakdowns'),

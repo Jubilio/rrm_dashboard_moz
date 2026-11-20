@@ -1,3 +1,19 @@
+# Excel export used by the Activity reporting buttons. Always delivers a .xlsx file:
+# if building the table fails, the file holds the error and the user sees a notification,
+# instead of the browser saving Shiny's error page under the button id with no extension.
+rrm_xlsx_download <- function(stem, data, sheet='Records') shiny::downloadHandler(
+  filename=function() paste0(stem,'_',format(Sys.Date()),'.xlsx'),
+  contentType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  content=function(file) {
+    x <- tryCatch(as.data.frame(data()), error=function(e) {
+      shiny::showNotification(paste('Export failed:',conditionMessage(e)),type='error',duration=NULL)
+      data.frame(export_error=conditionMessage(e))
+    })
+    x[] <- lapply(x, function(col) if (is.list(col))
+      vapply(col, function(v) paste(stats::na.omit(unlist(v)), collapse='; '), character(1)) else col)
+    writexl::write_xlsx(stats::setNames(list(x), sheet), file)
+  })
+
 source('R/table_labels.R', local=TRUE)
 source('R/response_reporting.R', local=TRUE)
 # Process-wide caches so each new browser session does not re-read and re-parse
@@ -233,15 +249,10 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   shiny::div(class='panel',shiny::p(if (length(alert) && alert!='All' && !alert %in% has_records)
     'No response activities recorded for this alert.' else 'No activities match these filters.'))
  })
- output$response_export <- shiny::downloadHandler(
-  filename=function() paste0('rrm_filtered_activities_',Sys.Date(),'.csv'),
-  content=function(file) {
-   a <- response_records()
-   write.csv(a[c('record_id','alert_id','district','admin_post','community','location_coverage',
+ output$response_export <- rrm_xlsx_download('rrm_filtered_activities', function()
+   response_records()[c('record_id','alert_id','district','admin_post','community','location_coverage',
      'activity','tier','implementing_agency','start_date','metric','quantity','unit','delivery_status',
-     'review_status','funding','delay_reason','link_status','delivery_status_source','source_sheet','source_row')],
-     file,row.names=FALSE,na='',fileEncoding='UTF-8')
-  })
+     'review_status','funding','delay_reason','link_status','delivery_status_source','source_sheet','source_row')], 'Activities')
  output$response_totals <- shiny::renderUI({
   a <- response_records()
   x <- data()$outputs
@@ -276,8 +287,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   review_records(),review_links(),which(review_records()$review_required),session$ns('pending-')))
  output$geographic_queue <- shiny::renderUI(response_review_table(
   review_records(),review_links(),seq_len(nrow(review_records())),session$ns('geo-')))
- output$location_export<-shiny::downloadHandler(filename=function()paste0('rrm_community_matching_',Sys.Date(),'.csv'),
-   content=function(file)write.csv(review_links(),file,row.names=FALSE,na='',fileEncoding='UTF-8'))
+ output$location_export<-rrm_xlsx_download('rrm_community_matching',review_links,'Geographic matching')
  output$metrics<-shiny::renderUI({
   x<-review_records()
   card<-function(label,value,title=NULL) shiny::div(class='rrm-kpi',title=title,shiny::p(class='rrm-kpi-label',label),shiny::p(class='rrm-kpi-value',fmt(value)))
@@ -319,11 +329,9 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  output$records<-DT::renderDT(result_table(displayed_records()))
  output$issues<-DT::renderDT({q<-data()$issues;q<-q[q$record_id %in% review_records()$record_id,,drop=FALSE];result_table(q)})
  output$definitions<-DT::renderDT(result_table(data()$metrics[,c('metric','unit','definition'),drop=FALSE]))
- output$export<-shiny::downloadHandler(filename=function() paste0('rrm_activity_review_',Sys.Date(),'.csv'),
-   content=function(file) {
+ output$export<-rrm_xlsx_download('rrm_activity_review',function() {
     a <- review_records()
-    write.csv(a[a$review_required,c('record_id','alert_id','community','link_status','review_status','eligibility_note','source_sheet','source_row')],
-              file,row.names=FALSE,na='',fileEncoding='UTF-8')
-   })
+    a[a$review_required,c('record_id','alert_id','community','link_status','review_status','eligibility_note','source_sheet','source_row')]
+   },'Review records')
  response_available
 })

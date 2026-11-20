@@ -21,9 +21,12 @@ alert_detail_data <- function(id, d=NULL, h=NULL, activity=NULL) {
   reported <- alert_detail_rows(activity$activities, id)
   if (nrow(reported)) reported <- reported[which(reported$link_status == 'Confirmed' &
     reported$eligible %in% TRUE), , drop=FALSE]
-  list(core=core, registry=registry, assessments=assessments, needs=needs,
+  alert_pdf <- if (nrow(registry)) source_document_url(registry$alert_source,
+    if ('alert_source_url' %in% names(registry)) registry$alert_source_url else NA, h$source_links) else NA_character_
+  # Every element is a table; the shared alert PDF travels as an attribute.
+  structure(list(core=core, registry=registry, assessments=assessments, needs=needs,
        evidence=evidence, assistance=alert_detail_rows(d$activities, id),
-       reported_assistance=reported)
+       reported_assistance=reported), alert_pdf=alert_pdf)
 }
 
 alert_detail_cell <- function(x) {
@@ -65,7 +68,26 @@ alert_detail_ui <- function(id, detail) {
       value('alert_severity','recorded_alert_severity'),value('rna_severity'),
       value('recorded_latest_severity','recorded_latest_severity')),
     stringsAsFactors=FALSE)
+  rounds <- detail$assessments
+  if (nrow(rounds) && 'start_date' %in% names(rounds))
+    rounds <- rounds[order(rounds$start_date, decreasing=TRUE, na.last=TRUE), , drop=FALSE]
+  round_label <- function(i) {
+    when <- if ('start_date' %in% names(rounds)) rna_round_date(rounds$start_date[i],
+      if ('end_date' %in% names(rounds)) rounds$end_date[i] else NA) else ''
+    place <- if ('area' %in% names(rounds) && !is.na(rounds$area[i])) rounds$area[i] else rounds$assessment_id[i]
+    paste(c(place, when), collapse=' \u00b7 ')
+  }
+  links <- shiny::div(class='alert-detail-links',
+    document_link(attr(detail, 'alert_pdf'), 'View original alert (PDF)'),
+    if (nrow(rounds)) shiny::div(class='alert-detail-rounds',
+      shiny::span(class='alert-detail-links-label',
+        if (nrow(rounds) == 1) 'Linked Light RNA' else sprintf('Linked Light RNA rounds (%s)', nrow(rounds))),
+      lapply(seq_len(nrow(rounds)), function(i)
+        alert_navigation_button('open_rna_round', rounds$assessment_id[i],
+          shiny::tagList(round_label(i), shiny::span(class='rrm-arrow', `aria-hidden`='true', '\u2192')))))
+    else shiny::span(class='alert-detail-links-label', 'No Light RNA recorded for this alert.'))
   shiny::tagList(
+    links,
     shiny::h3('Alert details'),
     alert_detail_table(summary, c(field='Field',value='Value')),
     shiny::h3('RNA assessments'),
@@ -92,11 +114,15 @@ alert_detail_ui <- function(id, detail) {
       delay_reason='Delay reason')))
 }
 
-show_alert_detail <- function(id, d=NULL, h=NULL, activity=NULL) {
+# return_round: the Light RNA round the user came from, offered as a way back.
+show_alert_detail <- function(id, d=NULL, h=NULL, activity=NULL, return_round=NULL) {
+  back <- !is.null(return_round) && return_round %in% d$assessments$assessment_id[d$assessments$alert_id %in% id]
   shiny::showModal(shiny::modalDialog(
     title=id, size='l', easyClose=TRUE,
     alert_detail_ui(id,alert_detail_data(id,d,h,activity)),
-    footer=shiny::tagList(alert_navigation_button('open_light_rna', id, 'Open Light RNA'),
+    footer=shiny::tagList(
+      if (back) alert_navigation_button('open_rna_round', return_round, 'Back to Light RNA round')
+      else alert_navigation_button('open_light_rna', id, 'Open Light RNA'),
       alert_navigation_button('open_reported_response', id, 'Open reported response'),
       shiny::modalButton('Close'))))
 }

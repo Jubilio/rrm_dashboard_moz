@@ -51,7 +51,7 @@ testServer(activity_workbook_server,args=list(snapshot_dir=directory),{
             grepl('Alpha; Beta',output$responses$html,fixed=TRUE),
             grepl('Completed',output$responses$html,fixed=TRUE),
             grepl('Pending review',output$responses$html,fixed=TRUE),
-            grepl('No validated totals available',output$response_totals$html,fixed=TRUE))
+            grepl('No validated totals for this selection',output$response_totals$html,fixed=TRUE))
   session$setInputs(response_view='map',community='Beta')
   stopifnot(identical(response_records()$record_id,'MULTI-001'))
   session$setInputs(community='Other')

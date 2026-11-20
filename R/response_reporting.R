@@ -31,17 +31,12 @@ rrm_toggle_button <- function(target, label, class='') {
 rrm_export_button <- function(id, label)
   tagAppendAttributes(downloadButton(id, label, icon=NULL), class='rrm-btn-outline')
 
-activity_workbook_ui <- function(id) {
+# show_review: the internal Data review view (record review, source workbook). Partners see
+# Response by community only; set RRM_SHOW_DATA_REVIEW=true to include Data review.
+activity_workbook_ui <- function(id, show_review=ACTIVITY_SHOW_DATA_REVIEW) {
   ns <- NS(id)
   show <- function(field,value) sprintf("input['%s'] == '%s'",ns(field),value)
-  div(class='dashboard-page rrm-workspace rrm-activity',
-    conditionalPanel(sprintf("input['%s'] != 'review'",ns('workspace')),
-      p(class='rrm-page-lede','See what partners reported delivering, where and when.')),
-    conditionalPanel(show('workspace','review'),
-      p(class='rrm-page-lede','Review reported activities, resolve alert links and check community matches.')),
-    uiOutput(ns('load_error')),
-    tabsetPanel(id=ns('workspace'),
-      tabPanel('Response by community',value='response',
+  response <- tagList(
         div(class='panel rrm-activity-filters',
           div(class='rrm-activity-filter-grid',
             selectizeInput(ns('alert'),'Alert',c('All alerts'='All')),
@@ -61,8 +56,13 @@ activity_workbook_ui <- function(id) {
           div(class='rrm-section-actions',
             div(class='rrm-segmented',radioButtons(ns('response_view'),span(class='sr-only','View'),
               c(List='list',Map='map'),inline=TRUE)),
-            rrm_export_button(ns('response_export'),'Export filtered activities'),
-            div(class='rrm-totals',uiOutput(ns('response_totals'))))),
+            rrm_export_button(ns('response_export'),'Export filtered activities'))),
+        div(class='rrm-results-bar',
+          div(class='rrm-results-totals',uiOutput(ns('response_totals')),
+            help_tip(ns('counts'),list(c('Reported output.',paste('The figure the partner reported, in the unit they used.',counting_units_text)),
+              c('Validated totals.','Only reviewed and reconciled records with confirmed alert links are added up. Each unit is totalled separately.')),
+              title='How counts work')),
+          uiOutput(ns('data_updated'),class='rrm-results-updated')),
         div(class='sr-only',radioButtons(ns('scope'),'Activity scope',
                        c('Delivery activities'='delivery','All activities'='all'),inline=TRUE)),
         uiOutput(ns('response_empty')),
@@ -72,8 +72,12 @@ activity_workbook_ui <- function(id) {
           p(class='rrm-footnote','Use List to see records without a confirmed map location.'))),
         tags$details(class='panel rrm-plain-details',tags$summary('Timing and handovers'),
           p(class='rrm-footnote','Validated totals use reviewed and reconciled records with confirmed alert links.'),
-          uiOutput(ns('first_delivery')),DT::DTOutput(ns('response_timeline')),DT::DTOutput(ns('handovers')))),
-      tabPanel('Data review',value='review',
+          uiOutput(ns('first_delivery')),DT::DTOutput(ns('response_timeline')),DT::DTOutput(ns('handovers'))),
+        tags$details(class='panel rrm-plain-details',tags$summary('Methods and counting definitions'),
+          p(class='rrm-footnote',counting_definition_text),
+          p(class='rrm-footnote','Delivery status is what the partner reported about delivery. Review status shows whether the record has been checked: Pending review means the figures are provisional; Validated and reconciled means the record has passed the data review.'),
+          DT::DTOutput(ns('definitions_public'))))
+  review <- tabPanel('Data review',value='review',
         div(class='panel rrm-source-panel',
           div(class='rrm-source-head',uiOutput(ns('source_status')),
             div(class='rrm-section-actions',
@@ -98,8 +102,19 @@ activity_workbook_ui <- function(id) {
             tabPanel('Counting definitions',DT::DTOutput(ns('definitions')))),
           tags$details(class='rrm-plain-details',tags$summary('Validated output and reach breakdowns'),
             DT::DTOutput(ns('outputs')),DT::DTOutput(ns('households')),DT::DTOutput(ns('people')),
-            DT::DTOutput(ns('demographics')),DT::DTOutput(ns('subsets'))))),
-      selected='response'))
+            DT::DTOutput(ns('demographics')),DT::DTOutput(ns('subsets')))))
+  div(class='dashboard-page rrm-workspace rrm-activity',
+    div(class='rrm-page-tools', help_tip(ns('page'), activity_help_items)),
+    if (show_review) tagList(
+      conditionalPanel(sprintf("input['%s'] != 'review'",ns('workspace')),
+        p(class='rrm-page-lede','See what partners reported delivering, where and when.')),
+      conditionalPanel(show('workspace','review'),
+        p(class='rrm-page-lede','Review reported activities, resolve alert links and check community matches.')))
+    else p(class='rrm-page-lede','See what partners reported delivering, where and when.'),
+    uiOutput(ns('load_error')),
+    if (show_review) tabsetPanel(id=ns('workspace'),
+      tabPanel('Response by community',value='response',response), review, selected='response')
+    else response)
 }
 
 rrm_day <- function(date) ifelse(is.na(date), NA_character_,

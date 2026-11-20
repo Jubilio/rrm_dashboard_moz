@@ -32,3 +32,22 @@ source_link_table <- function(x, mapping = NULL) {
   x <- x[setdiff(names(x),unname(url_fields))]
   list(data=x, escape=which(!names(x) %in% fields))
 }
+
+# The HTTPS address for one document, or NA when none was supplied. Same rule as above:
+# an explicit URL column first, then data/reference/source_links.csv by exact filename.
+source_document_url <- function(label, url = NA_character_, mapping = NULL) {
+  label <- if (length(label)) as.character(label[1]) else NA_character_
+  url <- if (length(url)) as.character(url[1]) else NA_character_
+  if ((is.na(url) || !nzchar(trimws(url))) && !is.na(label) && !is.null(mapping) && nrow(mapping) &&
+      all(c('filename','url') %in% names(mapping)))
+    url <- mapping$url[match(label, mapping$filename)]
+  url <- trimws(url)
+  if (!is.na(url) && grepl('^https://[^[:space:][:cntrl:]]+$', url, ignore.case=TRUE)) url else NA_character_
+}
+
+# Link that opens a shared document in a new tab.
+document_link <- function(url, label) {
+  if (is.na(url)) return(NULL)
+  htmltools::tags$a(class='rrm-doc-link', href=url, target='_blank', rel='noopener noreferrer',
+    label, htmltools::span(class='sr-only', ' (opens in a new tab)'))
+}

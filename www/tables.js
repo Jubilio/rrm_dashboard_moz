@@ -111,3 +111,54 @@ document.addEventListener('click', function (event) {
   target.hidden = !open;
   if (open && window.jQuery) window.jQuery(target).trigger('shown');
 });
+/* About the RRM: Previous / Next page. */
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('[data-pager-step]');
+  if (!button) return;
+  var pager = button.closest('.rrm-pager');
+  var pages = pager.querySelectorAll('.rrm-pager-page');
+  var current = Number(pager.getAttribute('data-page')) || 1;
+  var next = Math.min(pages.length, Math.max(1, current + Number(button.getAttribute('data-pager-step'))));
+  pages.forEach(function (page, i) { page.hidden = i + 1 !== next; });
+  pager.setAttribute('data-page', String(next));
+  pager.querySelector('.rrm-pager-count').textContent = next + ' of ' + pages.length;
+  pager.querySelector('.rrm-pager-prev').disabled = next === 1;
+  pager.querySelector('.rrm-pager-next').disabled = next === pages.length;
+  pager.querySelector('.rrm-pager-body').scrollTop = 0;
+});
+/* Help (i): close on Escape or a click elsewhere. */
+/* Help (i): Escape, a second click or a click elsewhere closes it, even while hovered or focused.
+   The "dismissed" mark is cleared once the pointer and focus have left. */
+function rrmCloseHelp(except) {
+  document.querySelectorAll('.rrm-help').forEach(function (help) {
+    var b = help.querySelector('.rrm-help-button');
+    if (b === except) return;
+    var wasOpen = b.getAttribute('aria-expanded') === 'true' || help.matches(':hover, :focus-within');
+    b.setAttribute('aria-expanded', 'false');
+    var panel = document.getElementById(b.getAttribute('data-toggle-target'));
+    if (panel) panel.hidden = true;
+    if (wasOpen) help.classList.add('rrm-help-dismissed');
+  });
+}
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape') rrmCloseHelp();
+});
+document.addEventListener('click', function (event) {
+  var help = event.target.closest('.rrm-help');
+  if (!help) return rrmCloseHelp();
+  var b = help.querySelector('.rrm-help-button');
+  rrmCloseHelp(b);
+  if (event.target.closest('.rrm-help-button')) {
+    /* Runs before the generic toggle: a click on an open help closes it for good. */
+    var opening = b.getAttribute('aria-expanded') !== 'true';
+    help.classList.toggle('rrm-help-dismissed', !opening);
+  }
+}, true);
+document.addEventListener('mouseout', function (event) {
+  var help = event.target.closest && event.target.closest('.rrm-help');
+  if (help && !help.contains(event.relatedTarget) && !help.matches(':focus-within')) help.classList.remove('rrm-help-dismissed');
+});
+document.addEventListener('focusout', function (event) {
+  var help = event.target.closest && event.target.closest('.rrm-help');
+  if (help && !help.contains(event.relatedTarget) && !help.matches(':hover')) help.classList.remove('rrm-help-dismissed');
+});

@@ -1,3 +1,4 @@
+source('R/source_links.R', local=TRUE)
 rna_reported_locations <- function(note, label) {
   if (is.na(note)) return(character())
   match <- regmatches(note, regexec(paste0('(?:^|[.] )', label, ': ([^.]+)'), note, perl=TRUE))[[1]]
@@ -64,6 +65,7 @@ light_rna_ui <- function(id, d) {
     paste(parts[!is.na(parts)],collapse=' · ')
   }, character(1))
   div(class='dashboard-page rrm-workspace rrm-rna',
+    div(class='rrm-page-tools', help_tip(ns('page'), rna_help_items)),
     div(class='panel rrm-rna-filters',
       div(class='rrm-workspace-toolbar', h3('Filter assessments'),
         actionButton(ns('reset'),'Clear filters',class='rrm-link-button')),
@@ -89,9 +91,13 @@ light_rna_ui <- function(id, d) {
       uiOutput(ns('findings'))))
 }
 
-light_rna_server <- function(id, d, open_alert, response_available) moduleServer(id, function(input, output, session) {
+# open_round: a specific assessment round requested from another tab (Alerts, Activity reporting).
+# Returns the selected round so the app can bring the user back to it.
+light_rna_server <- function(id, d, open_alert, response_available, open_round=reactive(NULL),
+                             source_links=NULL) moduleServer(id, function(input, output, session) {
   rounds <- rna_rounds(d)
   selected_round <- reactiveVal(NULL)
+  pending_round <- reactiveVal(NULL)
   filters <- c('gla','period_unit','period','district','post','community')
   clear <- function() {
     for (field in setdiff(filters,'period_unit')) updateSelectInput(session, field, selected='All')
@@ -103,12 +109,23 @@ light_rna_server <- function(id, d, open_alert, response_available) moduleServer
   }
   observeEvent(open_alert(), {
     alert <- open_alert()
+    if (is.list(alert)) alert <- alert$id
     req(alert %in% d$alerts$alert_id)
+    pending_round(NULL)
     clear()
     updateSelectizeInput(session,'alert',selected=alert)
     select_latest(alert)
   })
+  observeEvent(open_round(), {
+    round <- open_round()$id
+    req(round %in% rounds$assessment_id)
+    pending_round(round)
+    clear()
+    updateSelectizeInput(session,'alert',selected=rounds$alert_id[match(round,rounds$assessment_id)])
+    selected_round(round)
+  })
   observeEvent(input$reset, {
+    pending_round(NULL)
     clear()
     updateSelectizeInput(session,'alert',selected='')
     selected_round(NULL)
@@ -152,13 +169,25 @@ light_rna_server <- function(id, d, open_alert, response_available) moduleServer
     }
     x
   })
-  observeEvent(input$alert, select_latest(active_value('alert')), ignoreNULL=FALSE)
+  # A requested round stays selected while the filters settle; otherwise the latest round is shown.
+  keep_pending <- function(candidates) {
+    round <- pending_round()
+    if (!is.null(round) && round %in% candidates) round else NULL
+  }
+  observeEvent(input$alert, {
+    alert <- active_value('alert')
+    round <- keep_pending(rounds$assessment_id[rounds$alert_id %in% alert])
+    if (!is.null(round)) selected_round(round) else select_latest(alert)
+  }, ignoreNULL=FALSE)
   observeEvent(lapply(filters, active_value), {
-    if (any(lengths(lapply(filters, active_value)) > 0L)) selected_round(NULL)
+    if (any(lengths(lapply(filters, active_value)) > 0L)) selected_round(keep_pending(filtered()$assessment_id))
   }, ignoreInit=TRUE)
   observeEvent(input$select_round, {
     req(is.character(input$select_round), length(input$select_round)==1L)
-    if (input$select_round %in% filtered()$assessment_id) selected_round(input$select_round)
+    if (input$select_round %in% filtered()$assessment_id) {
+      pending_round(NULL)
+      selected_round(input$select_round)
+    }
   })
   any_filter <- reactive(any(vapply(c('alert','gla','district','post','community','period'),
                                      function(field) !is.null(active_value(field)), logical(1))))
@@ -194,6 +223,9 @@ light_rna_server <- function(id, d, open_alert, response_available) moduleServer
     record <- d$alerts[match(alert,d$alerts$alert_id),,drop=FALSE]
     available <- response_available()
     alert_date <- if (is.na(record$alert_date)) 'Date unavailable' else rna_day(record$alert_date)
+    brief <- if (nrow(x)) source_document_url(x$source[1],
+      if ('brief_url' %in% names(x)) x$brief_url[1] else if ('source_url' %in% names(x)) x$source_url[1] else NA,
+      source_links) else NA_character_
     links <- div(class='rrm-linked-alert',
       div(strong('Linked alert'), p(paste(alert,alert_date,sep=' \u00b7 '))),
       tagAppendAttributes(alert_navigation_button('open_alert_record',alert,rna_arrow_label('View alert details')),
@@ -226,6 +258,7 @@ light_rna_server <- function(id, d, open_alert, response_available) moduleServer
            if (length(x$communities[[1]])) paste(x$communities[[1]],collapse=' and ') else text_or(x$area)),
         if (length(location)) p(class='rrm-findings-location',paste(location,collapse=' \u00b7 ')),
         p(class='rrm-findings-meta',paste(c(rna_round_date(x$start_date,x$end_date),text_or(x$gla),method),collapse=' \u00b7 ')),
+        if (!is.na(brief)) p(class='rrm-brief-link', document_link(brief,'View full assessment brief (PDF)')),
         links),
       div(class='rrm-findings-body',
         h3('What we learned'),
@@ -242,4 +275,5 @@ light_rna_server <- function(id, d, open_alert, response_available) moduleServer
           field('Method',x$method),field('Coverage',x$coverage_note),field('Limitations',x$limitations),
           field('Use in response',x$response_use),field('Source',x$source))))
   })
+  selected_round
 })

@@ -151,7 +151,7 @@
     var districtProperties = {};
     data.districts.features.forEach(function (f) { districtProperties[f.properties.pcode] = f.properties; });
     state.posts = L.geoJSON(data.posts, {
-      // On RNA Intro, post outlines leave the district interiors clickable.
+      // On About the RRM, post outlines leave the district interiors clickable.
       style: {color: INK, weight: data.selected_post === 'All' ? 0.6 : 2.5, opacity: data.selected_post === 'All' ? 0.5 : 1, dashArray: '2 3', fill: contextMode, fillOpacity: 0},
       onEachFeature: function (f, layer) {
         var p = f.properties;

@@ -4,6 +4,9 @@ APP_TITLE <- "RRM dashboard"
 APP_SUBTITLE <- "Cabo Delgado, Mozambique"
 # Public address, used for the link preview image (must be absolute for WhatsApp, Teams, LinkedIn).
 APP_URL <- Sys.getenv("RRM_APP_URL", "https://jubilio.shinyapps.io/rrm_dashboard/")
+# Internal Data review view in Activity reporting (record review, source workbook management).
+# Off for the partner-facing dashboard; set RRM_SHOW_DATA_REVIEW=true for internal use.
+ACTIVITY_SHOW_DATA_REVIEW <- tolower(Sys.getenv("RRM_SHOW_DATA_REVIEW", "false")) %in% c("true", "1", "yes")
 APP_DESCRIPTION <- "Alerts, rapid needs assessments, vulnerability screening and reported response for the Rapid Response Mechanism in Cabo Delgado, Mozambique."
 
 # Use the updated local workbook when available; an explicit environment value

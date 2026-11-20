@@ -257,13 +257,23 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
   a <- response_records()
   x <- data()$outputs
   x <- x[x$eligible & x$record_id %in% a$record_id & !is.na(x$quantity),,drop=FALSE]
-  if (!nrow(x)) return(shiny::p(class='rrm-footnote','No validated totals available.'))
+  if (!nrow(x)) return(shiny::p(class='rrm-footnote','No validated totals for this selection. Reported activities are shown below.'))
   totals <- aggregate(quantity~metric+unit,x,sum)
   shiny::tags$ul(class='rrm-validated-totals',lapply(seq_len(nrow(totals)),function(i) {
    row <- totals[i,]
    shiny::tags$li(paste0(row$metric,': ',fmt(row$quantity),' ',row$unit,
      if (row$unit=='households' && row$metric=='Households assisted') ' (gross; may include repeat households)' else ''))
   }))
+ })
+ # When the activity data was last updated, so partners can judge how current the figures are.
+ output$data_updated <- shiny::renderUI({
+  d <- current()
+  updated <- if (!is.null(d) && !is.null(d$metadata$source_updated)) d$metadata$source_updated[1] else NA
+  updated <- suppressWarnings(as.POSIXct(updated, tz='UTC'))
+  label <- if (!is.na(updated)) format(updated, '%d %b %Y, %H:%M UTC') else if (!is.null(loaded_at())) loaded_at() else 'Not available'
+  label <- sub('^0', '', label)
+  shiny::p(class='rrm-footnote', shiny::span(class='rrm-updated-dot', `aria-hidden`='true'),
+    'Activity data last updated ', shiny::strong(label))
  })
  output$first_delivery <- shiny::renderUI({
   id <- input$alert
@@ -329,6 +339,7 @@ activity_workbook_server <- function(id,workbook_path='',snapshot_dir='data/acti
  output$records<-DT::renderDT(result_table(displayed_records()))
  output$issues<-DT::renderDT({q<-data()$issues;q<-q[q$record_id %in% review_records()$record_id,,drop=FALSE];result_table(q)})
  output$definitions<-DT::renderDT(result_table(data()$metrics[,c('metric','unit','definition'),drop=FALSE]))
+ output$definitions_public<-DT::renderDT(result_table(data()$metrics[,c('metric','unit','definition'),drop=FALSE]))
  output$export<-rrm_xlsx_download('rrm_activity_review',function() {
     a <- review_records()
     a[a$review_required,c('record_id','alert_id','community','link_status','review_status','eligibility_note','source_sheet','source_row')]

@@ -159,12 +159,34 @@ server <- function(input, output, session) {
   household_server('household', history, allow_synthetic = DATA_MODE == 'demo')
   response_available <- activity_workbook_server('activity_excel', ACTIVITY_WORKBOOK_PATH,
     core=d, open_alert=reactive(input$open_reported_response))
-  light_rna_server('rna', d, reactive(input$open_light_rna), response_available)
+  # Light RNA navigation. A link can ask for the alert (latest round) or one exact round.
+  # The last round viewed is remembered so View Light RNA and View details can return to it.
+  rna_alert_request <- reactiveVal(NULL)
+  rna_round_request <- reactiveVal(NULL)
+  rna_selected <- light_rna_server('rna', d, rna_alert_request, response_available,
+    open_round=rna_round_request, source_links=history$source_links)
+  last_rna_round <- reactiveVal(NULL)
+  observe({ round <- rna_selected(); if (!is.null(round)) last_rna_round(round) })
+  round_alert <- function(round) d$assessments$alert_id[match(round, d$assessments$assessment_id)]
   known_alert <- function(id) is.character(id) && length(id)==1L && id %in% d$alerts$alert_id
-  observeEvent(input$open_light_rna, {
-    req(known_alert(input$open_light_rna))
+  known_round <- function(id) is.character(id) && length(id)==1L && id %in% d$assessments$assessment_id
+  open_round <- function(round) {
     removeModal()
     updateRadioButtons(session,'page',selected='rna')
+    rna_round_request(list(id=round, at=Sys.time()))
+  }
+  observeEvent(input$open_rna_round, {
+    req(known_round(input$open_rna_round))
+    open_round(input$open_rna_round)
+  })
+  observeEvent(input$open_light_rna, {
+    alert <- input$open_light_rna
+    req(known_alert(alert))
+    round <- last_rna_round()
+    if (!is.null(round) && identical(round_alert(round), alert)) return(open_round(round))
+    removeModal()
+    updateRadioButtons(session,'page',selected='rna')
+    rna_alert_request(list(id=alert, at=Sys.time()))
   })
   observeEvent(input$open_reported_response, {
     req(known_alert(input$open_reported_response))
@@ -174,9 +196,10 @@ server <- function(input, output, session) {
   observeEvent(input$open_alert_record, {
     req(known_alert(input$open_alert_record))
     updateRadioButtons(session,'page',selected='alerts')
-    show_alert_detail(input$open_alert_record,d,history,alert_activity)
+    show_alert_detail(input$open_alert_record,d,history,alert_activity,
+      return_round=if (identical(input$page,'rna')) last_rna_round())
   })
-  # Clicking a district on the RNA Intro map opens the Alerts page filtered to that district.
+  # Clicking a district on the About the RRM map opens the Alerts page filtered to that district.
   district_alert_links <- reactive(alert_links_for(d))
   observeEvent(input$map_district_alerts, {
     code <- input$map_district_alerts

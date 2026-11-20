@@ -32,6 +32,8 @@ The application requires `shiny`, `DT` and `readxl`. Existing checks were exerci
 
 **The example contains fictional records and coordinates.** Replace them and set `Metadata.mode` to `operational` before using the workbook for operational reporting. Without an explicitly set `RRM_DATA_MODE`, the consolidated workbook's mode controls the interface. A conflicting explicit mode or invalid selected workbook is rejected.
 
+Activity reporting shows partners **Response by community** only. Set `RRM_SHOW_DATA_REVIEW=true` to include the internal **Data review** tab (record review and source workbook management); leave it unset for the published dashboard.
+
 With no default workbook or explicit `RRM_INPUT_WORKBOOK`, the application uses its CSV workflow; demo is the default core mode. The live consolidated file is excluded from version control. Include it explicitly in the intended deployment bundle.
 
 ## Understand the sources

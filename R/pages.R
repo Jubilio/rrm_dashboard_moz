@@ -1,16 +1,18 @@
 source('R/table_labels.R', local = TRUE)
+source('R/source_links.R', local = TRUE)
 source('R/alert_detail.R', local = TRUE)
+source('R/help_content.R', local = TRUE)
 source('R/alert_summary.R', local = TRUE)
 source('R/geography.R', local = TRUE)
 source('R/alert_locations.R', local = TRUE)
 page_titles <- c(
-  coverage = 'RNA Intro',
+  coverage = 'About the RRM',
   alerts = 'Alerts',
   rna = 'Light RNA',
   vulnerability = 'Vulnerability screening',
   activity = 'Activity reporting'
 )
-# Alert-to-district links (route text), shared by the Alerts district filter and the RNA Intro map.
+# Alert-to-district links (route text), shared by the Alerts district filter and the About the RRM map.
 alert_links_for <- function(d) {
   if (d$metadata$mode == 'demo') return(NULL)
   tryCatch(alert_district_links(d$alerts, d$routes), error = function(e) NULL)
@@ -247,6 +249,8 @@ page_ui <- function(id, key, d) {
       'needs'))
   div(
     class = paste('dashboard-page', paste0('page-', key)),
+    if (key == 'alerts')
+      div(class = 'rrm-page-tools', help_tip(ns('page'), alerts_help_items)),
     if (pending_count > 0L)
       div(
         class = 'method-strip',
@@ -433,12 +437,7 @@ page_ui <- function(id, key, d) {
           uiOutput(ns('map_slot')),
           uiOutput(ns('map_note'))
         ),
-        div(
-          class = 'panel coverage-intro-text',
-          h3('Rapid Needs Assessment (RNA)'),
-          # Placeholder: replace with the RNA introduction text.
-          p(class = 'muted', 'RNA introduction text to be added.')
-        )
+        about_rrm_panel(ns('about'))
       )
     else if (key == 'alerts')
       tagList(

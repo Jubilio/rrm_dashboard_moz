@@ -34,7 +34,7 @@ stopifnot(grepl('id="coverage-coverage_map"',coverage_html,fixed=TRUE),
   !grepl('Coverage uses effective assignment dates',coverage_html,fixed=TRUE))
 testServer(e$server,{
   session$setInputs(page='coverage')
-  stopifnot(output$page_subtitle=='RNA Intro | Cabo Delgado, Mozambique',
+  stopifnot(output$page_subtitle=='About the RRM | Cabo Delgado, Mozambique',
     output$source_label=='DRAFT LAYOUT - DEMO DATA ONLY',grepl('illustrative',output$source_footer,fixed=TRUE))
   session$setInputs(page='activity',activity_view='workbook')
   stopifnot(grepl('WORKBOOK SOURCE',output$source_label,fixed=TRUE),!grepl('DEMO',output$source_label,fixed=TRUE),
@@ -55,7 +55,7 @@ testServer(e$page_server,args=list(key='coverage',d=e$d),{
 testServer(e$page_server,args=list(key='coverage',d=e$d),{
   stopifnot(nrow(filtered())>0L)
 })
-message('PASS: default demo layout, coverage-first navigation, single geography input, source labels, reference KPIs and RNA Intro layout.')
+message('PASS: default demo layout, coverage-first navigation, single geography input, source labels, reference KPIs and About the RRM layout.')
 # Vulnerability screening has no "Include records without a date" checkbox; undated records stay included.
 local({
   v <- new.env(parent = globalenv())
